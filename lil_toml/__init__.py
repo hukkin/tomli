@@ -1,3 +1,4 @@
+import datetime
 import re
 import string
 from typing import Any, Iterable, List, Sequence, Tuple
@@ -15,6 +16,7 @@ _DEC_OR_FLOAT_RE = re.compile(
     + r"(?:[eE][+-]?[0-9](?:_?[0-9])*)?"  # optional exponent part
     + r"$"
 )
+_LOCAL_TIME_RE = re.compile(r"([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])(\.[0-9]+)?")
 
 
 _Namespace = Tuple[str, ...]
@@ -331,8 +333,17 @@ def _parse_value(state: _ParseState) -> Any:  # noqa: C901
         #   - local date-time
         #   - local date
         raise NotImplementedError
-    if char == "TODO:":  # local time
-        raise NotImplementedError
+    localtime_match = _LOCAL_TIME_RE.match(src)
+    if localtime_match:
+        state.pos += len(localtime_match.group())
+        millis = localtime_match.group(4) or "0"
+        millis = millis.ljust(6, "0")[:6]
+        return datetime.time(
+            int(localtime_match.group(1)),
+            int(localtime_match.group(2)),
+            int(localtime_match.group(3)),
+            int(millis),
+        )
 
     # Booleans
     if src.startswith("true"):
