@@ -1,10 +1,15 @@
 import datetime
 import re
 import string
-from typing import Any, Iterable, List, Sequence, Tuple
+from typing import Any, Iterable, List, Optional, Sequence, Tuple
 
 __all__ = ("loads", "dumps")
 __version__ = "0.0.0"  # DO NOT EDIT THIS LINE MANUALLY. LET bump2version UTILITY DO IT
+
+# E.g.
+# - 00:32:00.999999
+# - 00:32:00
+_TIME_RE_STR = r"([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])(\.[0-9]+)?"
 
 _HEX_RE = re.compile(r"0x[0-9A-Fa-f](?:_?[0-9A-Fa-f]+)*")
 _BIN_RE = re.compile(r"0b[01](?:_?[01]+)*")
@@ -16,10 +21,34 @@ _DEC_OR_FLOAT_RE = re.compile(
     + r"(?:[eE][+-]?[0-9](?:_?[0-9])*)?"  # optional exponent part
     + r"$"
 )
-_LOCAL_TIME_RE = re.compile(r"([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])(\.[0-9]+)?")
+_LOCAL_TIME_RE = re.compile(_TIME_RE_STR)
+_DATETIME_RE = re.compile(
+    r"([0-9]{4})-(0[1-9]|1[0-2])-(0[1-9]|1[0-9]|2[0-9]|3[01])"  # date, e.g. 1988-10-27
+    + r"(?:[T ]"
+    + _TIME_RE_STR
+    + r"(?:Z|[+-]([01][0-9]|2[0-3]):([0-5][0-9]))?"  # time offset
+    + r")?"
+)
 
 
 _Namespace = Tuple[str, ...]
+
+
+class _CustomTzinfo(datetime.tzinfo):
+    def __init__(self, offset: datetime.timedelta) -> None:
+        self._offset = offset
+
+    def __deepcopy__(self, memo: Any) -> Any:
+        return type(self)(self._offset)
+
+    def utcoffset(self, dt: Optional[datetime.datetime]) -> datetime.timedelta:
+        return self._offset
+
+    def dst(self, dt: Optional[datetime.datetime]) -> None:
+        return None
+
+    def tzname(self, dt: Optional[datetime.datetime]) -> None:
+        return None
 
 
 class _ParseState:
@@ -327,22 +356,41 @@ def _parse_value(state: _ParseState) -> Any:  # noqa: C901
         raise NotImplementedError
 
     # Dates and times
-    if len(src) >= 5 and all(c in string.digits for c in src[:4]) and src[4] == "-":
-        # things to parse here:
-        #   - offset date-time
-        #   - local date-time
-        #   - local date
-        raise NotImplementedError
+    date_match = _DATETIME_RE.match(src)
+    if date_match:
+        match_str = date_match.group()
+        state.pos += len(match_str)
+        groups: Any = date_match.groups()
+        year, month, day = (int(x) for x in groups[:3])
+        if groups[3] is None:
+            # Returning local date
+            return datetime.date(year, month, day)
+        hour, minute, sec = (int(x) for x in groups[3:6])
+        micros_str = groups[6] or "0"
+        micros = int(micros_str.ljust(6, "0")[:6])
+        if groups[7] is not None:
+            offset_dir = 1 if "+" in match_str else -1
+            tz: Optional[datetime.tzinfo] = _CustomTzinfo(
+                datetime.timedelta(
+                    hours=offset_dir * int(groups[7]),
+                    minutes=offset_dir * int(groups[8]),
+                )
+            )
+        elif "Z" in match_str:
+            tz = _CustomTzinfo(datetime.timedelta())
+        else:  # local date-time
+            tz = None
+        return datetime.datetime(year, month, day, hour, minute, sec, micros, tzinfo=tz)
     localtime_match = _LOCAL_TIME_RE.match(src)
     if localtime_match:
         state.pos += len(localtime_match.group())
-        millis = localtime_match.group(4) or "0"
-        millis = millis.ljust(6, "0")[:6]
+        micros_str = localtime_match.group(4) or "0"
+        micros_str = micros_str.ljust(6, "0")[:6]
         return datetime.time(
             int(localtime_match.group(1)),
             int(localtime_match.group(2)),
             int(localtime_match.group(3)),
-            int(millis),
+            int(micros_str),
         )
 
     # Booleans

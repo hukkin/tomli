@@ -61,7 +61,7 @@ def _convert_primitive_to_burntsushi(obj):
     elif isinstance(obj, float):
         return {"type": "float", "value": str(obj)}
     elif isinstance(obj, datetime.datetime):
-        return {"type": "datetime", "value": str(obj)}
+        return {"type": "datetime", "value": str(obj).replace(" ", "T", 1)}
     elif isinstance(obj, list):
         return {
             "type": "array",
