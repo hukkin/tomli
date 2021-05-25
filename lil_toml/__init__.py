@@ -384,14 +384,11 @@ def _parse_value(state: _ParseState) -> Any:  # noqa: C901
     localtime_match = _LOCAL_TIME_RE.match(src)
     if localtime_match:
         state.pos += len(localtime_match.group())
-        micros_str = localtime_match.group(4) or "0"
-        micros_str = micros_str.ljust(6, "0")[:6]
-        return datetime.time(
-            int(localtime_match.group(1)),
-            int(localtime_match.group(2)),
-            int(localtime_match.group(3)),
-            int(micros_str),
-        )
+        groups = localtime_match.groups()
+        hour, minute, sec = (int(x) for x in groups[:3])
+        micros_str = groups[3] or "0"
+        micros = int(micros_str.ljust(6, "0")[:6])
+        return datetime.time(hour, minute, sec, micros)
 
     # Booleans
     if src.startswith("true"):
