@@ -1,3 +1,4 @@
+import datetime
 import json
 from pathlib import Path
 
@@ -33,4 +34,48 @@ def test_invalid(invalid):
 def test_valid(valid, expected):
     toml_str = valid.read_text(encoding="utf-8")
     actual = lil_toml.loads(toml_str)
-    assert actual == expected
+    actual = convert_dict_to_burntsushi(actual)
+    assert actual == normalize_burntsushi_floats(expected)
+
+
+def convert_dict_to_burntsushi(d: dict) -> dict:
+    converted = {}
+    for k, v in d.items():
+        if isinstance(v, dict):
+            converted[k] = convert_dict_to_burntsushi(v)
+        else:
+            converted[k] = _convert_primitive_to_burntsushi(v)
+    return converted
+
+
+def _convert_primitive_to_burntsushi(obj):
+    if isinstance(obj, str):
+        return {"type": "string", "value": obj}
+    elif isinstance(obj, bool):
+        return {"type": "bool", "value": str(obj).lower()}
+    elif isinstance(obj, int):
+        return {"type": "integer", "value": str(obj)}
+    elif isinstance(obj, float):
+        return {"type": "float", "value": str(obj)}
+    elif isinstance(obj, datetime.datetime):
+        return {"type": "datetime", "value": str(obj)}
+    elif isinstance(obj, list):
+        return {
+            "type": "array",
+            "value": [_convert_primitive_to_burntsushi(item) for item in obj],
+        }
+    else:
+        Exception("unsupported type")
+
+
+def normalize_burntsushi_floats(d: dict) -> dict:
+    normalized = {}
+    for k, v in d.items():
+        if not isinstance(v, dict):
+            pytest.fail("Burntsushi fixtures should be dicts only")
+        if v.get("type") == "float":
+            normalized[k] = v.copy()
+            normalized[k]["value"] = str(float(normalized[k]["value"]))
+        else:
+            normalized[k] = v
+    return normalized
