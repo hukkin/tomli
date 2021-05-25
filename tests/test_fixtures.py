@@ -35,7 +35,8 @@ def test_valid(valid, expected):
     toml_str = valid.read_text(encoding="utf-8")
     actual = lil_toml.loads(toml_str)
     actual = convert_dict_to_burntsushi(actual)
-    assert actual == normalize_burntsushi_floats(expected)
+    expected = normalize_burntsushi_floats(expected)
+    assert actual == expected
 
 
 def convert_dict_to_burntsushi(d: dict) -> dict:
@@ -43,6 +44,8 @@ def convert_dict_to_burntsushi(d: dict) -> dict:
     for k, v in d.items():
         if isinstance(v, dict):
             converted[k] = convert_dict_to_burntsushi(v)
+        elif isinstance(v, list):
+            converted[k] = [convert_dict_to_burntsushi(item) for item in v]
         else:
             converted[k] = _convert_primitive_to_burntsushi(v)
     return converted
@@ -71,11 +74,14 @@ def _convert_primitive_to_burntsushi(obj):
 def normalize_burntsushi_floats(d: dict) -> dict:
     normalized = {}
     for k, v in d.items():
-        if not isinstance(v, dict):
-            pytest.fail("Burntsushi fixtures should be dicts only")
-        if v.get("type") == "float":
-            normalized[k] = v.copy()
-            normalized[k]["value"] = str(float(normalized[k]["value"]))
+        if isinstance(v, list):
+            normalized[k] = [normalize_burntsushi_floats(item) for item in v]
+        elif isinstance(v, dict):
+            if v.get("type") == "float":
+                normalized[k] = v.copy()
+                normalized[k]["value"] = str(float(normalized[k]["value"]))
+            else:
+                normalized[k] = v
         else:
-            normalized[k] = v
+            pytest.fail("Burntsushi fixtures should be dicts/lists only")
     return normalized

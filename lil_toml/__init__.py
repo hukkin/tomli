@@ -1,6 +1,6 @@
 import re
 import string
-from typing import Any, Iterable, List, Tuple, Union
+from typing import Any, Iterable, List, Sequence, Tuple
 
 __all__ = ("loads", "dumps")
 __version__ = "0.0.0"  # DO NOT EDIT THIS LINE MANUALLY. LET bump2version UTILITY DO IT
@@ -17,7 +17,7 @@ _DEC_OR_FLOAT_RE = re.compile(
 )
 
 
-_Namespace = Tuple[Union[int, str], ...]  # int for arrays, str for mappings
+_Namespace = Tuple[str, ...]
 
 
 class _ParseState:
@@ -64,7 +64,7 @@ def loads(s: str) -> dict:  # noqa: C901
         elif char in _BARE_KEY_CHARS or char in "\"'":
             _key_value_rule(state)
         elif state.src[state.pos : state.pos + 2] == "[[":
-            raise NotImplementedError
+            _create_list_rule(state)
         elif char == "[":
             _create_dict_rule(state)
         else:
@@ -127,6 +127,19 @@ def _create_dict_rule(state: _ParseState) -> None:
     state.pos += 1
 
 
+def _create_list_rule(state: _ParseState) -> None:
+    state.pos += 2
+    _skip_chars(state, _TOML_WS)
+    key_parts = _parse_key(state)
+
+    _append_dict_to_nested_list(state.out, key_parts)
+    state.header_namespace = tuple(key_parts)
+
+    if not state.src[state.pos : state.pos + 2] == "]]":
+        raise Exception("TODO: type and msg")
+    state.pos += 2
+
+
 def _key_value_rule(state: _ParseState) -> None:
     key_parts = _parse_key(state)
     last_key_part = key_parts.pop()
@@ -135,9 +148,11 @@ def _key_value_rule(state: _ParseState) -> None:
     state.pos += 1
     _skip_chars(state, _TOML_WS)
 
-    container = state.out
+    container: Any = state.out
     for part in state.header_namespace:
         container = container[part]
+        if isinstance(container, list):
+            container = container[-1]
 
     container = _get_or_create_nested_dict(container, key_parts)
 
@@ -244,10 +259,11 @@ def _parse_literal_str(state: _ParseState) -> str:
     state.pos += 1
     start_pos = state.pos
     _skip_until(state, "'\n")
+    end_pos = state.pos
     if state.done() or state.char() == "\n":
         raise Exception("TODO: msg and type")
     state.pos += 1
-    return state.src[start_pos : state.pos]
+    return state.src[start_pos:end_pos]
 
 
 def _parse_multiline_literal_str(state: _ParseState) -> str:
@@ -362,3 +378,20 @@ def _get_or_create_nested_dict(base_dict: dict, keys: Iterable[str]) -> dict:
             container[k] = {}
         container = container[k]
     return container
+
+
+def _append_dict_to_nested_list(base_dict: dict, keys: Sequence[str]) -> dict:
+    container: Any = base_dict
+    for k in keys[:-1]:
+        if k not in container:
+            container[k] = {}
+        container = container[k]
+        if isinstance(container, list):
+            container = container[-1]
+    new_dict: dict = {}
+    last_key = keys[-1]
+    if last_key in container:
+        container[last_key].append(new_dict)
+    else:
+        container[last_key] = [new_dict]
+    return new_dict
