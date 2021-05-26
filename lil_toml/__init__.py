@@ -7,25 +7,9 @@ import string
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 from lil_toml import _re
+from lil_toml._tz import CustomTzinfo
 
 _Namespace = Tuple[str, ...]
-
-
-class _CustomTzinfo(datetime.tzinfo):
-    def __init__(self, offset: datetime.timedelta) -> None:
-        self._offset = offset
-
-    def __deepcopy__(self, memo: Any) -> Any:
-        return type(self)(self._offset)
-
-    def utcoffset(self, dt: Optional[datetime.datetime]) -> datetime.timedelta:
-        return self._offset
-
-    def dst(self, dt: Optional[datetime.datetime]) -> None:
-        return None
-
-    def tzname(self, dt: Optional[datetime.datetime]) -> None:
-        return None
 
 
 class _ParseState:
@@ -456,14 +440,14 @@ def _parse_value(state: _ParseState) -> Any:  # noqa: C901
         micros = int(groups[6][1:].ljust(6, "0")[:6]) if groups[6] else 0
         if groups[7] is not None:
             offset_dir = 1 if "+" in match_str else -1
-            tz: Optional[datetime.tzinfo] = _CustomTzinfo(
+            tz: Optional[datetime.tzinfo] = CustomTzinfo(
                 datetime.timedelta(
                     hours=offset_dir * int(groups[7]),
                     minutes=offset_dir * int(groups[8]),
                 )
             )
         elif "Z" in match_str:
-            tz = _CustomTzinfo(datetime.timedelta())
+            tz = CustomTzinfo(datetime.timedelta())
         else:  # local date-time
             tz = None
         return datetime.datetime(year, month, day, hour, minute, sec, micros, tzinfo=tz)
