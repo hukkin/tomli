@@ -147,10 +147,14 @@ def _skip_comment(state: _ParseState) -> None:
 
 
 def _comment_rule(state: _ParseState) -> None:
-    try:
-        state.pos = state.src.index("\n", state.pos + 1)
-    except ValueError:
-        state.pos = len(state.src)
+    state.pos += 1
+    while not state.done():
+        c = state.char()
+        if c == "\n":
+            break
+        if c in _ILLEGAL_COMMENT_CHARS:
+            raise Exception("TODO: msg and type")
+        state.pos += 1
 
 
 def _create_dict_rule(state: _ParseState) -> None:
@@ -243,8 +247,10 @@ _ASCII_CTRL = frozenset(chr(i) for i in range(32)) | frozenset(chr(127))
 
 # Neither of these sets include quotation mark or backslash. They are
 # currently handled as separate cases in the parser functions.
-_DISALLOWED_BASIC_STR_CHARS = _ASCII_CTRL - frozenset("\t")
-_DISALLOWED_MULTILINE_BASIC_STR_CHARS = _ASCII_CTRL - frozenset("\t\n\r")
+_ILLEGAL_BASIC_STR_CHARS = _ASCII_CTRL - frozenset("\t")
+_ILLEGAL_MULTILINE_BASIC_STR_CHARS = _ASCII_CTRL - frozenset("\t\n\r")
+
+_ILLEGAL_COMMENT_CHARS = _ASCII_CTRL - frozenset("\t")
 
 
 def _parse_basic_str(state: _ParseState) -> str:
@@ -255,7 +261,7 @@ def _parse_basic_str(state: _ParseState) -> str:
         if c == '"':
             state.pos += 1
             return result
-        if c in _DISALLOWED_BASIC_STR_CHARS:
+        if c in _ILLEGAL_BASIC_STR_CHARS:
             raise Exception("TODO: msg and type")
 
         if c == "\\":
@@ -438,7 +444,7 @@ def _parse_multiline_basic_str(state: _ParseState) -> str:
                 result += '"'
                 state.pos += 1
             continue
-        if c in _DISALLOWED_MULTILINE_BASIC_STR_CHARS:
+        if c in _ILLEGAL_MULTILINE_BASIC_STR_CHARS:
             raise Exception("TODO: msg and type")
 
         if c == "\\":
