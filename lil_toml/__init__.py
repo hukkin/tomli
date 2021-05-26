@@ -3,32 +3,10 @@ import re
 import string
 from typing import Any, Iterable, List, Optional, Sequence, Tuple
 
+from lil_toml import _re
+
 __all__ = ("loads", "dumps")
 __version__ = "0.0.0"  # DO NOT EDIT THIS LINE MANUALLY. LET bump2version UTILITY DO IT
-
-# E.g.
-# - 00:32:00.999999
-# - 00:32:00
-_TIME_RE_STR = r"([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])(\.[0-9]+)?"
-
-_HEX_RE = re.compile(r"0x[0-9A-Fa-f](?:_?[0-9A-Fa-f]+)*")
-_BIN_RE = re.compile(r"0b[01](?:_?[01]+)*")
-_OCT_RE = re.compile(r"0o[0-7](?:_?[0-7]+)*")
-_DEC_OR_FLOAT_RE = re.compile(
-    r"^"
-    + r"[+-]?(?:0|[1-9](?:_?[0-9])*)"  # integer
-    + r"(?:\.[0-9](?:_?[0-9])*)?"  # optional fractional part
-    + r"(?:[eE][+-]?[0-9](?:_?[0-9])*)?"  # optional exponent part
-    + r"$"
-)
-_LOCAL_TIME_RE = re.compile(_TIME_RE_STR)
-_DATETIME_RE = re.compile(
-    r"([0-9]{4})-(0[1-9]|1[0-2])-(0[1-9]|1[0-9]|2[0-9]|3[01])"  # date, e.g. 1988-10-27
-    + r"(?:[T ]"
-    + _TIME_RE_STR
-    + r"(?:Z|[+-]([01][0-9]|2[0-3]):([0-5][0-9]))?"  # time offset
-    + r")?"
-)
 
 
 _Namespace = Tuple[str, ...]
@@ -356,7 +334,7 @@ def _parse_value(state: _ParseState) -> Any:  # noqa: C901
         raise NotImplementedError
 
     # Dates and times
-    date_match = _DATETIME_RE.match(src)
+    date_match = _re.DATETIME.match(src)
     if date_match:
         match_str = date_match.group()
         state.pos += len(match_str)
@@ -381,7 +359,7 @@ def _parse_value(state: _ParseState) -> Any:  # noqa: C901
         else:  # local date-time
             tz = None
         return datetime.datetime(year, month, day, hour, minute, sec, micros, tzinfo=tz)
-    localtime_match = _LOCAL_TIME_RE.match(src)
+    localtime_match = _re.LOCAL_TIME.match(src)
     if localtime_match:
         state.pos += len(localtime_match.group())
         groups = localtime_match.groups()
@@ -400,20 +378,20 @@ def _parse_value(state: _ParseState) -> Any:  # noqa: C901
 
     # Non-decimal integers
     if src.startswith("0x"):
-        hex_str = _parse_regex(state, _HEX_RE)
+        hex_str = _parse_regex(state, _re.HEX)
         return int(hex_str, 16)
     if src.startswith("0o"):
-        oct_str = _parse_regex(state, _OCT_RE)
+        oct_str = _parse_regex(state, _re.OCT)
         return int(oct_str, 8)
     if src.startswith("0b"):
-        bin_str = _parse_regex(state, _BIN_RE)
+        bin_str = _parse_regex(state, _re.BIN)
         return int(bin_str, 2)
 
     # First "word". A substring before whitespace or line comment
     first_word = src.split(maxsplit=1)[0].split("#", maxsplit=1)[0]
 
     # Decimal integers and "normal" floats
-    if _DEC_OR_FLOAT_RE.match(first_word):
+    if _re.DEC_OR_FLOAT.match(first_word):
         state.pos += len(first_word)
         if "." in first_word or "e" in first_word or "E" in first_word:
             return float(first_word)
