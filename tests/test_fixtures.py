@@ -6,13 +6,29 @@ import pytest
 
 import lil_toml
 
-DATA_DIR = Path(__file__).parent / "data" / "BurntSushi"
 
-VALID_FILES = tuple((DATA_DIR / "valid").glob("*.toml"))
-VALID_FILES_EXPECTED = tuple(
-    json.loads(p.with_suffix(".json").read_text("utf-8")) for p in VALID_FILES
-)
-INVALID_FILES = tuple((DATA_DIR / "invalid").glob("*.toml"))
+class MissingFile:
+    def __init__(self, path: Path):
+        self.path = path
+
+
+DATA_DIR = Path(__file__).parent / "data" / "toml-lang-compliance"
+
+VALID_FILES = tuple((DATA_DIR / "valid").glob("**/*.toml"))
+# VALID_FILES_EXPECTED = tuple(
+#     json.loads(p.with_suffix(".json").read_text("utf-8")) for p in VALID_FILES
+# )
+_expected_files = []
+for p in VALID_FILES:
+    json_path = p.with_suffix(".json")
+    try:
+        text = json.loads(json_path.read_text("utf-8"))
+    except FileNotFoundError:
+        text = MissingFile(json_path)
+    _expected_files.append(text)
+
+VALID_FILES_EXPECTED = tuple(_expected_files)
+INVALID_FILES = tuple((DATA_DIR / "invalid").glob("**/*.toml"))
 
 
 @pytest.mark.parametrize(
@@ -32,26 +48,16 @@ def test_invalid(invalid):
     ids=[p.stem for p in VALID_FILES],
 )
 def test_valid(valid, expected):
+    if isinstance(expected, MissingFile):
+        pytest.xfail(f"Missing a .json file corresponding the .toml: {expected.path}")
     toml_str = valid.read_text(encoding="utf-8")
     actual = lil_toml.loads(toml_str)
-    actual = convert_dict_to_burntsushi(actual)
+    actual = convert_to_burntsushi(actual)
     expected = normalize_burntsushi_floats(expected)
     assert actual == expected
 
 
-def convert_dict_to_burntsushi(d: dict) -> dict:
-    converted = {}
-    for k, v in d.items():
-        if isinstance(v, dict):
-            converted[k] = convert_dict_to_burntsushi(v)
-        elif isinstance(v, list):
-            converted[k] = [convert_dict_to_burntsushi(item) for item in v]
-        else:
-            converted[k] = _convert_primitive_to_burntsushi(v)
-    return converted
-
-
-def _convert_primitive_to_burntsushi(obj):
+def convert_to_burntsushi(obj):
     if isinstance(obj, str):
         return {"type": "string", "value": obj}
     elif isinstance(obj, bool):
@@ -61,12 +67,17 @@ def _convert_primitive_to_burntsushi(obj):
     elif isinstance(obj, float):
         return {"type": "float", "value": str(obj)}
     elif isinstance(obj, datetime.datetime):
-        return {"type": "datetime", "value": str(obj).replace(" ", "T", 1)}
+        return {
+            "type": "datetime",
+            "value": str(obj).replace(" ", "T", 1).replace("+00:00", "Z", 1),
+        }
     elif isinstance(obj, list):
         return {
             "type": "array",
-            "value": [_convert_primitive_to_burntsushi(item) for item in obj],
+            "value": [convert_to_burntsushi(i) for i in obj],
         }
+    elif isinstance(obj, dict):
+        return {k: convert_to_burntsushi(v) for k, v in obj.items()}
     else:
         Exception("unsupported type")
 

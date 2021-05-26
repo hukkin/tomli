@@ -1,0 +1,5 @@
+{"colors":
+  {"type":"array","value":[
+    {"type":"string","value":"red"},
+    {"type":"string","value":"yellow"},
+    {"type":"string","value":"green"}]}}

@@ -1,0 +1,9 @@
+{"nested_mixed_array":
+  {"type":"array","value":[
+    {"type":"array","value":[
+      {"type":"integer","value":"1"},
+      {"type":"integer","value":"2"}]},
+    {"type":"array","value":[
+      {"type":"string","value":"a"},
+      {"type":"string","value":"b"},
+      {"type":"string","value":"c"}]}]}}

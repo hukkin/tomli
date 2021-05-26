@@ -81,8 +81,7 @@ def loads(s: str) -> dict:  # noqa: C901
 
         # 2. skip whitespace and line comment
         _skip_chars(state, _TOML_WS)
-        if not state.done() and state.char() == "#":
-            _comment_rule(state)
+        _skip_comment(state)
 
         # 3. either:
         #      - EOF
@@ -114,6 +113,11 @@ def _skip_chars(state: _ParseState, chars: Iterable[str]) -> None:
 def _skip_until(state: _ParseState, chars: Iterable[str]) -> None:
     while not state.done() and state.char() not in chars:
         state.pos += 1
+
+
+def _skip_comment(state: _ParseState) -> None:
+    if not state.done() and state.char() == "#":
+        _comment_rule(state)
 
 
 def _comment_rule(state: _ParseState) -> None:
@@ -230,13 +234,53 @@ def _parse_basic_str(state: _ParseState) -> str:
     raise Exception("TODO: msg and type")
 
 
+def _parse_array(state: _ParseState) -> list:
+    state.pos += 1
+    array: list = []
+
+    _skip_comments_and_array_ws(state)
+    if state.char() == "]":
+        state.pos += 1
+        return array
+    while True:
+        array.append(_parse_value(state))
+        _skip_comments_and_array_ws(state)
+
+        if state.char() == "]":
+            state.pos += 1
+            return array
+        elif state.char() != ",":
+            raise Exception("TODO: msg and type")
+        state.pos += 1
+
+        _skip_comments_and_array_ws(state)
+
+        if state.char() == "]":
+            state.pos += 1
+            return array
+
+
+def _skip_comments_and_array_ws(state: _ParseState) -> None:
+    array_ws = _TOML_WS | {"\n"}
+    while True:
+        pos_before_skip = state.pos
+        _skip_chars(state, array_ws)
+        _skip_comment(state)
+        if state.pos == pos_before_skip:
+            break
+
+
+def _parse_inline_table(state: _ParseState) -> dict:
+    raise NotImplementedError
+
+
 _BASIC_STR_ESCAPE_REPLACEMENTS = {
     "\\b": "\u0008",  # backspace
     "\\t": "\u0009",  # tab
     "\\n": "\u000A",  # linefeed
     "\\f": "\u000C",  # form feed
     "\\r": "\u000D",  # carriage return
-    "\\": "\u0022",  # quote
+    '\\"': "\u0022",  # quote
     "\\\\": "\u005C",  # backslash
 }
 
@@ -300,6 +344,10 @@ def _parse_multiline_literal_str(state: _ParseState) -> str:
     return content
 
 
+def _parse_multiline_basic_str(state: _ParseState) -> str:
+    raise NotImplementedError
+
+
 def _parse_regex(state: _ParseState, regex: re.Pattern) -> str:
     match = regex.match(state.src[state.pos :])
     if not match:
@@ -315,7 +363,7 @@ def _parse_value(state: _ParseState) -> Any:  # noqa: C901
 
     # Multiline strings
     if src.startswith('"""'):
-        raise NotImplementedError
+        return _parse_multiline_basic_str(state)
     if src.startswith("'''"):
         return _parse_multiline_literal_str(state)
 
@@ -327,11 +375,11 @@ def _parse_value(state: _ParseState) -> Any:  # noqa: C901
 
     # Inline tables
     if char == "{":
-        raise NotImplementedError
+        return _parse_inline_table(state)
 
     # Arrays
     if char == "[":
-        raise NotImplementedError
+        return _parse_array(state)
 
     # Dates and times
     date_match = _re.DATETIME.match(src)
@@ -344,8 +392,7 @@ def _parse_value(state: _ParseState) -> Any:  # noqa: C901
             # Returning local date
             return datetime.date(year, month, day)
         hour, minute, sec = (int(x) for x in groups[3:6])
-        micros_str = groups[6] or "0"
-        micros = int(micros_str.ljust(6, "0")[:6])
+        micros = int(groups[6][1:].ljust(6, "0")[:6]) if groups[6] else 0
         if groups[7] is not None:
             offset_dir = 1 if "+" in match_str else -1
             tz: Optional[datetime.tzinfo] = _CustomTzinfo(
@@ -364,8 +411,7 @@ def _parse_value(state: _ParseState) -> Any:  # noqa: C901
         state.pos += len(localtime_match.group())
         groups = localtime_match.groups()
         hour, minute, sec = (int(x) for x in groups[:3])
-        micros_str = groups[3] or "0"
-        micros = int(micros_str.ljust(6, "0")[:6])
+        micros = int(groups[3][1:].ljust(6, "0")[:6]) if groups[3] else 0
         return datetime.time(hour, minute, sec, micros)
 
     # Booleans
@@ -387,20 +433,22 @@ def _parse_value(state: _ParseState) -> Any:  # noqa: C901
         bin_str = _parse_regex(state, _re.BIN)
         return int(bin_str, 2)
 
-    # First "word". A substring before whitespace or line comment
-    first_word = src.split(maxsplit=1)[0].split("#", maxsplit=1)[0]
+    # Special floats
+    if src[:3] in {"inf", "nan"}:
+        state.pos += 3
+        return float(src[:3])
+    if src[:4] in {"-inf", "+inf", "-nan", "+nan"}:
+        state.pos += 4
+        return float(src[:4])
 
     # Decimal integers and "normal" floats
-    if _re.DEC_OR_FLOAT.match(first_word):
-        state.pos += len(first_word)
-        if "." in first_word or "e" in first_word or "E" in first_word:
-            return float(first_word)
-        return int(first_word)
-
-    # Special floats
-    if first_word in {"-inf", "inf", "+inf", "-nan", "nan", "+nan"}:
-        state.pos += len(first_word)
-        return float(first_word)
+    dec_match = _re.DEC_OR_FLOAT.match(src)
+    if dec_match:
+        match_str = dec_match.group()
+        state.pos += len(match_str)
+        if "." in match_str or "e" in match_str or "E" in match_str:
+            return float(match_str)
+        return int(match_str)
 
     raise Exception("TODO: msg and type")
 

@@ -1,0 +1,9 @@
+{"contributors":
+  {"type":"array","value":[
+    {"type":"string","value":"Foo Bar <foo@example.com>"},
+    {"name":
+      {"type":"string","value":"Baz Qux"},
+     "email":
+      {"type":"string","value":"bazqux@example.com"},
+     "url":
+      {"type":"string", "value":"https://example.com/bazqux"}}]}}

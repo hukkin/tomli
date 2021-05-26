@@ -9,11 +9,9 @@ HEX = re.compile(r"0x[0-9A-Fa-f](?:_?[0-9A-Fa-f]+)*")
 BIN = re.compile(r"0b[01](?:_?[01]+)*")
 OCT = re.compile(r"0o[0-7](?:_?[0-7]+)*")
 DEC_OR_FLOAT = re.compile(
-    r"^"
-    + r"[+-]?(?:0|[1-9](?:_?[0-9])*)"  # integer
+    r"[+-]?(?:0|[1-9](?:_?[0-9])*)"  # integer
     + r"(?:\.[0-9](?:_?[0-9])*)?"  # optional fractional part
     + r"(?:[eE][+-]?[0-9](?:_?[0-9])*)?"  # optional exponent part
-    + r"$"
 )
 LOCAL_TIME = re.compile(_TIME_RE_STR)
 DATETIME = re.compile(

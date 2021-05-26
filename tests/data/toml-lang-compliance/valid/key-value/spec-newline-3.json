@@ -1,0 +1,6 @@
+{"abc":
+  {"type":"integer","value":"123"},
+ "def":
+  {"type":"integer","value":"456"},
+ "ghi":
+  {"type":"integer","value":"789"}}

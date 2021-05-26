@@ -1,0 +1,43 @@
+{"title":
+  {"type":"string","value":"TOML Example"},
+ "owner":
+   {"name":
+     {"type":"string","value":"Tom Preston-Werner"},
+    "dob":
+     {"type":"offset datetime","value":"1979-05-27T07:32:00-08:00"}},
+ "database":
+   {"server":
+     {"type":"string","value":"192.168.1.1"},
+    "ports":
+     {"type":"array","value":[
+       {"type":"integer","value":"8001"},
+       {"type":"integer","value":"8001"},
+       {"type":"integer","value":"8002"}]},
+    "connection_max":
+     {"type":"integer","value":"5000"},
+    "enabled":
+     {"type":"boolean","value":"true"}},
+  "servers":
+   {"alpha":
+     {"ip":
+       {"type":"string","value":"10.0.0.1"},
+      "dc":
+       {"type":"string","value":"eqdc10"}},
+    "beta":
+     {"ip":
+       {"type":"string","value":"10.0.0.2"},
+      "dc":
+       {"type":"string","value":"eqdc10"}}},
+  "clients":
+   {"data":
+     {"type":"array","value":[
+       {"type":"array","value":[
+         {"type":"string","value":"gamma"},
+         {"type":"string","value":"delta"}]},
+       {"type":"array","value":[
+         {"type":"integer","value":"1"},
+         {"type":"integer","value":"2"}]}]},
+    "hosts":
+     {"type":"array","value":[
+       {"type":"string","value":"alpha"},
+       {"type":"string","value":"omega"}]}}}
