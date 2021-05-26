@@ -57,19 +57,34 @@ def test_valid(valid, expected):
     assert actual == expected
 
 
-def convert_to_burntsushi(obj):
+def convert_to_burntsushi(obj):  # noqa: C901
     if isinstance(obj, str):
         return {"type": "string", "value": obj}
     elif isinstance(obj, bool):
-        return {"type": "bool", "value": str(obj).lower()}
+        return {"type": "boolean", "value": str(obj).lower()}
     elif isinstance(obj, int):
         return {"type": "integer", "value": str(obj)}
     elif isinstance(obj, float):
         return {"type": "float", "value": str(obj)}
     elif isinstance(obj, datetime.datetime):
+        if obj.tzinfo:
+            return {
+                "type": "offset datetime",
+                "value": str(obj).replace(" ", "T", 1).replace("+00:00", "Z", 1),
+            }
         return {
             "type": "datetime",
-            "value": str(obj).replace(" ", "T", 1).replace("+00:00", "Z", 1),
+            "value": str(obj).replace(" ", "T", 1),
+        }
+    elif isinstance(obj, datetime.time):
+        return {
+            "type": "local time",
+            "value": str(obj),
+        }
+    elif isinstance(obj, datetime.date):
+        return {
+            "type": "local date",
+            "value": str(obj),
         }
     elif isinstance(obj, list):
         return {
@@ -78,8 +93,7 @@ def convert_to_burntsushi(obj):
         }
     elif isinstance(obj, dict):
         return {k: convert_to_burntsushi(v) for k, v in obj.items()}
-    else:
-        Exception("unsupported type")
+    raise Exception("unsupported type")
 
 
 def normalize_burntsushi_floats(d: dict) -> dict:
