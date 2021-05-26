@@ -1,13 +1,12 @@
-import datetime
-import re
-import string
-from typing import Any, Iterable, List, Optional, Sequence, Tuple
-
-from lil_toml import _re
-
 __all__ = ("loads", "dumps")
 __version__ = "0.0.0"  # DO NOT EDIT THIS LINE MANUALLY. LET bump2version UTILITY DO IT
 
+import datetime
+import re
+import string
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
+
+from lil_toml import _re
 
 _Namespace = Tuple[str, ...]
 
@@ -33,7 +32,7 @@ class _ParseState:
     def __init__(self, src: str):
         self.src: str = src
         self.pos: int = 0
-        self.out: dict = {}
+        self.out: _NestedDict = _NestedDict({})
         self.header_namespace: _Namespace = ()
 
     def done(self) -> bool:
@@ -41,6 +40,49 @@ class _ParseState:
 
     def char(self) -> str:
         return self.src[self.pos]
+
+
+class _NestedDict:
+    def __init__(self, wrapped_dict: dict):
+        self.dict: Dict[str, Any] = wrapped_dict
+
+    def __contains__(self, keys: Iterable[str]) -> bool:
+        assert not isinstance(keys, str), "keys must not be of type str"
+        try:
+            self.get_nest(keys)
+        except KeyError:
+            return False
+        return True
+
+    def get_nest(self, keys: Iterable[str]) -> dict:
+        assert not isinstance(keys, str), "keys must not be of type str"
+        container: Any = self.dict
+        for part in keys:
+            container = container[part]
+            if isinstance(container, list):
+                container = container[-1]
+        return container
+
+    def get_or_create_nest(self, keys: Iterable[str]) -> dict:
+        assert not isinstance(keys, str), "keys must not be of type str"
+        container: Any = self.dict
+        for k in keys:
+            if k not in container:
+                container[k] = {}
+            container = container[k]
+            if isinstance(container, list):
+                container = container[-1]
+        return container
+
+    def append_nest_to_list(self, keys: Sequence[str]) -> dict:
+        container = self.get_or_create_nest(keys[:-1])
+        nest: dict = {}
+        last_key = keys[-1]
+        if last_key in container:
+            container[last_key].append(nest)
+        else:
+            container[last_key] = [nest]
+        return nest
 
 
 def loads(s: str) -> dict:  # noqa: C901
@@ -94,7 +136,7 @@ def loads(s: str) -> dict:  # noqa: C901
         else:
             raise Exception("TODO: msg and type --- statement didnt end in EOF or EOL")
 
-    return state.out
+    return state.out.dict
 
 
 def dumps(*args: Any, **kwargs: Any) -> str:
@@ -132,7 +174,9 @@ def _create_dict_rule(state: _ParseState) -> None:
     _skip_chars(state, _TOML_WS)
     key_parts = _parse_key(state)
 
-    _get_or_create_nested_dict(state.out, key_parts)
+    if key_parts in state.out:
+        raise Exception("TODO: msg and type")
+    state.out.get_or_create_nest(key_parts)
     state.header_namespace = tuple(key_parts)
 
     if not state.char() == "]":
@@ -145,7 +189,7 @@ def _create_list_rule(state: _ParseState) -> None:
     _skip_chars(state, _TOML_WS)
     key_parts = _parse_key(state)
 
-    _append_dict_to_nested_list(state.out, key_parts)
+    state.out.append_nest_to_list(key_parts)
     state.header_namespace = tuple(key_parts)
 
     if not state.src[state.pos : state.pos + 2] == "]]":
@@ -154,26 +198,25 @@ def _create_list_rule(state: _ParseState) -> None:
 
 
 def _key_value_rule(state: _ParseState) -> None:
-    key_parts = _parse_key(state)
+    key_parts, value = _parse_key_value_pair(state)
+
+    # Set the value in the right place in `state.out`
+    nested_dict = _NestedDict(state.out.get_nest(state.header_namespace))
     last_key_part = key_parts.pop()
+    nest = nested_dict.get_or_create_nest(key_parts)
+    if last_key_part in nest:
+        raise Exception("TODO: type and msg")
+    nest[last_key_part] = value
+
+
+def _parse_key_value_pair(state: _ParseState) -> Tuple[List[str], Any]:
+    key_parts = _parse_key(state)
     if state.char() != "=":
         raise Exception("TODO: type and msg")
     state.pos += 1
     _skip_chars(state, _TOML_WS)
-
-    container: Any = state.out
-    for part in state.header_namespace:
-        container = container[part]
-        if isinstance(container, list):
-            container = container[-1]
-
-    container = _get_or_create_nested_dict(container, key_parts)
-
-    if last_key_part in container:
-        raise Exception("TODO: type and msg")
-
     value = _parse_value(state)
-    container[last_key_part] = value
+    return key_parts, value
 
 
 def _parse_key(state: _ParseState) -> List[str]:
@@ -271,7 +314,25 @@ def _skip_comments_and_array_ws(state: _ParseState) -> None:
 
 
 def _parse_inline_table(state: _ParseState) -> dict:
-    raise NotImplementedError
+    state.pos += 1
+    nested_dict = _NestedDict({})
+
+    _skip_chars(state, _TOML_WS)
+    if state.char() == "}":
+        state.pos += 1
+        return nested_dict.dict
+    while True:
+        keys, value = _parse_key_value_pair(state)
+        nest = nested_dict.get_or_create_nest(keys[:-1])
+        nest[keys[-1]] = value  # TODO: check that "keys[-1]" isnt already there
+        _skip_chars(state, _TOML_WS)
+        if state.char() == "}":
+            state.pos += 1
+            return nested_dict.dict
+        if state.char() != ",":
+            raise Exception("TODO: type and msg")
+        state.pos += 1
+        _skip_chars(state, _TOML_WS)
 
 
 _BASIC_STR_ESCAPE_REPLACEMENTS = {
@@ -451,29 +512,3 @@ def _parse_value(state: _ParseState) -> Any:  # noqa: C901
         return int(match_str)
 
     raise Exception("TODO: msg and type")
-
-
-def _get_or_create_nested_dict(base_dict: dict, keys: Iterable[str]) -> dict:
-    container = base_dict
-    for k in keys:
-        if k not in container:
-            container[k] = {}
-        container = container[k]
-    return container
-
-
-def _append_dict_to_nested_list(base_dict: dict, keys: Sequence[str]) -> dict:
-    container: Any = base_dict
-    for k in keys[:-1]:
-        if k not in container:
-            container[k] = {}
-        container = container[k]
-        if isinstance(container, list):
-            container = container[-1]
-    new_dict: dict = {}
-    last_key = keys[-1]
-    if last_key in container:
-        container[last_key].append(new_dict)
-    else:
-        container[last_key] = [new_dict]
-    return new_dict

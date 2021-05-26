@@ -54,7 +54,13 @@ def test_valid(valid, expected):
     actual = lil_toml.loads(toml_str)
     actual = convert_to_burntsushi(actual)
     expected = normalize_burntsushi_floats(expected)
-    assert actual == expected
+    assert json.dumps(actual) == (
+        json.dumps(expected)
+        .replace("\\\\b", "\\b")
+        .replace("\\\\t", "\\t")
+        .replace("\\\\r", "\\r")
+        .replace("\\\\u0000", "\\u0000")
+    )
 
 
 def convert_to_burntsushi(obj):  # noqa: C901
