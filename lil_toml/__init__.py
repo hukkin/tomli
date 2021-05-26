@@ -159,6 +159,8 @@ def _create_dict_rule(state: _ParseState) -> None:
     key_parts = _parse_key(state)
 
     if key_parts in state.out:
+        # TODO: this needs to be loosened: getting parent dict of one
+        #       that's already been created should be allowed.
         raise Exception("TODO: msg and type")
     state.out.get_or_create_nest(key_parts)
     state.header_namespace = tuple(key_parts)
@@ -238,7 +240,11 @@ def _parse_key_part(state: _ParseState) -> str:
 
 
 _ASCII_CTRL = frozenset(chr(i) for i in range(32)) | frozenset(chr(127))
+
+# Neither of these sets include quotation mark or backslash. They are
+# currently handled as separate cases in the parser functions.
 _DISALLOWED_BASIC_STR_CHARS = _ASCII_CTRL - frozenset("\t")
+_DISALLOWED_MULTILINE_BASIC_STR_CHARS = _ASCII_CTRL - frozenset("\t\n\r")
 
 
 def _parse_basic_str(state: _ParseState) -> str:
@@ -345,6 +351,24 @@ def _parse_basic_str_escape_sequence(state: _ParseState) -> str:
     raise Exception("TODO: type and msg")
 
 
+def _parse_multiline_basic_str_escape_sequence(state: _ParseState) -> str:
+    escape_id = state.src[state.pos : state.pos + 2]
+    if not len(escape_id) == 2:
+        raise Exception("TODO: type and msg")
+    state.pos += 2
+
+    if escape_id in {"\\ ", "\\\t", "\\\n"}:
+        _skip_chars(state, _TOML_WS | frozenset("\n"))
+        return ""
+    elif escape_id in _BASIC_STR_ESCAPE_REPLACEMENTS:
+        return _BASIC_STR_ESCAPE_REPLACEMENTS[escape_id]
+    elif escape_id == "\\u":
+        return _parse_hex_char(state, 4)
+    elif escape_id == "\\U":
+        return _parse_hex_char(state, 8)
+    raise Exception("TODO: type and msg")
+
+
 def _parse_hex_char(state: _ParseState, hex_len: int) -> str:
     hex_str = state.src[state.pos : state.pos + hex_len]
     if not len(hex_str) == hex_len or any(c not in string.hexdigits for c in hex_str):
@@ -366,6 +390,8 @@ def _parse_literal_str(state: _ParseState) -> str:
 
 def _parse_multiline_literal_str(state: _ParseState) -> str:
     state.pos += 3
+    if state.char() == "\n":
+        state.pos += 1
     start_pos = state.pos
     try:
         end_pos = state.src.index("'''", state.pos)
@@ -382,15 +408,46 @@ def _parse_multiline_literal_str(state: _ParseState) -> str:
             state.pos += 1
             end_pos += 1
 
-    content = state.src[start_pos:end_pos]
-
-    if content.startswith("\n"):
-        content = content[1:]
-    return content
+    return state.src[start_pos:end_pos]
 
 
 def _parse_multiline_basic_str(state: _ParseState) -> str:
-    raise NotImplementedError
+    state.pos += 3
+    if state.char() == "\n":
+        state.pos += 1
+    result = ""
+    while not state.done():
+        c = state.char()
+        if c == '"':
+            next_five = state.src[state.pos : state.pos + 5]
+            if next_five == '"""""':
+                result += '""'
+                state.pos += 5
+                return result
+            if next_five.startswith('""""'):
+                result += '"'
+                state.pos += 4
+                return result
+            if next_five.startswith('"""'):
+                state.pos += 3
+                return result
+            if next_five.startswith('""'):
+                result += '""'
+                state.pos += 2
+            else:
+                result += '"'
+                state.pos += 1
+            continue
+        if c in _DISALLOWED_MULTILINE_BASIC_STR_CHARS:
+            raise Exception("TODO: msg and type")
+
+        if c == "\\":
+            result += _parse_multiline_basic_str_escape_sequence(state)
+        else:
+            result += c
+            state.pos += 1
+
+    raise Exception("TODO: msg and type")
 
 
 def _parse_regex(state: _ParseState, regex: re.Pattern) -> str:
