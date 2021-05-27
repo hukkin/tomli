@@ -44,6 +44,25 @@ except tomli.TOMLDecodeError:
     print("Yep, definitely not valid.")
 ```
 
+## Performance
+
+The `benchmark/` folder in this repository contains a performance benchmark for comparing the various Python TOML parsers.
+The benchmark can be run with `tox -e benchmark-pypi`.
+On May 28 2021 running the benchmark output the following on my notebook computer.
+
+```console
+foo@bar:~/dev/tomli$ tox -e benchmark-pypi
+Parsing data.toml 5000 times:
+  pytomlpp:    0.961 s
+     tomli:    7.073 s (7.3x slower)
+      toml:    7.253 s (7.5x slower)
+     qtoml:   12.292 s (12.7x slower)
+   tomlkit:   56.114 s (58.3x slower)
+```
+
+Tomli performed the best out of all pure Python TOML parsers,
+losing only to pytomlpp, which is a wrapper for a C++ parser.
+
 ## FAQ
 
 ### Why this parser?

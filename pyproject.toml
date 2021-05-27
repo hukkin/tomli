@@ -99,6 +99,22 @@ commands_pre =
     poetry install --no-root
 commands =
     mypy {posargs:.}
+
+[testenv:benchmark]
+description = run the benchmark script against a local Tomli version
+deps =
+    -r benchmark/requirements.txt
+commands =
+    python benchmark/run.py
+
+[testenv:benchmark-pypi]
+description = run the benchmark script against the latest Tomli in PyPI
+skip_install = True
+deps =
+    tomli
+    -r benchmark/requirements.txt
+commands =
+    python benchmark/run.py
 """
 
 
@@ -135,3 +151,7 @@ no_implicit_optional = true
 [[tool.mypy.overrides]]
 module = "tests.*"
 disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = "benchmark.*"
+ignore_errors = true
