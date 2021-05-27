@@ -28,20 +28,20 @@ class NestedDict:
         self.dict: Dict[str, Any] = wrapped_dict
         self.explicitly_created: Set[Tuple[str, ...]] = set()
 
-    def __contains__(self, keys: Tuple[str, ...]) -> bool:
-        try:
-            self.get_nest(keys)
-        except KeyError:
-            return False
-        return True
-
-    def get_nest(self, keys: Tuple[str, ...]) -> dict:
-        container: Any = self.dict
-        for part in keys:
-            container = container[part]
-            if isinstance(container, list):
-                container = container[-1]
-        return container
+    # def __contains__(self, keys: Tuple[str, ...]) -> bool:
+    #     try:
+    #         self._get_nest(keys)
+    #     except KeyError:
+    #         return False
+    #     return True
+    #
+    # def _get_nest(self, keys: Tuple[str, ...]) -> dict:
+    #     container: Any = self.dict
+    #     for part in keys:
+    #         container = container[part]
+    #         if isinstance(container, list):
+    #             container = container[-1]
+    #     return container
 
     def get_or_create_nest(self, keys: Tuple[str, ...]) -> dict:
         container: Any = self.dict
@@ -185,8 +185,7 @@ def _key_value_rule(state: ParseState) -> None:
     parent_key, key_stem = key_parts[:-1], key_parts[-1]
 
     # Set the value in the right place in `state.out`
-    nested_dict = NestedDict(state.out.get_nest(state.header_namespace))
-    nest = nested_dict.get_or_create_nest(parent_key)
+    nest = state.out.get_or_create_nest(state.header_namespace + parent_key)
     if key_stem in nest:
         raise Exception("TODO: type and msg")
     nest[key_stem] = value
