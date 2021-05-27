@@ -65,9 +65,10 @@ def loads(s: str) -> dict:  # noqa: C901
         #    - key->value
         #    - append dict to list (and move to its namespace)
         #    - create dict (and move to its namespace)
-        if state.done():
+        try:
+            char = state.char()
+        except IndexError:
             break
-        char = state.char()
         if char == "\n":
             state.pos += 1
             continue
@@ -87,9 +88,11 @@ def loads(s: str) -> dict:  # noqa: C901
         _skip_comment(state)
 
         # 4. Expect end of line of end of file
-        if state.done():
+        try:
+            char = state.char()
+        except IndexError:
             break
-        elif state.char() == "\n":
+        if char == "\n":
             state.pos += 1
         else:
             raise TOMLDecodeError(
@@ -167,17 +170,26 @@ class NestedDict:
 
 
 def _skip_chars(state: ParseState, chars: Iterable[str]) -> None:
-    while not state.done() and state.char() in chars:
-        state.pos += 1
+    try:
+        while state.char() in chars:
+            state.pos += 1
+    except IndexError:
+        pass
 
 
 def _skip_until(
     state: ParseState, chars: Iterable[str], *, error_on: Iterable[str]
 ) -> None:
-    while not state.done() and state.char() not in chars:
-        if state.char() in error_on:
-            raise TOMLDecodeError(f'Invalid character "{state.char()!r}" found')
-        state.pos += 1
+    try:
+        while True:
+            char = state.char()
+            if char in chars:
+                break
+            if char in error_on:
+                raise TOMLDecodeError(f'Invalid character "{char!r}" found')
+            state.pos += 1
+    except IndexError:
+        pass
 
 
 def _skip_comment(state: ParseState) -> None:
