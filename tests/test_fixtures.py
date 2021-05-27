@@ -60,9 +60,18 @@ def test_valid(valid, expected):
 
 def convert_to_burntsushi(obj):  # noqa: C901
     if isinstance(obj, str):
+        # The test case JSONs seem to have inconsistent escape chars. E.g. tab is
+        # escaped with '\\t' (two backspaces), but quotation mark with '\"' (only one
+        # backspace. This line does its best to fix such issues.
+        normalized_str = (
+            json.dumps(obj)[1:-1]
+            .replace('\\"', '"')
+            .replace("\\\\", "\\")
+            .replace("\\u00e9", "é")
+        )
         return {
             "type": "string",
-            "value": json.dumps(obj)[1:-1].replace('\\"', '"').replace("\\\\", "\\"),
+            "value": normalized_str,
         }
         # return {"type": "string", "value": obj}
     elif isinstance(obj, bool):

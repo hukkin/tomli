@@ -4,7 +4,7 @@ __version__ = "0.0.0"  # DO NOT EDIT THIS LINE MANUALLY. LET bump2version UTILIT
 import datetime
 import re
 import string
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Dict, Iterable, Optional, Set, Tuple
 
 from lil_toml import _re
 from lil_toml._tz import CustomTzinfo
@@ -29,17 +29,16 @@ class _ParseState:
 class _NestedDict:
     def __init__(self, wrapped_dict: dict):
         self.dict: Dict[str, Any] = wrapped_dict
+        self.explicitly_defined_keys: Set[Tuple[str, ...]] = set()
 
-    def __contains__(self, keys: Iterable[str]) -> bool:
-        assert not isinstance(keys, str), "keys must not be of type str"
+    def __contains__(self, keys: Tuple[str, ...]) -> bool:
         try:
             self.get_nest(keys)
         except KeyError:
             return False
         return True
 
-    def get_nest(self, keys: Iterable[str]) -> dict:
-        assert not isinstance(keys, str), "keys must not be of type str"
+    def get_nest(self, keys: Tuple[str, ...]) -> dict:
         container: Any = self.dict
         for part in keys:
             container = container[part]
@@ -47,8 +46,7 @@ class _NestedDict:
                 container = container[-1]
         return container
 
-    def get_or_create_nest(self, keys: Iterable[str]) -> dict:
-        assert not isinstance(keys, str), "keys must not be of type str"
+    def get_or_create_nest(self, keys: Tuple[str, ...]) -> dict:
         container: Any = self.dict
         for k in keys:
             if k not in container:
@@ -56,9 +54,10 @@ class _NestedDict:
             container = container[k]
             if isinstance(container, list):
                 container = container[-1]
+        self.explicitly_defined_keys.add(keys)
         return container
 
-    def append_nest_to_list(self, keys: Sequence[str]) -> dict:
+    def append_nest_to_list(self, keys: Tuple[str, ...]) -> dict:
         container = self.get_or_create_nest(keys[:-1])
         nest: dict = {}
         last_key = keys[-1]
@@ -66,6 +65,7 @@ class _NestedDict:
             container[last_key].append(nest)
         else:
             container[last_key] = [nest]
+        self.explicitly_defined_keys.add(keys)
         return nest
 
 
@@ -162,12 +162,10 @@ def _create_dict_rule(state: _ParseState) -> None:
     _skip_chars(state, _TOML_WS)
     key_parts = _parse_key(state)
 
-    if key_parts in state.out:
-        # TODO: this needs to be loosened: getting parent dict of one
-        #       that's already been created should be allowed.
+    if key_parts in state.out.explicitly_defined_keys:
         raise Exception("TODO: msg and type")
     state.out.get_or_create_nest(key_parts)
-    state.header_namespace = tuple(key_parts)
+    state.header_namespace = key_parts
 
     if not state.char() == "]":
         raise Exception("TODO: type and msg")
@@ -180,7 +178,7 @@ def _create_list_rule(state: _ParseState) -> None:
     key_parts = _parse_key(state)
 
     state.out.append_nest_to_list(key_parts)
-    state.header_namespace = tuple(key_parts)
+    state.header_namespace = key_parts
 
     if not state.src[state.pos : state.pos + 2] == "]]":
         raise Exception("TODO: type and msg")
@@ -189,17 +187,17 @@ def _create_list_rule(state: _ParseState) -> None:
 
 def _key_value_rule(state: _ParseState) -> None:
     key_parts, value = _parse_key_value_pair(state)
+    parent_key, key_stem = key_parts[:-1], key_parts[-1]
 
     # Set the value in the right place in `state.out`
     nested_dict = _NestedDict(state.out.get_nest(state.header_namespace))
-    last_key_part = key_parts.pop()
-    nest = nested_dict.get_or_create_nest(key_parts)
-    if last_key_part in nest:
+    nest = nested_dict.get_or_create_nest(parent_key)
+    if key_stem in nest:
         raise Exception("TODO: type and msg")
-    nest[last_key_part] = value
+    nest[key_stem] = value
 
 
-def _parse_key_value_pair(state: _ParseState) -> Tuple[List[str], Any]:
+def _parse_key_value_pair(state: _ParseState) -> Tuple[Tuple[str, ...], Any]:
     key_parts = _parse_key(state)
     if state.char() != "=":
         raise Exception("TODO: type and msg")
@@ -209,7 +207,7 @@ def _parse_key_value_pair(state: _ParseState) -> Tuple[List[str], Any]:
     return key_parts, value
 
 
-def _parse_key(state: _ParseState) -> List[str]:
+def _parse_key(state: _ParseState) -> Tuple[str, ...]:
     """Return parsed key as list of strings.
 
     Move state.pos after the key, to the start of the value that
@@ -222,7 +220,7 @@ def _parse_key(state: _ParseState) -> List[str]:
         _skip_chars(state, _TOML_WS)
         key_parts.append(_parse_key_part(state))
         _skip_chars(state, _TOML_WS)
-    return key_parts
+    return tuple(key_parts)
 
 
 def _parse_key_part(state: _ParseState) -> str:
