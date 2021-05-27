@@ -1,6 +1,6 @@
 repos:
 - repo: https://github.com/executablebooks/mdformat
-  rev: 0.7.6
+  rev: 767a107bac7c4503d9960bfd73f999c9950b69bf  # frozen: 0.7.6
   hooks:
   - id: mdformat
     additional_dependencies:

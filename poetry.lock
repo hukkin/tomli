@@ -134,7 +134,7 @@ python-versions = "*"
 
 [[package]]
 name = "mypy"
-version = "0.820+dev.b633ae123b816e45058853d42bbd9a1f82af1a23"
+version = "0.820+dev.61c346230cf4960c9766f7c2b5bd3312b47f74da"
 description = "Optional static typing for Python"
 category = "dev"
 optional = false
@@ -155,7 +155,7 @@ python2 = ["typed-ast (>=1.4.0,<1.5.0)"]
 type = "git"
 url = "https://github.com/python/mypy.git"
 reference = "master"
-resolved_reference = "b633ae123b816e45058853d42bbd9a1f82af1a23"
+resolved_reference = "61c346230cf4960c9766f7c2b5bd3312b47f74da"
 
 [[package]]
 name = "mypy-extensions"
@@ -282,6 +282,17 @@ importlib-metadata = {version = ">=3.6.0", markers = "python_version < \"3.10\""
 pytest = "*"
 
 [[package]]
+name = "python-dateutil"
+version = "2.8.1"
+description = "Extensions to the standard Python datetime module"
+category = "dev"
+optional = false
+python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,>=2.7"
+
+[package.dependencies]
+six = ">=1.5"
+
+[[package]]
 name = "pyyaml"
 version = "5.4.1"
 description = "YAML parser and emitter for Python"
@@ -356,7 +367,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=1.2.3)", "pytest-flake8", "pyt
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.6.1"
-content-hash = "8884c17d229b05d4f7cc6d225a09c22a676b118efc9bf3b5185b89c0df49f0cc"
+content-hash = "a832a017610d22511e84355131ed866c5dae39726f1dc786370e32c507a100c2"
 
 [metadata.files]
 appdirs = [
@@ -501,6 +512,10 @@ pytest-cov = [
 pytest-randomly = [
     {file = "pytest-randomly-3.8.0.tar.gz", hash = "sha256:d9e21a72446757129378beea00bc9a32df1fb1cfd0bbe408be1ae9685bdf1209"},
     {file = "pytest_randomly-3.8.0-py3-none-any.whl", hash = "sha256:f5b7a09e84ee1eabcdedbb73c51d0929ae2f582bab6941dbb513bb49296d6340"},
+]
+python-dateutil = [
+    {file = "python-dateutil-2.8.1.tar.gz", hash = "sha256:73ebfe9dbf22e832286dafa60473e4cd239f8592f699aa5adaf10050e6e1823c"},
+    {file = "python_dateutil-2.8.1-py2.py3-none-any.whl", hash = "sha256:75bb3f31ea686f1197762692a9ee6a7550b59fc6ca3a1f4b5d7e32fb98e2da2a"},
 ]
 pyyaml = [
     {file = "PyYAML-5.4.1-cp27-cp27m-macosx_10_9_x86_64.whl", hash = "sha256:3b2b1824fe7112845700f815ff6a489360226a5609b96ec2190a45e62a9fc922"},

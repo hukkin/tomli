@@ -2,6 +2,7 @@ import datetime
 import json
 from pathlib import Path
 
+import dateutil.parser
 import pytest
 
 import lil_toml
@@ -54,18 +55,16 @@ def test_valid(valid, expected):
     actual = lil_toml.loads(toml_str)
     actual = convert_to_burntsushi(actual)
     expected = normalize_burntsushi_floats(expected)
-    assert json.dumps(actual) == (
-        json.dumps(expected)
-        .replace("\\\\b", "\\b")
-        .replace("\\\\t", "\\t")
-        .replace("\\\\r", "\\r")
-        .replace("\\\\u0000", "\\u0000")
-    )
+    assert actual == expected
 
 
 def convert_to_burntsushi(obj):  # noqa: C901
     if isinstance(obj, str):
-        return {"type": "string", "value": obj}
+        return {
+            "type": "string",
+            "value": json.dumps(obj)[1:-1].replace('\\"', '"').replace("\\\\", "\\"),
+        }
+        # return {"type": "string", "value": obj}
     elif isinstance(obj, bool):
         return {"type": "boolean", "value": str(obj).lower()}
     elif isinstance(obj, int):
@@ -73,15 +72,10 @@ def convert_to_burntsushi(obj):  # noqa: C901
     elif isinstance(obj, float):
         return {"type": "float", "value": str(obj)}
     elif isinstance(obj, datetime.datetime):
+        val = normalize_datetime_str(obj.isoformat())
         if obj.tzinfo:
-            return {
-                "type": "offset datetime",
-                "value": str(obj).replace(" ", "T", 1).replace("+00:00", "Z", 1),
-            }
-        return {
-            "type": "datetime",
-            "value": str(obj).replace(" ", "T", 1),
-        }
+            return {"type": "offset datetime", "value": val}
+        return {"type": "local datetime", "value": val}
     elif isinstance(obj, datetime.time):
         return {
             "type": "local time",
@@ -108,11 +102,23 @@ def normalize_burntsushi_floats(d: dict) -> dict:
         if isinstance(v, list):
             normalized[k] = [normalize_burntsushi_floats(item) for item in v]
         elif isinstance(v, dict):
-            if v.get("type") == "float":
-                normalized[k] = v.copy()
-                normalized[k]["value"] = str(float(normalized[k]["value"]))
+            if "type" in v and "value" in v:
+                if v["type"] == "float":
+                    normalized[k] = v.copy()
+                    normalized[k]["value"] = str(float(normalized[k]["value"]))
+                elif v["type"] in {"offset datetime", "local datetime"}:
+                    normalized[k] = v.copy()
+                    normalized[k]["value"] = normalize_datetime_str(
+                        normalized[k]["value"]
+                    )
+                else:
+                    normalized[k] = v
             else:
                 normalized[k] = v
         else:
             pytest.fail("Burntsushi fixtures should be dicts/lists only")
     return normalized
+
+
+def normalize_datetime_str(dt_str: str) -> str:
+    return dateutil.parser.isoparse(dt_str).isoformat()

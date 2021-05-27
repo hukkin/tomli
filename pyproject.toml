@@ -36,6 +36,7 @@ python = "^3.6.1"
 pytest = "*"
 pytest-randomly = "*"
 pytest-cov = "*"
+python-dateutil = "*"
 
 # Tools
 pre-commit = "*"
