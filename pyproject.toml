@@ -153,5 +153,7 @@ module = "tests.*"
 disallow_untyped_defs = false
 
 [[tool.mypy.overrides]]
-module = "benchmark.*"
+# This matches `benchmark/run.py`. Since benchmark/ is
+# not a package, we use the module name here.
+module = "run"
 ignore_errors = true
