@@ -278,6 +278,7 @@ ILLEGAL_BASIC_STR_CHARS = ASCII_CTRL - frozenset("\t")
 ILLEGAL_MULTILINE_BASIC_STR_CHARS = ASCII_CTRL - frozenset("\t\n\r")
 
 ILLEGAL_LITERAL_STR_CHARS = ASCII_CTRL - frozenset("\t")
+ILLEGAL_MULTILINE_LITERAL_STR_CHARS = ASCII_CTRL - frozenset("\t\n")
 
 ILLEGAL_COMMENT_CHARS = ASCII_CTRL - frozenset("\t")
 
@@ -438,7 +439,7 @@ def _parse_multiline_literal_str(state: ParseState) -> str:
                 return state.src[start_pos : state.pos - 3]
             continue
         consecutive_apostrophes = 0
-        if c in ILLEGAL_LITERAL_STR_CHARS:
+        if c in ILLEGAL_MULTILINE_LITERAL_STR_CHARS:
             raise Exception("TODO: msg and type")
 
     raise Exception("TODO: msg and type")
