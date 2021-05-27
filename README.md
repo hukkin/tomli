@@ -6,8 +6,26 @@
 
 > A lil' TOML parser
 
-## Installing
+LTOML is a Python library for parsing [TOML](https://toml.io).
+LTOML is fully compatible with [TOML v1.0.0](https://toml.io/en/v1.0.0).
+
+## Installation
 
 ```bash
 pip install ltoml
+```
+
+## Usage
+
+```python
+import ltoml
+
+toml_str = """
+top-level-key = 99
+
+[namespace]
+namespace-key = 17
+"""
+toml_dict = ltoml.loads(toml_str)
+assert toml_dict == {"top-level-key": 99, "namespace": {"namespace-key": 17}}
 ```
