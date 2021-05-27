@@ -1,7 +1,7 @@
 import datetime
 import re
 import string
-from typing import Any, Dict, Iterable, Optional, Set, Tuple
+from typing import Any, Dict, Iterable, Optional, Set, Tuple, Union
 
 from lil_toml import _re
 from lil_toml._tz import CustomTzinfo
@@ -441,6 +441,41 @@ def _parse_regex(state: ParseState, regex: re.Pattern) -> str:
     return match_str
 
 
+def _parse_datetime(
+    state: ParseState, match: re.Match
+) -> Union[datetime.datetime, datetime.date]:
+    match_str = match.group()
+    state.pos += len(match_str)
+    groups: Any = match.groups()
+    year, month, day = (int(x) for x in groups[:3])
+    if groups[3] is None:
+        # Returning local date
+        return datetime.date(year, month, day)
+    hour, minute, sec = (int(x) for x in groups[3:6])
+    micros = int(groups[6][1:].ljust(6, "0")[:6]) if groups[6] else 0
+    if groups[7] is not None:
+        offset_dir = 1 if "+" in match_str else -1
+        tz: Optional[datetime.tzinfo] = CustomTzinfo(
+            datetime.timedelta(
+                hours=offset_dir * int(groups[7]),
+                minutes=offset_dir * int(groups[8]),
+            )
+        )
+    elif "Z" in match_str:
+        tz = CustomTzinfo(datetime.timedelta())
+    else:  # local date-time
+        tz = None
+    return datetime.datetime(year, month, day, hour, minute, sec, micros, tzinfo=tz)
+
+
+def _parse_localtime(state: ParseState, match: re.Match) -> datetime.time:
+    state.pos += len(match.group())
+    groups = match.groups()
+    hour, minute, sec = (int(x) for x in groups[:3])
+    micros = int(groups[3][1:].ljust(6, "0")[:6]) if groups[3] else 0
+    return datetime.time(hour, minute, sec, micros)
+
+
 def _parse_value(state: ParseState) -> Any:  # noqa: C901
     src = state.src[state.pos :]
     char = state.char()
@@ -468,35 +503,10 @@ def _parse_value(state: ParseState) -> Any:  # noqa: C901
     # Dates and times
     date_match = _re.DATETIME.match(src)
     if date_match:
-        match_str = date_match.group()
-        state.pos += len(match_str)
-        groups: Any = date_match.groups()
-        year, month, day = (int(x) for x in groups[:3])
-        if groups[3] is None:
-            # Returning local date
-            return datetime.date(year, month, day)
-        hour, minute, sec = (int(x) for x in groups[3:6])
-        micros = int(groups[6][1:].ljust(6, "0")[:6]) if groups[6] else 0
-        if groups[7] is not None:
-            offset_dir = 1 if "+" in match_str else -1
-            tz: Optional[datetime.tzinfo] = CustomTzinfo(
-                datetime.timedelta(
-                    hours=offset_dir * int(groups[7]),
-                    minutes=offset_dir * int(groups[8]),
-                )
-            )
-        elif "Z" in match_str:
-            tz = CustomTzinfo(datetime.timedelta())
-        else:  # local date-time
-            tz = None
-        return datetime.datetime(year, month, day, hour, minute, sec, micros, tzinfo=tz)
+        return _parse_datetime(state, date_match)
     localtime_match = _re.LOCAL_TIME.match(src)
     if localtime_match:
-        state.pos += len(localtime_match.group())
-        groups = localtime_match.groups()
-        hour, minute, sec = (int(x) for x in groups[:3])
-        micros = int(groups[3][1:].ljust(6, "0")[:6]) if groups[3] else 0
-        return datetime.time(hour, minute, sec, micros)
+        return _parse_localtime(state, localtime_match)
 
     # Booleans
     if src.startswith("true"):
