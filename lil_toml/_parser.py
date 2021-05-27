@@ -1,9 +1,14 @@
 import datetime
-import re
 import string
+import sys
 from typing import Any, Dict, Iterable, Optional, Set, Tuple, Union
 
 from lil_toml import _re
+
+if sys.version_info < (3, 7):
+    from typing import re
+else:
+    import re
 
 Namespace = Tuple[str, ...]
 
