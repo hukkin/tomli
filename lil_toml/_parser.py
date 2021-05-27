@@ -208,18 +208,21 @@ def _create_list_rule(state: ParseState) -> None:
 
 
 def _key_value_rule(state: ParseState) -> None:
-    key_parts, value = _parse_key_value_pair(state)
-    parent_key, key_stem = key_parts[:-1], key_parts[-1]
+    key, value = _parse_key_value_pair(state)
+    parent_key, key_stem = key[:-1], key[-1]
+    abs_parent_key = state.header_namespace + parent_key
+    abs_key = state.header_namespace + key
 
+    if state.out.is_frozen(abs_parent_key):
+        raise Exception("TODO: type and msg")
     # Set the value in the right place in `state.out`
-    nest = state.out.get_or_create_nest(state.header_namespace + parent_key)
+    nest = state.out.get_or_create_nest(abs_parent_key)
     if key_stem in nest:
         raise Exception("TODO: type and msg")
     # Mark inline table and array namespaces as recursively immutable
     if isinstance(value, (dict, list)):
-        # TODO: mark all of `key_parts` immutable/explicitly defined
-        state.out.mark_explicitly_created(key_parts, recursive=False)
-        state.out.mark_frozen(key_parts)
+        state.out.mark_explicitly_created(abs_key, recursive=False)
+        state.out.mark_frozen(abs_key)
     nest[key_stem] = value
 
 
