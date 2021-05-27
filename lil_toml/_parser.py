@@ -375,6 +375,15 @@ def _parse_basic_str_escape_sequence(state: ParseState, *, multiline: bool) -> s
     state.pos += 2
 
     if multiline and escape_id in {"\\ ", "\\\t", "\\\n"}:
+        # Skip whitespace until next non-whitespace character or end of
+        # the doc. Error if non-whitespace is found before newline.
+        if escape_id != "\\\n":
+            _skip_chars(state, TOML_WS)
+            if state.done():
+                return ""
+            if state.char() != "\n":
+                raise Exception("TODO: msg and type")
+            state.pos += 1
         _skip_chars(state, TOML_WS | frozenset("\n"))
         return ""
     if escape_id in BASIC_STR_ESCAPE_REPLACEMENTS:
