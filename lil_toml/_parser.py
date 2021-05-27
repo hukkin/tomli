@@ -73,18 +73,19 @@ def loads(s: str) -> dict:  # noqa: C901
 
     state = ParseState(s)
 
-    # Parse one statement at a time (typically means one line)
+    # Parse one statement at a time
+    # (typically means one line in TOML source)
     while True:
-        # 0. skip whitespace
+        # 1. Skip line leading whitespace
         _skip_chars(state, TOML_WS)
 
-        # 1. rules
-        #      - end of file
-        #      - end of line
-        #      - comment
-        #      - key->value
-        #      - get/create list and append dict (change ns)
-        #      - create dict (change ns)
+        # 2. Parse rules. Do one of:
+        #    - end of file
+        #    - end of line
+        #    - comment
+        #    - key->value
+        #    - append dict to list (and move to its namespace)
+        #    - create dict (and move to its namespace)
         if state.done():
             break
         char = state.char()
@@ -102,14 +103,11 @@ def loads(s: str) -> dict:  # noqa: C901
         else:
             raise Exception("TODO: msg and type --- not able to apply any rule")
 
-        # 2. skip whitespace and line comment
+        # 3. Skip trailing whitespace and line comment
         _skip_chars(state, TOML_WS)
         _skip_comment(state)
 
-        # 3. either:
-        #      - EOF
-        #      - newline
-        #      - error
+        # 4. Expect end of line of end of file
         if state.done():
             break
         elif state.char() == "\n":
@@ -129,8 +127,12 @@ def _skip_chars(state: ParseState, chars: Iterable[str]) -> None:
         state.pos += 1
 
 
-def _skip_until(state: ParseState, chars: Iterable[str]) -> None:
+def _skip_until(
+    state: ParseState, chars: Iterable[str], *, error_on: Iterable[str]
+) -> None:
     while not state.done() and state.char() not in chars:
+        if state.char() in error_on:
+            raise Exception("TODO: msg and type")
         state.pos += 1
 
 
@@ -240,6 +242,8 @@ ASCII_CTRL = frozenset(chr(i) for i in range(32)) | frozenset(chr(127))
 # currently handled as separate cases in the parser functions.
 ILLEGAL_BASIC_STR_CHARS = ASCII_CTRL - frozenset("\t")
 ILLEGAL_MULTILINE_BASIC_STR_CHARS = ASCII_CTRL - frozenset("\t\n\r")
+
+ILLEGAL_LITERAL_STR_CHARS = ASCII_CTRL - frozenset("\t")
 
 ILLEGAL_COMMENT_CHARS = ASCII_CTRL - frozenset("\t")
 
@@ -362,7 +366,7 @@ def _parse_hex_char(state: ParseState, hex_len: int) -> str:
 def _parse_literal_str(state: ParseState) -> str:
     state.pos += 1
     start_pos = state.pos
-    _skip_until(state, "'\n")
+    _skip_until(state, "'\n", error_on=ILLEGAL_LITERAL_STR_CHARS)
     end_pos = state.pos
     if state.done() or state.char() == "\n":
         raise Exception("TODO: msg and type")
