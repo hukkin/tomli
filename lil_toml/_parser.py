@@ -26,7 +26,9 @@ class ParseState:
 class NestedDict:
     def __init__(self, wrapped_dict: dict):
         self.dict: Dict[str, Any] = wrapped_dict
-        self.explicitly_created: Set[Tuple[str, ...]] = set()
+        self._explicitly_created: Set[Tuple[str, ...]] = set()
+        self._recursive_explicitly_created: Set[Tuple[str, ...]] = set()
+        self._frozen: Set[Tuple[str, ...]] = set()
 
     # def __contains__(self, keys: Tuple[str, ...]) -> bool:
     #     try:
@@ -51,7 +53,7 @@ class NestedDict:
             container = container[k]
             if isinstance(container, list):
                 container = container[-1]
-        self.explicitly_created.add(keys)
+        self.mark_explicitly_created(keys, recursive=False)
         return container
 
     def append_nest_to_list(self, keys: Tuple[str, ...]) -> dict:
@@ -62,8 +64,31 @@ class NestedDict:
             container[last_key].append(nest)
         else:
             container[last_key] = [nest]
-        self.explicitly_created.add(keys)
+        self.mark_explicitly_created(keys, recursive=False)
         return nest
+
+    def is_explicitly_created(self, keys: Tuple[str, ...]) -> bool:
+        for rec in self._recursive_explicitly_created:
+            if keys[: len(rec)] == rec:
+                return True
+        return keys in self._explicitly_created
+
+    def mark_explicitly_created(
+        self, keys: Tuple[str, ...], *, recursive: bool
+    ) -> None:
+        if recursive:
+            self._recursive_explicitly_created.add(keys)
+        else:
+            self._explicitly_created.add(keys)
+
+    def is_frozen(self, keys: Tuple[str, ...]) -> bool:
+        for frozen_space in self._frozen:
+            if keys[: len(frozen_space)] == frozen_space:
+                return True
+        return False
+
+    def mark_frozen(self, keys: Tuple[str, ...]) -> None:
+        self._frozen.add(keys)
 
 
 def loads(s: str) -> dict:  # noqa: C901
@@ -157,7 +182,7 @@ def _create_dict_rule(state: ParseState) -> None:
     _skip_chars(state, TOML_WS)
     key_parts = _parse_key(state)
 
-    if key_parts in state.out.explicitly_created:
+    if state.out.is_explicitly_created(key_parts):
         raise Exception("TODO: msg and type")
     state.out.get_or_create_nest(key_parts)
     state.header_namespace = key_parts
@@ -172,6 +197,8 @@ def _create_list_rule(state: ParseState) -> None:
     _skip_chars(state, TOML_WS)
     key_parts = _parse_key(state)
 
+    if state.out.is_frozen(key_parts):
+        raise Exception("TODO: msg and type")
     state.out.append_nest_to_list(key_parts)
     state.header_namespace = key_parts
 
@@ -188,6 +215,11 @@ def _key_value_rule(state: ParseState) -> None:
     nest = state.out.get_or_create_nest(state.header_namespace + parent_key)
     if key_stem in nest:
         raise Exception("TODO: type and msg")
+    # Mark inline table and array namespaces as recursively immutable
+    if isinstance(value, (dict, list)):
+        # TODO: mark all of `key_parts` immutable/explicitly defined
+        state.out.mark_explicitly_created(key_parts, recursive=False)
+        state.out.mark_frozen(key_parts)
     nest[key_stem] = value
 
 
