@@ -2,7 +2,7 @@
 [![codecov.io](https://codecov.io/gh/hukkinj1/ltoml/branch/master/graph/badge.svg)](https://codecov.io/gh/hukkinj1/ltoml)
 [![PyPI version](https://img.shields.io/pypi/v/ltoml)](https://pypi.org/project/ltoml)
 
-# ltoml
+# LTOML
 
 > A lil' TOML parser
 
