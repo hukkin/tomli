@@ -4,11 +4,11 @@ build-backend = "poetry.core.masonry.api"
 
 
 [tool.poetry]
-name = "ltoml"
+name = "tomli"
 version = "0.1.0"  # DO NOT EDIT THIS LINE MANUALLY. LET bump2version UTILITY DO IT
 authors = ["Taneli Hukkinen <hukkinj1@users.noreply.github.com>"]
 description = "A lil' TOML parser"
-repository = "https://github.com/hukkinj1/ltoml"
+repository = "https://github.com/hukkinj1/tomli"
 readme = "README.md"
 license = "MIT"
 classifiers = [
@@ -21,12 +21,12 @@ classifiers = [
 keywords = ["toml"]
 
 packages = [
-    {include = "ltoml"},
+    {include = "tomli"},
 ]
-include = ["ltoml/py.typed"]
+include = ["tomli/py.typed"]
 
 [tool.poetry.urls]
-"Changelog" = "https://github.com/hukkinj1/ltoml/blob/master/CHANGELOG.md"
+"Changelog" = "https://github.com/hukkinj1/tomli/blob/master/CHANGELOG.md"
 
 [tool.poetry.dependencies]
 python = ">=3.6"
@@ -54,7 +54,7 @@ force_sort_within_sections = true
 no_lines_before = ["LOCALFOLDER"]
 
 # Configure isort to work without access to site-packages
-known_first_party = ["ltoml", "tests"]
+known_first_party = ["tomli", "tests"]
 
 # Settings for Black compatibility
 profile = "black"

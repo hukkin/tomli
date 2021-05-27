@@ -9,7 +9,7 @@ environment. To get profiler results:
 """
 from pathlib import Path
 
-import ltoml
+import tomli
 
 
 def test_for_profiler():
@@ -20,4 +20,4 @@ def test_for_profiler():
     # the count low here because this is part of the
     # standard test suite.
     for _ in range(10):
-        ltoml.loads(benchmark_toml)
+        tomli.loads(benchmark_toml)

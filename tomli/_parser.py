@@ -4,7 +4,7 @@ import sys
 from types import MappingProxyType
 from typing import Any, Dict, Iterable, Optional, Set, Tuple, Union
 
-from ltoml import _re
+from tomli import _re
 
 if sys.version_info < (3, 7):
     from typing import re
