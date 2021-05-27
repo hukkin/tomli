@@ -1,6 +1,7 @@
 import datetime
 import json
 from pathlib import Path
+from typing import Any
 
 import dateutil.parser
 import pytest
@@ -106,7 +107,7 @@ def convert_to_burntsushi(obj):  # noqa: C901
 
 
 def normalize_burntsushi_floats(d: dict) -> dict:
-    normalized = {}
+    normalized: Any = {}
     for k, v in d.items():
         if isinstance(v, list):
             normalized[k] = [normalize_burntsushi_floats(item) for item in v]

@@ -37,6 +37,7 @@ pytest = "*"
 pytest-randomly = "*"
 pytest-cov = "*"
 python-dateutil = "*"
+types-python-dateutil = "*"
 
 # Tools
 pre-commit = "*"
