@@ -409,23 +409,27 @@ def _parse_multiline_literal_str(state: ParseState) -> str:
     state.pos += 3
     if state.char() == "\n":
         state.pos += 1
+    consecutive_apostrophes = 0
     start_pos = state.pos
-    try:
-        end_pos = state.src.index("'''", state.pos)
-    except ValueError:
-        raise Exception("TODO: msg and type here")
-    state.pos = end_pos + 3
-
-    # Add at maximum two extra apostrophes if the end sequence is 4 or 5
-    # apostrophes long instead of just 3.
-    if not state.done() and state.char() == "'":
+    while not state.done():
+        c = state.char()
         state.pos += 1
-        end_pos += 1
-        if not state.done() and state.char() == "'":
-            state.pos += 1
-            end_pos += 1
+        if c == "'":
+            consecutive_apostrophes += 1
+            if consecutive_apostrophes == 3:
+                # Add at maximum two extra apostrophes if the end sequence is 4 or 5
+                # apostrophes long instead of just 3.
+                if not state.done() and state.char() == "'":
+                    state.pos += 1
+                    if not state.done() and state.char() == "'":
+                        state.pos += 1
+                return state.src[start_pos : state.pos - 3]
+            continue
+        consecutive_apostrophes = 0
+        if c in ILLEGAL_LITERAL_STR_CHARS:
+            raise Exception("TODO: msg and type")
 
-    return state.src[start_pos:end_pos]
+    raise Exception("TODO: msg and type")
 
 
 def _parse_multiline_basic_str(state: ParseState) -> str:
