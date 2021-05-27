@@ -102,12 +102,13 @@ def loads(s: str) -> dict:  # noqa: C901
 class ParseState:
     def __init__(self, src: str):
         self.src: str = src
+        self.src_len = len(self.src)
         self.pos: int = 0
         self.out: NestedDict = NestedDict({})
         self.header_namespace: Namespace = ()
 
     def done(self) -> bool:
-        return self.pos >= len(self.src)
+        return self.pos >= self.src_len
 
     def char(self) -> str:
         return self.src[self.pos]
@@ -559,16 +560,16 @@ def _parse_value(state: ParseState) -> Any:  # noqa: C901
     src = state.src[state.pos :]
     char = state.char()
 
-    # Multiline strings
-    if src.startswith('"""'):
-        return _parse_multiline_basic_str(state)
-    if src.startswith("'''"):
-        return _parse_multiline_literal_str(state)
-
-    # Single line strings
+    # Basic strings
     if char == '"':
+        if src.startswith('"""'):
+            return _parse_multiline_basic_str(state)
         return _parse_basic_str(state)
+
+    # Literal strings
     if char == "'":
+        if src.startswith("'''"):
+            return _parse_multiline_literal_str(state)
         return _parse_literal_str(state)
 
     # Inline tables
@@ -579,14 +580,6 @@ def _parse_value(state: ParseState) -> Any:  # noqa: C901
     if char == "[":
         return _parse_array(state)
 
-    # Dates and times
-    date_match = _re.DATETIME.match(src)
-    if date_match:
-        return _parse_datetime(state, date_match)
-    localtime_match = _re.LOCAL_TIME.match(src)
-    if localtime_match:
-        return _parse_localtime(state, localtime_match)
-
     # Booleans
     if src.startswith("true"):
         state.pos += 4
@@ -594,6 +587,14 @@ def _parse_value(state: ParseState) -> Any:  # noqa: C901
     if src.startswith("false"):
         state.pos += 5
         return False
+
+    # Dates and times
+    date_match = _re.DATETIME.match(src)
+    if date_match:
+        return _parse_datetime(state, date_match)
+    localtime_match = _re.LOCAL_TIME.match(src)
+    if localtime_match:
+        return _parse_localtime(state, localtime_match)
 
     # Non-decimal integers
     if src.startswith("0x"):
