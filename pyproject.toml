@@ -29,7 +29,7 @@ include = ["ltoml/py.typed"]
 "Changelog" = "https://github.com/hukkinj1/ltoml/blob/master/CHANGELOG.md"
 
 [tool.poetry.dependencies]
-python = "^3.6.1"
+python = ">=3.6"
 
 [tool.poetry.dev-dependencies]
 # Tests
