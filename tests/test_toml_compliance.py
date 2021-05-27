@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-import lil_toml
+import ltoml
 from . import burntsushi
 
 
@@ -39,7 +39,7 @@ INVALID_FILES = tuple((DATA_DIR / "invalid").glob("**/*.toml"))
 def test_invalid(invalid):
     toml_str = invalid.read_text(encoding="utf-8")
     with pytest.raises(Exception):
-        lil_toml.loads(toml_str)
+        ltoml.loads(toml_str)
 
 
 @pytest.mark.parametrize(
@@ -51,7 +51,7 @@ def test_valid(valid, expected):
     if isinstance(expected, MissingFile):
         pytest.xfail(f"Missing a .json file corresponding the .toml: {expected.path}")
     toml_str = valid.read_text(encoding="utf-8")
-    actual = lil_toml.loads(toml_str)
+    actual = ltoml.loads(toml_str)
     actual = burntsushi.convert(actual)
     expected = burntsushi.normalize_floats(expected)
     assert actual == expected

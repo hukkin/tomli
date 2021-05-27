@@ -1,98 +1,44 @@
 import datetime
 import string
 import sys
+from types import MappingProxyType
 from typing import Any, Dict, Iterable, Optional, Set, Tuple, Union
 
-from lil_toml import _re
+from ltoml import _re
 
 if sys.version_info < (3, 7):
     from typing import re
 else:
     import re
 
+ASCII_CTRL = frozenset(chr(i) for i in range(32)) | frozenset(chr(127))
+
+# Neither of these sets include quotation mark or backslash. They are
+# currently handled as separate cases in the parser functions.
+ILLEGAL_BASIC_STR_CHARS = ASCII_CTRL - frozenset("\t")
+ILLEGAL_MULTILINE_BASIC_STR_CHARS = ASCII_CTRL - frozenset("\t\n\r")
+
+ILLEGAL_LITERAL_STR_CHARS = ASCII_CTRL - frozenset("\t")
+ILLEGAL_MULTILINE_LITERAL_STR_CHARS = ASCII_CTRL - frozenset("\t\n")
+
+ILLEGAL_COMMENT_CHARS = ASCII_CTRL - frozenset("\t")
+
+TOML_WS = frozenset(" \t")
+BARE_KEY_CHARS = frozenset(string.ascii_letters + string.digits + "-_")
+
+BASIC_STR_ESCAPE_REPLACEMENTS = MappingProxyType(
+    {
+        "\\b": "\u0008",  # backspace
+        "\\t": "\u0009",  # tab
+        "\\n": "\u000A",  # linefeed
+        "\\f": "\u000C",  # form feed
+        "\\r": "\u000D",  # carriage return
+        '\\"': "\u0022",  # quote
+        "\\\\": "\u005C",  # backslash
+    }
+)
+
 Namespace = Tuple[str, ...]
-
-
-class ParseState:
-    def __init__(self, src: str):
-        self.src: str = src
-        self.pos: int = 0
-        self.out: NestedDict = NestedDict({})
-        self.header_namespace: Namespace = ()
-
-    def done(self) -> bool:
-        return self.pos >= len(self.src)
-
-    def char(self) -> str:
-        return self.src[self.pos]
-
-
-class NestedDict:
-    def __init__(self, wrapped_dict: dict):
-        self.dict: Dict[str, Any] = wrapped_dict
-        self._explicitly_created: Set[Tuple[str, ...]] = set()
-        self._recursive_explicitly_created: Set[Tuple[str, ...]] = set()
-        self._frozen: Set[Tuple[str, ...]] = set()
-
-    # def __contains__(self, keys: Tuple[str, ...]) -> bool:
-    #     try:
-    #         self._get_nest(keys)
-    #     except KeyError:
-    #         return False
-    #     return True
-    #
-    # def _get_nest(self, keys: Tuple[str, ...]) -> dict:
-    #     container: Any = self.dict
-    #     for part in keys:
-    #         container = container[part]
-    #         if isinstance(container, list):
-    #             container = container[-1]
-    #     return container
-
-    def get_or_create_nest(self, keys: Tuple[str, ...]) -> dict:
-        container: Any = self.dict
-        for k in keys:
-            if k not in container:
-                container[k] = {}
-            container = container[k]
-            if isinstance(container, list):
-                container = container[-1]
-        self.mark_explicitly_created(keys, recursive=False)
-        return container
-
-    def append_nest_to_list(self, keys: Tuple[str, ...]) -> dict:
-        container = self.get_or_create_nest(keys[:-1])
-        nest: dict = {}
-        last_key = keys[-1]
-        if last_key in container:
-            container[last_key].append(nest)
-        else:
-            container[last_key] = [nest]
-        self.mark_explicitly_created(keys, recursive=False)
-        return nest
-
-    def is_explicitly_created(self, keys: Tuple[str, ...]) -> bool:
-        for rec in self._recursive_explicitly_created:
-            if keys[: len(rec)] == rec:
-                return True
-        return keys in self._explicitly_created
-
-    def mark_explicitly_created(
-        self, keys: Tuple[str, ...], *, recursive: bool
-    ) -> None:
-        if recursive:
-            self._recursive_explicitly_created.add(keys)
-        else:
-            self._explicitly_created.add(keys)
-
-    def is_frozen(self, keys: Tuple[str, ...]) -> bool:
-        for frozen_space in self._frozen:
-            if keys[: len(frozen_space)] == frozen_space:
-                return True
-        return False
-
-    def mark_frozen(self, keys: Tuple[str, ...]) -> None:
-        self._frozen.add(keys)
 
 
 def loads(s: str) -> dict:  # noqa: C901
@@ -147,8 +93,65 @@ def loads(s: str) -> dict:  # noqa: C901
     return state.out.dict
 
 
-TOML_WS = frozenset(" \t")
-BARE_KEY_CHARS = frozenset(string.ascii_letters + string.digits + "-_")
+class ParseState:
+    def __init__(self, src: str):
+        self.src: str = src
+        self.pos: int = 0
+        self.out: NestedDict = NestedDict({})
+        self.header_namespace: Namespace = ()
+
+    def done(self) -> bool:
+        return self.pos >= len(self.src)
+
+    def char(self) -> str:
+        return self.src[self.pos]
+
+
+class NestedDict:
+    def __init__(self, wrapped_dict: dict):
+        self.dict: Dict[str, Any] = wrapped_dict
+        # Keep track of keys that have been explicitly set
+        self._explicitly_created: Set[Tuple[str, ...]] = set()
+        # Keep track of keys that hold immutable values. Immutability
+        # applies recursively to sub-structures.
+        self._frozen: Set[Tuple[str, ...]] = set()
+
+    def get_or_create_nest(self, keys: Tuple[str, ...]) -> dict:
+        container: Any = self.dict
+        for k in keys:
+            if k not in container:
+                container[k] = {}
+            container = container[k]
+            if isinstance(container, list):
+                container = container[-1]
+        self.mark_explicitly_created(keys)
+        return container
+
+    def append_nest_to_list(self, keys: Tuple[str, ...]) -> dict:
+        container = self.get_or_create_nest(keys[:-1])
+        nest: dict = {}
+        last_key = keys[-1]
+        if last_key in container:
+            container[last_key].append(nest)
+        else:
+            container[last_key] = [nest]
+        self.mark_explicitly_created(keys)
+        return nest
+
+    def is_explicitly_created(self, keys: Tuple[str, ...]) -> bool:
+        return keys in self._explicitly_created
+
+    def mark_explicitly_created(self, keys: Tuple[str, ...]) -> None:
+        self._explicitly_created.add(keys)
+
+    def is_frozen(self, keys: Tuple[str, ...]) -> bool:
+        for frozen_space in self._frozen:
+            if keys[: len(frozen_space)] == frozen_space:
+                return True
+        return False
+
+    def mark_frozen(self, keys: Tuple[str, ...]) -> None:
+        self._frozen.add(keys)
 
 
 def _skip_chars(state: ParseState, chars: Iterable[str]) -> None:
@@ -225,7 +228,7 @@ def _key_value_rule(state: ParseState) -> None:
         raise Exception("TODO: type and msg")
     # Mark inline table and array namespaces as recursively immutable
     if isinstance(value, (dict, list)):
-        state.out.mark_explicitly_created(abs_key, recursive=False)
+        state.out.mark_explicitly_created(abs_key)
         state.out.mark_frozen(abs_key)
     nest[key_stem] = value
 
@@ -272,19 +275,6 @@ def _parse_key_part(state: ParseState) -> str:
         return _parse_basic_str(state)
     else:
         raise Exception("TODO: add type and msg")
-
-
-ASCII_CTRL = frozenset(chr(i) for i in range(32)) | frozenset(chr(127))
-
-# Neither of these sets include quotation mark or backslash. They are
-# currently handled as separate cases in the parser functions.
-ILLEGAL_BASIC_STR_CHARS = ASCII_CTRL - frozenset("\t")
-ILLEGAL_MULTILINE_BASIC_STR_CHARS = ASCII_CTRL - frozenset("\t\n\r")
-
-ILLEGAL_LITERAL_STR_CHARS = ASCII_CTRL - frozenset("\t")
-ILLEGAL_MULTILINE_LITERAL_STR_CHARS = ASCII_CTRL - frozenset("\t\n")
-
-ILLEGAL_COMMENT_CHARS = ASCII_CTRL - frozenset("\t")
 
 
 def _parse_basic_str(state: ParseState) -> str:
@@ -363,17 +353,6 @@ def _parse_inline_table(state: ParseState) -> dict:
             raise Exception("TODO: type and msg")
         state.pos += 1
         _skip_chars(state, TOML_WS)
-
-
-BASIC_STR_ESCAPE_REPLACEMENTS = {
-    "\\b": "\u0008",  # backspace
-    "\\t": "\u0009",  # tab
-    "\\n": "\u000A",  # linefeed
-    "\\f": "\u000C",  # form feed
-    "\\r": "\u000D",  # carriage return
-    '\\"': "\u0022",  # quote
-    "\\\\": "\u005C",  # backslash
-}
 
 
 def _parse_basic_str_escape_sequence(state: ParseState, *, multiline: bool) -> str:

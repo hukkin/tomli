@@ -1,11 +1,11 @@
 import copy
 import datetime
 
-import lil_toml
+import ltoml
 
 
 def test_deepcopy():
-    obj = lil_toml.loads(
+    obj = ltoml.loads(
         """\
 [bliibaa.diibaa]
 offsettime=[1979-05-27T00:32:00.999999-07:00]

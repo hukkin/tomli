@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-import lil_toml
+import ltoml
 from . import burntsushi
 
 DATA_DIR = Path(__file__).parent / "data" / "extras"
@@ -24,7 +24,7 @@ VALID_FILES_EXPECTED = tuple(
 # def test_invalid(invalid):
 #     toml_str = invalid.read_text(encoding="utf-8")
 #     with pytest.raises(Exception):
-#         lil_toml.loads(toml_str)
+#         ltoml.loads(toml_str)
 
 
 @pytest.mark.parametrize(
@@ -34,7 +34,7 @@ VALID_FILES_EXPECTED = tuple(
 )
 def test_valid(valid, expected):
     toml_str = valid.read_text(encoding="utf-8")
-    actual = lil_toml.loads(toml_str)
+    actual = ltoml.loads(toml_str)
     actual = burntsushi.convert(actual)
     expected = burntsushi.normalize_floats(expected)
     assert actual == expected
