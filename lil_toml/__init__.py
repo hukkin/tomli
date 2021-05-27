@@ -263,7 +263,7 @@ def _parse_basic_str(state: _ParseState) -> str:
             raise Exception("TODO: msg and type")
 
         if c == "\\":
-            result += _parse_basic_str_escape_sequence(state)
+            result += _parse_basic_str_escape_sequence(state, multiline=False)
         else:
             result += c
             state.pos += 1
@@ -340,35 +340,20 @@ _BASIC_STR_ESCAPE_REPLACEMENTS = {
 }
 
 
-def _parse_basic_str_escape_sequence(state: _ParseState) -> str:
+def _parse_basic_str_escape_sequence(state: _ParseState, *, multiline: bool) -> str:
     escape_id = state.src[state.pos : state.pos + 2]
     if not len(escape_id) == 2:
         raise Exception("TODO: type and msg")
     state.pos += 2
 
-    if escape_id in _BASIC_STR_ESCAPE_REPLACEMENTS:
-        return _BASIC_STR_ESCAPE_REPLACEMENTS[escape_id]
-    elif escape_id == "\\u":
-        return _parse_hex_char(state, 4)
-    elif escape_id == "\\U":
-        return _parse_hex_char(state, 8)
-    raise Exception("TODO: type and msg")
-
-
-def _parse_multiline_basic_str_escape_sequence(state: _ParseState) -> str:
-    escape_id = state.src[state.pos : state.pos + 2]
-    if not len(escape_id) == 2:
-        raise Exception("TODO: type and msg")
-    state.pos += 2
-
-    if escape_id in {"\\ ", "\\\t", "\\\n"}:
+    if multiline and escape_id in {"\\ ", "\\\t", "\\\n"}:
         _skip_chars(state, _TOML_WS | frozenset("\n"))
         return ""
-    elif escape_id in _BASIC_STR_ESCAPE_REPLACEMENTS:
+    if escape_id in _BASIC_STR_ESCAPE_REPLACEMENTS:
         return _BASIC_STR_ESCAPE_REPLACEMENTS[escape_id]
-    elif escape_id == "\\u":
+    if escape_id == "\\u":
         return _parse_hex_char(state, 4)
-    elif escape_id == "\\U":
+    if escape_id == "\\U":
         return _parse_hex_char(state, 8)
     raise Exception("TODO: type and msg")
 
@@ -446,7 +431,7 @@ def _parse_multiline_basic_str(state: _ParseState) -> str:
             raise Exception("TODO: msg and type")
 
         if c == "\\":
-            result += _parse_multiline_basic_str_escape_sequence(state)
+            result += _parse_basic_str_escape_sequence(state, multiline=True)
         else:
             result += c
             state.pos += 1
