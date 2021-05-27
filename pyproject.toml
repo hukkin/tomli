@@ -26,7 +26,7 @@ packages = [
 include = ["ltoml/py.typed"]
 
 [tool.poetry.urls]
-"Changelog" = "https://github.com/hukkinj1/ltoml/TODO"
+"Changelog" = "https://github.com/hukkinj1/ltoml/blob/master/CHANGELOG.md"
 
 [tool.poetry.dependencies]
 python = "^3.6.1"

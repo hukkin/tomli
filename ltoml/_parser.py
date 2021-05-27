@@ -41,6 +41,10 @@ BASIC_STR_ESCAPE_REPLACEMENTS = MappingProxyType(
 Namespace = Tuple[str, ...]
 
 
+class TOMLDecodeError(ValueError):
+    """An error raised if a document is not valid TOML."""
+
+
 def loads(s: str) -> dict:  # noqa: C901
     # The spec allows converting "\r\n" to "\n", even in string
     # literals. Let's do so to simplify parsing.
@@ -76,7 +80,7 @@ def loads(s: str) -> dict:  # noqa: C901
         elif char == "[":
             _create_dict_rule(state)
         else:
-            raise Exception("TODO: msg and type --- not able to apply any rule")
+            raise TOMLDecodeError("Invalid TOML")
 
         # 3. Skip trailing whitespace and line comment
         _skip_chars(state, TOML_WS)
@@ -88,7 +92,9 @@ def loads(s: str) -> dict:  # noqa: C901
         elif state.char() == "\n":
             state.pos += 1
         else:
-            raise Exception("TODO: msg and type --- statement didnt end in EOF or EOL")
+            raise TOMLDecodeError(
+                "End of line or end of document not found after a statement"
+            )
 
     return state.out.dict
 
@@ -124,6 +130,8 @@ class NestedDict:
             container = container[k]
             if isinstance(container, list):
                 container = container[-1]
+        if not isinstance(container, dict):
+            raise KeyError("There is no nest behind this key")
         self.mark_explicitly_created(keys)
         return container
 
@@ -132,7 +140,10 @@ class NestedDict:
         nest: dict = {}
         last_key = keys[-1]
         if last_key in container:
-            container[last_key].append(nest)
+            list_ = container[last_key]
+            if not isinstance(list_, list):
+                raise KeyError("An object other than list found behind this key")
+            list_.append(nest)
         else:
             container[last_key] = [nest]
         self.mark_explicitly_created(keys)
@@ -164,7 +175,7 @@ def _skip_until(
 ) -> None:
     while not state.done() and state.char() not in chars:
         if state.char() in error_on:
-            raise Exception("TODO: msg and type")
+            raise TOMLDecodeError(f'Invalid character "{state.char()!r}" found')
         state.pos += 1
 
 
@@ -180,7 +191,7 @@ def _comment_rule(state: ParseState) -> None:
         if c == "\n":
             break
         if c in ILLEGAL_COMMENT_CHARS:
-            raise Exception("TODO: msg and type")
+            raise TOMLDecodeError(f'Illegal character "{c!r}" found in a comment')
         state.pos += 1
 
 
@@ -190,12 +201,17 @@ def _create_dict_rule(state: ParseState) -> None:
     key_parts = _parse_key(state)
 
     if state.out.is_explicitly_created(key_parts):
-        raise Exception("TODO: msg and type")
-    state.out.get_or_create_nest(key_parts)
+        raise TOMLDecodeError(f'Can not declare "{".".join(key_parts)}" twice')
+    try:
+        state.out.get_or_create_nest(key_parts)
+    except KeyError:
+        raise TOMLDecodeError("Can not overwrite a value")
     state.header_namespace = key_parts
 
     if not state.char() == "]":
-        raise Exception("TODO: type and msg")
+        raise TOMLDecodeError(
+            f'Found "{state.char()!r}" at the end of a table declaration. Expected "]"'
+        )
     state.pos += 1
 
 
@@ -205,12 +221,20 @@ def _create_list_rule(state: ParseState) -> None:
     key_parts = _parse_key(state)
 
     if state.out.is_frozen(key_parts):
-        raise Exception("TODO: msg and type")
-    state.out.append_nest_to_list(key_parts)
+        raise TOMLDecodeError(
+            f'Can not mutate immutable namespace "{".".join(key_parts)}"'
+        )
+    try:
+        state.out.append_nest_to_list(key_parts)
+    except KeyError:
+        raise TOMLDecodeError("Can not overwrite a value")
     state.header_namespace = key_parts
 
-    if not state.src[state.pos : state.pos + 2] == "]]":
-        raise Exception("TODO: type and msg")
+    end_marker = state.src[state.pos : state.pos + 2]
+    if not end_marker == "]]":
+        raise TOMLDecodeError(
+            f'Found "{end_marker!r}" at the end of an array declaration. Expected "]]"'
+        )
     state.pos += 2
 
 
@@ -221,11 +245,16 @@ def _key_value_rule(state: ParseState) -> None:
     abs_key = state.header_namespace + key
 
     if state.out.is_frozen(abs_parent_key):
-        raise Exception("TODO: type and msg")
+        raise TOMLDecodeError(
+            f'Can not mutate immutable namespace "{".".join(abs_parent_key)}"'
+        )
     # Set the value in the right place in `state.out`
-    nest = state.out.get_or_create_nest(abs_parent_key)
+    try:
+        nest = state.out.get_or_create_nest(abs_parent_key)
+    except KeyError:
+        raise TOMLDecodeError("Can not overwrite a value")
     if key_stem in nest:
-        raise Exception("TODO: type and msg")
+        raise TOMLDecodeError(f'Can not define "{".".join(abs_key)}" twice')
     # Mark inline table and array namespaces as recursively immutable
     if isinstance(value, (dict, list)):
         state.out.mark_explicitly_created(abs_key)
@@ -236,7 +265,7 @@ def _key_value_rule(state: ParseState) -> None:
 def _parse_key_value_pair(state: ParseState) -> Tuple[Tuple[str, ...], Any]:
     key_parts = _parse_key(state)
     if state.char() != "=":
-        raise Exception("TODO: type and msg")
+        raise TOMLDecodeError(f'Found "{state.char()!r}" after a key. Expected "="')
     state.pos += 1
     _skip_chars(state, TOML_WS)
     value = _parse_value(state)
@@ -269,12 +298,11 @@ def _parse_key_part(state: ParseState) -> str:
         start_pos = state.pos
         _skip_chars(state, BARE_KEY_CHARS)
         return state.src[start_pos : state.pos]
-    elif char == "'":
+    if char == "'":
         return _parse_literal_str(state)
-    elif char == '"':
+    if char == '"':
         return _parse_basic_str(state)
-    else:
-        raise Exception("TODO: add type and msg")
+    raise TOMLDecodeError("Invalid key definition")
 
 
 def _parse_basic_str(state: ParseState) -> str:
@@ -286,7 +314,7 @@ def _parse_basic_str(state: ParseState) -> str:
             state.pos += 1
             return result
         if c in ILLEGAL_BASIC_STR_CHARS:
-            raise Exception("TODO: msg and type")
+            raise TOMLDecodeError(f'Illegal character "{c!r}" found in a string')
 
         if c == "\\":
             result += _parse_basic_str_escape_sequence(state, multiline=False)
@@ -294,7 +322,7 @@ def _parse_basic_str(state: ParseState) -> str:
             result += c
             state.pos += 1
 
-    raise Exception("TODO: msg and type")
+    raise TOMLDecodeError("Closing quote of a string not found")
 
 
 def _parse_array(state: ParseState) -> list:
@@ -313,7 +341,9 @@ def _parse_array(state: ParseState) -> list:
             state.pos += 1
             return array
         elif state.char() != ",":
-            raise Exception("TODO: msg and type")
+            raise TOMLDecodeError(
+                f'Found "{state.char()!r}" after an array item. Expected "," or "]"'
+            )
         state.pos += 1
 
         _skip_comments_and_array_ws(state)
@@ -350,7 +380,10 @@ def _parse_inline_table(state: ParseState) -> dict:
             state.pos += 1
             return nested_dict.dict
         if state.char() != ",":
-            raise Exception("TODO: type and msg")
+            raise TOMLDecodeError(
+                f'Found "{state.char()!r}" after an inline table key value pair. '
+                + 'Expected "," or "}"'
+            )
         state.pos += 1
         _skip_chars(state, TOML_WS)
 
@@ -358,7 +391,7 @@ def _parse_inline_table(state: ParseState) -> dict:
 def _parse_basic_str_escape_sequence(state: ParseState, *, multiline: bool) -> str:
     escape_id = state.src[state.pos : state.pos + 2]
     if not len(escape_id) == 2:
-        raise Exception("TODO: type and msg")
+        raise TOMLDecodeError("String value not closed before end of document")
     state.pos += 2
 
     if multiline and escape_id in {"\\ ", "\\\t", "\\\n"}:
@@ -369,7 +402,7 @@ def _parse_basic_str_escape_sequence(state: ParseState, *, multiline: bool) -> s
             if state.done():
                 return ""
             if state.char() != "\n":
-                raise Exception("TODO: msg and type")
+                raise TOMLDecodeError('Unescaped "\\" character found in a string')
             state.pos += 1
         _skip_chars(state, TOML_WS | frozenset("\n"))
         return ""
@@ -379,15 +412,20 @@ def _parse_basic_str_escape_sequence(state: ParseState, *, multiline: bool) -> s
         return _parse_hex_char(state, 4)
     if escape_id == "\\U":
         return _parse_hex_char(state, 8)
-    raise Exception("TODO: type and msg")
+    raise TOMLDecodeError('Unescaped "\\" character found in a string')
 
 
 def _parse_hex_char(state: ParseState, hex_len: int) -> str:
     hex_str = state.src[state.pos : state.pos + hex_len]
     if not len(hex_str) == hex_len or any(c not in string.hexdigits for c in hex_str):
-        raise Exception("TODO: type and msg")
+        raise TOMLDecodeError("Invalid hex value")
     state.pos += hex_len
-    return chr(int(hex_str, 16))
+    hex_int = int(hex_str, 16)
+    try:
+        char = chr(hex_int)
+    except (ValueError, OverflowError):
+        raise TOMLDecodeError("Hex value too large to convert into a character")
+    return char
 
 
 def _parse_literal_str(state: ParseState) -> str:
@@ -396,7 +434,7 @@ def _parse_literal_str(state: ParseState) -> str:
     _skip_until(state, "'\n", error_on=ILLEGAL_LITERAL_STR_CHARS)
     end_pos = state.pos
     if state.done() or state.char() == "\n":
-        raise Exception("TODO: msg and type")
+        raise TOMLDecodeError("Literal string closing apostrophe not found")
     state.pos += 1
     return state.src[start_pos:end_pos]
 
@@ -423,9 +461,13 @@ def _parse_multiline_literal_str(state: ParseState) -> str:
             continue
         consecutive_apostrophes = 0
         if c in ILLEGAL_MULTILINE_LITERAL_STR_CHARS:
-            raise Exception("TODO: msg and type")
+            raise TOMLDecodeError(
+                f'Illegal character "{c!r}" found in a multiline literal string'
+            )
 
-    raise Exception("TODO: msg and type")
+    raise TOMLDecodeError(
+        "Multiline literal string not closed before end of the document"
+    )
 
 
 def _parse_multiline_basic_str(state: ParseState) -> str:
@@ -456,7 +498,9 @@ def _parse_multiline_basic_str(state: ParseState) -> str:
                 state.pos += 1
             continue
         if c in ILLEGAL_MULTILINE_BASIC_STR_CHARS:
-            raise Exception("TODO: msg and type")
+            raise TOMLDecodeError(
+                f'Illegal character "{c!r}" found in a multiline string'
+            )
 
         if c == "\\":
             result += _parse_basic_str_escape_sequence(state, multiline=True)
@@ -464,13 +508,13 @@ def _parse_multiline_basic_str(state: ParseState) -> str:
             result += c
             state.pos += 1
 
-    raise Exception("TODO: msg and type")
+    raise TOMLDecodeError("Multiline string not closed before end of the document")
 
 
 def _parse_regex(state: ParseState, regex: re.Pattern) -> str:
     match = regex.match(state.src[state.pos :])
     if not match:
-        raise Exception("TODO: type and msg")
+        raise TOMLDecodeError("Invalid document")
     match_str = match.group()
     state.pos += len(match_str)
     return match_str
@@ -579,4 +623,4 @@ def _parse_value(state: ParseState) -> Any:  # noqa: C901
             return float(match_str)
         return int(match_str)
 
-    raise Exception("TODO: msg and type")
+    raise TOMLDecodeError("Invalid value")

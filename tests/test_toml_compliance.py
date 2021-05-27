@@ -38,7 +38,7 @@ INVALID_FILES = tuple((DATA_DIR / "invalid").glob("**/*.toml"))
 )
 def test_invalid(invalid):
     toml_str = invalid.read_text(encoding="utf-8")
-    with pytest.raises(Exception):
+    with pytest.raises(ltoml.TOMLDecodeError):
         ltoml.loads(toml_str)
 
 
