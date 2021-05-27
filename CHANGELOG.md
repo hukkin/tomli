@@ -1,5 +1,7 @@
 # Changelog
 
-## 0.0.1
+## 0.1.0
 
-- TODO
+- Added
+  - `ltoml.loads` for parsing TOML strings
+  - `ltoml.TOMLDecodeError` that is raised for parse errors
