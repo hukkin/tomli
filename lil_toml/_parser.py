@@ -4,7 +4,6 @@ import string
 from typing import Any, Dict, Iterable, Optional, Set, Tuple, Union
 
 from lil_toml import _re
-from lil_toml._tz import CustomTzinfo
 
 Namespace = Tuple[str, ...]
 
@@ -507,14 +506,14 @@ def _parse_datetime(
     micros = int(groups[6][1:].ljust(6, "0")[:6]) if groups[6] else 0
     if groups[7] is not None:
         offset_dir = 1 if "+" in match_str else -1
-        tz: Optional[datetime.tzinfo] = CustomTzinfo(
+        tz: Optional[datetime.tzinfo] = datetime.timezone(
             datetime.timedelta(
                 hours=offset_dir * int(groups[7]),
                 minutes=offset_dir * int(groups[8]),
             )
         )
     elif "Z" in match_str:
-        tz = CustomTzinfo(datetime.timedelta())
+        tz = datetime.timezone(datetime.timedelta())
     else:  # local date-time
         tz = None
     return datetime.datetime(year, month, day, hour, minute, sec, micros, tzinfo=tz)
