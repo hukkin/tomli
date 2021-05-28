@@ -45,7 +45,7 @@ class TOMLDecodeError(ValueError):
     """An error raised if a document is not valid TOML."""
 
 
-def loads(s: str) -> dict:  # noqa: C901
+def loads(s: str) -> Dict[str, Any]:  # noqa: C901
     # The spec allows converting "\r\n" to "\n", even in string
     # literals. Let's do so to simplify parsing.
     s = s.replace("\r\n", "\n")
