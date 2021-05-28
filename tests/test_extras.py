@@ -13,18 +13,18 @@ VALID_FILES_EXPECTED = tuple(
     json.loads(p.with_suffix(".json").read_text("utf-8")) for p in VALID_FILES
 )
 
-# INVALID_FILES = tuple((DATA_DIR / "invalid").glob("**/*.toml"))
+INVALID_FILES = tuple((DATA_DIR / "invalid").glob("**/*.toml"))
 
 
-# @pytest.mark.parametrize(
-#     "invalid",
-#     INVALID_FILES,
-#     ids=[p.stem for p in INVALID_FILES],
-# )
-# def test_invalid(invalid):
-#     toml_str = invalid.read_text(encoding="utf-8")
-#     with pytest.raises(tomli.TOMLDecodeError):
-#         tomli.loads(toml_str)
+@pytest.mark.parametrize(
+    "invalid",
+    INVALID_FILES,
+    ids=[p.stem for p in INVALID_FILES],
+)
+def test_invalid(invalid):
+    toml_str = invalid.read_text(encoding="utf-8")
+    with pytest.raises(tomli.TOMLDecodeError):
+        tomli.loads(toml_str)
 
 
 @pytest.mark.parametrize(

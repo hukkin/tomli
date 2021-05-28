@@ -126,8 +126,6 @@ omit = ["tests/*", "*/site-packages/*"]
 exclude_lines = [
     # Have to re-enable the standard pragma
     "pragma: no cover",
-    # Ellipsis lines after @typing.overload
-    '\.\.\.',
     # Code for static type checkers
     "if TYPE_CHECKING:",
     # Scripts

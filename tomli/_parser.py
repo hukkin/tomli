@@ -7,9 +7,9 @@ from typing import Any, Dict, Iterable, Optional, Set, Tuple, Union
 from tomli import _re
 
 if sys.version_info < (3, 7):
-    from typing import re
+    from typing import re  # pragma: no cover
 else:
-    import re
+    import re  # pragma: no cover
 
 ASCII_CTRL = frozenset(chr(i) for i in range(32)) | frozenset(chr(127))
 
@@ -471,7 +471,7 @@ def _parse_multiline_literal_str(state: ParseState) -> str:
                     if not state.done() and state.char() == "'":
                         state.pos += 1
                 return state.src[start_pos : state.pos - 3]
-            continue
+            continue  # pragma: no cover
         consecutive_apostrophes = 0
         if c in ILLEGAL_MULTILINE_LITERAL_STR_CHARS:
             raise TOMLDecodeError(
