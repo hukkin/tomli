@@ -2,7 +2,7 @@ import datetime
 import string
 import sys
 from types import MappingProxyType
-from typing import Any, Dict, Iterable, Optional, Set, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, Optional, Set, Tuple, Union
 
 from tomli import _re
 
@@ -38,6 +38,7 @@ BASIC_STR_ESCAPE_REPLACEMENTS = MappingProxyType(
     }
 )
 
+ParseFloat = Callable[[str], Any]
 Namespace = Tuple[str, ...]
 
 
@@ -45,12 +46,12 @@ class TOMLDecodeError(ValueError):
     """An error raised if a document is not valid TOML."""
 
 
-def loads(s: str) -> Dict[str, Any]:  # noqa: C901
+def loads(s: str, *, parse_float: ParseFloat = float) -> Dict[str, Any]:  # noqa: C901
     # The spec allows converting "\r\n" to "\n", even in string
     # literals. Let's do so to simplify parsing.
     s = s.replace("\r\n", "\n")
 
-    state = ParseState(s)
+    state = ParseState(s, parse_float)
 
     # Parse one statement at a time
     # (typically means one line in TOML source)
@@ -103,11 +104,15 @@ def loads(s: str) -> Dict[str, Any]:  # noqa: C901
 
 
 class ParseState:
-    def __init__(self, src: str):
+    def __init__(self, src: str, parse_float: ParseFloat):
+        # Read only
         self.src: str = src
         self.src_len = len(self.src)
-        self.pos: int = 0
         self.out: NestedDict = NestedDict({})
+        self.parse_float = parse_float
+
+        # Read and write
+        self.pos: int = 0
         self.header_namespace: Namespace = ()
 
     def done(self) -> bool:
@@ -625,10 +630,10 @@ def _parse_value(state: ParseState) -> Any:  # noqa: C901
     # Special floats
     if src[:3] in {"inf", "nan"}:
         state.pos += 3
-        return float(src[:3])
+        return state.parse_float(src[:3])
     if src[:4] in {"-inf", "+inf", "-nan", "+nan"}:
         state.pos += 4
-        return float(src[:4])
+        return state.parse_float(src[:4])
 
     # Decimal integers and "normal" floats
     dec_match = _re.DEC_OR_FLOAT.match(src)
@@ -636,7 +641,7 @@ def _parse_value(state: ParseState) -> Any:  # noqa: C901
         match_str = dec_match.group()
         state.pos += len(match_str)
         if "." in match_str or "e" in match_str or "E" in match_str:
-            return float(match_str)
+            return state.parse_float(match_str)
         return int(match_str)
 
     raise TOMLDecodeError("Invalid value")

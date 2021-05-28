@@ -1,5 +1,11 @@
 # Changelog
 
+## **unreleased**
+
+- Added
+  - `parse_float` keyword argument to `tomli.loads`.
+    Allows parsing TOML floats to a non-float type in Python.
+
 ## 0.2.1
 
 - Fixed
