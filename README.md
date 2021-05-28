@@ -44,6 +44,16 @@ except tomli.TOMLDecodeError:
     print("Yep, definitely not valid.")
 ```
 
+### Construct `decimal.Decimal`s from TOML floats
+
+```python
+from decimal import Decimal
+import tomli
+
+toml_dict = tomli.loads("precision-matters = 0.982492", parse_float=Decimal)
+assert isinstance(toml_dict["precision-matters"], Decimal)
+```
+
 ## FAQ
 
 ### Why this parser?
