@@ -5,6 +5,15 @@ from decimal import Decimal as D
 import tomli
 
 
+def test_load(tmp_path):
+    content = "one=1 \n two='two' \n arr=[]"
+    file_path = tmp_path / "test.toml"
+    file_path.write_text(content)
+    with open(file_path, encoding="utf-8") as f:
+        actual = tomli.load(f)
+    assert actual == {"one": 1, "two": "two", "arr": []}
+
+
 def test_parse_float():
     doc = """
           val=0.1
