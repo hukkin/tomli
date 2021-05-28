@@ -1,6 +1,6 @@
 # Changelog
 
-## **unreleased**
+## 0.2.1
 
 - Fixed
   - `TOMLDecodeError` is now raised for duplicate keys in inline tables,
