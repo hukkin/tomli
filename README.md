@@ -52,12 +52,15 @@ On May 28 2021 running the benchmark output the following on my notebook compute
 
 ```console
 foo@bar:~/dev/tomli$ tox -e benchmark-pypi
+benchmark-pypi installed: attrs==19.3.0,click==7.1.2,pytomlpp==1.0.2,qtoml==0.3.0,toml==0.10.2,tomli==0.2.0,tomlkit==0.7.2
+benchmark-pypi run-test-pre: PYTHONHASHSEED='858677413'
+benchmark-pypi run-test: commands[0] | python benchmark/run.py
 Parsing data.toml 5000 times:
-  pytomlpp:    0.961 s
-     tomli:    7.073 s (7.3x slower)
-      toml:    7.253 s (7.5x slower)
-     qtoml:   12.292 s (12.7x slower)
-   tomlkit:   56.114 s (58.3x slower)
+  pytomlpp:    1.218 s
+     tomli:    9.593 s (7.8x slower)
+      toml:   10.231 s (8.3x slower)
+     qtoml:   16.887 s (13.8x slower)
+   tomlkit:   75.576 s (62.0x slower)
 ```
 
 Tomli performed the best out of all pure Python TOML parsers,
