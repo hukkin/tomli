@@ -1,6 +1,6 @@
 # Changelog
 
-## **unreleased**
+## 0.2.2
 
 - Added
   - `tomli.load` for parsing IO streams returned by `open()`
