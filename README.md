@@ -69,7 +69,12 @@ losing only to pytomlpp, which is a wrapper for a C++ parser.
 
 - it's lil'
 - fairly fast (but pure Python so can't do any miracles there)
-- 100% spec compliance: passes all tests in [a test set](https://github.com/toml-lang/compliance/pull/8) soon to be merged to the official [compliance tests for TOML](https://github.com/toml-lang/compliance) repository
+- 100% spec compliance: passes all tests in
+  [a test set](https://github.com/toml-lang/compliance/pull/8)
+  soon to be merged to the official
+  [compliance tests for TOML](https://github.com/toml-lang/compliance)
+  repository
+- 100% test coverage
 
 ### Is comment preserving round-trip parsing supported?
 
