@@ -253,17 +253,17 @@ def _create_list_rule(state: ParseState) -> None:
 
 def _key_value_rule(state: ParseState) -> None:
     key, value = _parse_key_value_pair(state)
-    parent_key, key_stem = key[:-1], key[-1]
-    abs_parent_key = state.header_namespace + parent_key
+    key_parent, key_stem = key[:-1], key[-1]
+    abs_key_parent = state.header_namespace + key_parent
     abs_key = state.header_namespace + key
 
-    if state.out.is_frozen(abs_parent_key):
+    if state.out.is_frozen(abs_key_parent):
         raise TOMLDecodeError(
-            f'Can not mutate immutable namespace "{".".join(abs_parent_key)}"'
+            f'Can not mutate immutable namespace "{".".join(abs_key_parent)}"'
         )
     # Set the value in the right place in `state.out`
     try:
-        nest = state.out.get_or_create_nest(abs_parent_key)
+        nest = state.out.get_or_create_nest(abs_key_parent)
     except KeyError:
         raise TOMLDecodeError("Can not overwrite a value")
     if key_stem in nest:
@@ -386,8 +386,11 @@ def _parse_inline_table(state: ParseState) -> dict:
         return nested_dict.dict
     while True:
         keys, value = _parse_key_value_pair(state)
-        nest = nested_dict.get_or_create_nest(keys[:-1])
-        nest[keys[-1]] = value  # TODO: check that "keys[-1]" isnt already there
+        key_parent, key_stem = keys[:-1], keys[-1]
+        nest = nested_dict.get_or_create_nest(key_parent)
+        if key_stem in nest:
+            raise TOMLDecodeError(f'Duplicate inline table key "{key_stem}"')
+        nest[key_stem] = value
         _skip_chars(state, TOML_WS)
         if state.char() == "}":
             state.pos += 1

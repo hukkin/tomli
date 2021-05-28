@@ -1,5 +1,11 @@
 # Changelog
 
+## **unreleased**
+
+- Fixed
+  - `TOMLDecodeError` is now raised for duplicate key names in inline tables,
+    as opposed to silently overriding the previous value
+
 ## 0.2.0
 
 - Changed
