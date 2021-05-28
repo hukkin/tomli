@@ -2,7 +2,7 @@ import datetime
 import string
 import sys
 from types import MappingProxyType
-from typing import Any, Callable, Dict, Iterable, Optional, Set, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, Optional, Set, TextIO, Tuple, Union
 
 from tomli import _re
 
@@ -44,6 +44,11 @@ Namespace = Tuple[str, ...]
 
 class TOMLDecodeError(ValueError):
     """An error raised if a document is not valid TOML."""
+
+
+def load(fp: TextIO, *, parse_float: ParseFloat = float) -> Dict[str, Any]:
+    s = fp.read()
+    return loads(s, parse_float=parse_float)
 
 
 def loads(s: str, *, parse_float: ParseFloat = float) -> Dict[str, Any]:  # noqa: C901

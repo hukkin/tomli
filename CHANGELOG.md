@@ -3,6 +3,7 @@
 ## **unreleased**
 
 - Added
+  - `tomli.load` for parsing IO streams returned by `open()`
   - `parse_float` keyword argument to `tomli.loads`.
     Allows parsing TOML floats to a non-float type in Python.
 

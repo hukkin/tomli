@@ -33,6 +33,15 @@ toml_dict = tomli.loads(toml_str)
 assert toml_dict == {"gretzky": 99, "kurri": {"jari": 17}}
 ```
 
+### Parse a TOML file
+
+```python
+import tomli
+
+with open("path_to_file/conf.toml", encoding="utf-8") as f:
+    toml_dict = tomli.load(f)
+```
+
 ### Handle invalid TOML
 
 ```python
