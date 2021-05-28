@@ -14,21 +14,23 @@ import tomli
 
 
 def benchmark(
-    name: str, run_count: int, func: Callable, compare_to: float | None = None
+    name: str,
+    run_count: int,
+    func: Callable,
+    col_width: tuple,
+    compare_to: float | None = None,
 ) -> float:
-    print(f"{name:>10}: Running...", end="", flush=True)
+    placeholder = "Running..."
+    print(f"{name:>{col_width[0]}} | {placeholder}", end="", flush=True)
     time_taken = timeit.timeit(func, number=run_count)
-    res = str(time_taken).split(".")
-    print("\b" * 10, end="")
-    print(f"{res[0]:>4}.{res[1][:3]} s", end="")
-    if compare_to is not None:
-        delta = time_taken / compare_to
-        relation = "slower"
-        if delta < 1.0:
-            delta = 1.0 / delta
-            relation = "faster"
-        delta = int(delta * 10.0) / 10.0
-        print(f" ({delta}x {relation})", end="")
+    print("\b" * len(placeholder), end="")
+    time_suffix = " s"
+    print(f"{time_taken:{col_width[1]-len(time_suffix)}.3g}{time_suffix}", end="")
+    if compare_to is None:
+        print(" | baseline", end="")
+    else:
+        delta = compare_to / time_taken
+        print(f" | {delta:.2g}x baseline", end="")
     print()
     return time_taken
 
@@ -36,15 +38,22 @@ def benchmark(
 def run(run_count: int) -> None:
     data_path = Path(__file__).parent / "data.toml"
     test_data = data_path.read_text(encoding="utf-8")
+    col_width = (10, 10, 28)
+    col_head = ("parser", "exec time", "performance (more is better)")
     print(f"Parsing data.toml {run_count} times:")
-    baseline = benchmark("pytomlpp", run_count, lambda: pytomlpp.loads(test_data))
-    benchmark("rtoml", run_count, lambda: rtoml.loads(test_data), compare_to=baseline)
-    benchmark("tomli", run_count, lambda: tomli.loads(test_data), compare_to=baseline)
-    benchmark("toml", run_count, lambda: toml.loads(test_data), compare_to=baseline)
-    benchmark("qtoml", run_count, lambda: qtoml.loads(test_data), compare_to=baseline)
-    benchmark(
-        "tomlkit", run_count, lambda: tomlkit.parse(test_data), compare_to=baseline
+    print("-" * col_width[0] + "---" + "-" * col_width[1] + "---" + col_width[2] * "-")
+    print(
+        f"{col_head[0]:>{col_width[0]}} | {col_head[1]:>{col_width[1]}} | {col_head[2]}"
     )
+    print("-" * col_width[0] + "-+-" + "-" * col_width[1] + "-+-" + col_width[2] * "-")
+    # fmt: off
+    baseline = benchmark("pytomlpp", run_count, lambda: pytomlpp.loads(test_data), col_width)  # noqa: E501
+    benchmark("rtoml", run_count, lambda: rtoml.loads(test_data), col_width, compare_to=baseline)  # noqa: E501
+    benchmark("tomli", run_count, lambda: tomli.loads(test_data), col_width, compare_to=baseline)  # noqa: E501
+    benchmark("toml", run_count, lambda: toml.loads(test_data), col_width, compare_to=baseline)  # noqa: E501
+    benchmark("qtoml", run_count, lambda: qtoml.loads(test_data), col_width, compare_to=baseline)  # noqa: E501
+    benchmark("tomlkit", run_count, lambda: tomlkit.parse(test_data), col_width, compare_to=baseline)  # noqa: E501
+    # fmt: on
 
 
 if __name__ == "__main__":
