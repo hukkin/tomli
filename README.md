@@ -52,19 +52,20 @@ On May 28 2021 running the benchmark output the following on my notebook compute
 
 ```console
 foo@bar:~/dev/tomli$ tox -e benchmark-pypi
-benchmark-pypi installed: attrs==19.3.0,click==7.1.2,pytomlpp==1.0.2,qtoml==0.3.0,toml==0.10.2,tomli==0.2.0,tomlkit==0.7.2
-benchmark-pypi run-test-pre: PYTHONHASHSEED='858677413'
+benchmark-pypi installed: attrs==19.3.0,click==7.1.2,pytomlpp==1.0.2,qtoml==0.3.0,rtoml==0.6.1,toml==0.10.2,tomli==0.2.0,tomlkit==0.7.2
+benchmark-pypi run-test-pre: PYTHONHASHSEED='3494638500'
 benchmark-pypi run-test: commands[0] | python benchmark/run.py
 Parsing data.toml 5000 times:
-  pytomlpp:    1.218 s
-     tomli:    9.593 s (7.8x slower)
-      toml:   10.231 s (8.3x slower)
-     qtoml:   16.887 s (13.8x slower)
-   tomlkit:   75.576 s (62.0x slower)
+  pytomlpp:    1.126 s
+     rtoml:    1.178 s (1.0x slower)
+     tomli:    8.913 s (7.9x slower)
+      toml:    9.456 s (8.3x slower)
+     qtoml:   15.925 s (14.1x slower)
+   tomlkit:   71.509 s (63.5x slower)
 ```
 
 Tomli performed the best out of all pure Python TOML parsers,
-losing only to pytomlpp, which is a wrapper for a C++ parser.
+losing only to pytomlpp (wraps C++) and rtoml (wraps Rust).
 
 ## FAQ
 
