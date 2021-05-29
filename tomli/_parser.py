@@ -110,7 +110,6 @@ class ParseState:
     def __init__(self, src: str, parse_float: ParseFloat):
         # Read only
         self.src: str = src
-        self.src_len = len(self.src)
         self.out: NestedDict = NestedDict({})
         self.parse_float = parse_float
 
