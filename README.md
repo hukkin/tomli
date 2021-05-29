@@ -23,11 +23,11 @@ pip install tomli
 import tomli
 
 toml_str = """
-gretzky = 99
+           gretzky = 99
 
-[kurri]
-jari = 17
-"""
+           [kurri]
+           jari = 17
+           """
 
 toml_dict = tomli.loads(toml_str)
 assert toml_dict == {"gretzky": 99, "kurri": {"jari": 17}}
@@ -69,7 +69,7 @@ assert isinstance(toml_dict["precision-matters"], Decimal)
 
 - it's lil'
 - pure Python with zero dependencies
-- fairly fast (but pure Python so can't do any miracles there)
+- as fast as pure Python allows
 - 100% spec compliance: passes all tests in
   [a test set](https://github.com/toml-lang/compliance/pull/8)
   soon to be merged to the official
