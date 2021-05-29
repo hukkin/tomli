@@ -27,10 +27,10 @@ def benchmark(
     time_suffix = " s"
     print(f"{time_taken:{col_width[1]-len(time_suffix)}.3g}{time_suffix}", end="")
     if compare_to is None:
-        print(" | baseline", end="")
+        print(" | baseline (100%)", end="")
     else:
         delta = compare_to / time_taken
-        print(f" | {delta:.2g}x baseline", end="")
+        print(f" | {delta:.2%}", end="")
     print()
     return time_taken
 

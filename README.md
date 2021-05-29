@@ -92,23 +92,23 @@ Not yet, and it's possible there never will be.
 
 The `benchmark/` folder in this repository contains a performance benchmark for comparing the various Python TOML parsers.
 The benchmark can be run with `tox -e benchmark-pypi`.
-On May 28 2021 running the benchmark output the following on my notebook computer.
+On May 29 2021 running the benchmark output the following on my notebook computer.
 
 ```console
 foo@bar:~/dev/tomli$ tox -e benchmark-pypi
-benchmark-pypi installed: attrs==19.3.0,click==7.1.2,pytomlpp==1.0.2,qtoml==0.3.0,rtoml==0.6.1,toml==0.10.2,tomli==0.2.0,tomlkit==0.7.2
-benchmark-pypi run-test-pre: PYTHONHASHSEED='305387179'
+benchmark-pypi installed: attrs==19.3.0,click==7.1.2,pytomlpp==1.0.2,qtoml==0.3.0,rtoml==0.6.1,toml==0.10.2,tomli==0.2.3,tomlkit==0.7.2
+benchmark-pypi run-test-pre: PYTHONHASHSEED='2295586404'
 benchmark-pypi run-test: commands[0] | python benchmark/run.py
 Parsing data.toml 5000 times:
 ------------------------------------------------------
     parser |  exec time | performance (more is better)
 -----------+------------+-----------------------------
-  pytomlpp |     1.16 s | baseline
-     rtoml |     1.17 s | 1x baseline
-     tomli |     8.94 s | 0.13x baseline
-      toml |     9.33 s | 0.12x baseline
-     qtoml |     15.7 s | 0.074x baseline
-   tomlkit |       70 s | 0.017x baseline
+  pytomlpp |     1.14 s | baseline (100%)
+     rtoml |     1.16 s | 98.13%
+     tomli |     7.58 s | 15.07%
+      toml |     9.35 s | 12.21%
+     qtoml |     15.4 s | 7.43%
+   tomlkit |     68.3 s | 1.67%
 ```
 
 The parsers are ordered from fastest to slowest, using the fastest parser (pytomlpp) as baseline.
