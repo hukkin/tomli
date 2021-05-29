@@ -71,9 +71,8 @@ def loads(s: str, *, parse_float: ParseFloat = float) -> Dict[str, Any]:  # noqa
         #    - key->value
         #    - append dict to list (and move to its namespace)
         #    - create dict (and move to its namespace)
-        try:
-            char = state.char()
-        except IndexError:
+        char = state.try_char()
+        if not char:
             break
         if char == "\n":
             state.pos += 1
@@ -94,9 +93,8 @@ def loads(s: str, *, parse_float: ParseFloat = float) -> Dict[str, Any]:  # noqa
         _skip_comment(state)
 
         # 4. Expect end of line of end of file
-        try:
-            char = state.char()
-        except IndexError:
+        char = state.try_char()
+        if not char:
             break
         if char == "\n":
             state.pos += 1
@@ -120,11 +118,11 @@ class ParseState:
         self.pos: int = 0
         self.header_namespace: Namespace = ()
 
-    def done(self) -> bool:
-        return self.pos >= self.src_len
-
-    def char(self) -> str:
-        return self.src[self.pos]
+    def try_char(self) -> Optional[str]:
+        try:
+            return self.src[self.pos]
+        except IndexError:
+            return None
 
 
 class NestedDict:
@@ -181,7 +179,7 @@ class NestedDict:
 
 def _skip_chars(state: ParseState, chars: Iterable[str]) -> None:
     try:
-        while state.char() in chars:
+        while state.src[state.pos] in chars:
             state.pos += 1
     except IndexError:
         pass
@@ -190,27 +188,29 @@ def _skip_chars(state: ParseState, chars: Iterable[str]) -> None:
 def _skip_until(
     state: ParseState, chars: Iterable[str], *, error_on: Iterable[str]
 ) -> None:
-    try:
-        while True:
-            char = state.char()
-            if char in chars:
-                break
-            if char in error_on:
-                raise TOMLDecodeError(f'Invalid character "{char!r}" found')
-            state.pos += 1
-    except IndexError:
-        pass
+    while True:
+        try:
+            char = state.src[state.pos]
+        except IndexError:
+            break
+        if char in chars:
+            break
+        if char in error_on:
+            raise TOMLDecodeError(f'Invalid character "{char!r}" found')
+        state.pos += 1
 
 
 def _skip_comment(state: ParseState) -> None:
-    if not state.done() and state.char() == "#":
+    if state.try_char() == "#":
         _comment_rule(state)
 
 
 def _comment_rule(state: ParseState) -> None:
     state.pos += 1
-    while not state.done():
-        c = state.char()
+    while True:
+        c = state.try_char()
+        if not c:
+            break
         if c == "\n":
             break
         if c in ILLEGAL_COMMENT_CHARS:
@@ -231,10 +231,8 @@ def _create_dict_rule(state: ParseState) -> None:
         raise TOMLDecodeError("Can not overwrite a value")
     state.header_namespace = key_parts
 
-    if not state.char() == "]":
-        raise TOMLDecodeError(
-            f'Found "{state.char()!r}" at the end of a table declaration. Expected "]"'
-        )
+    if state.try_char() != "]":
+        raise TOMLDecodeError('Expected "]" at the end of a table declaration')
     state.pos += 1
 
 
@@ -287,8 +285,8 @@ def _key_value_rule(state: ParseState) -> None:
 
 def _parse_key_value_pair(state: ParseState) -> Tuple[Tuple[str, ...], Any]:
     key_parts = _parse_key(state)
-    if state.char() != "=":
-        raise TOMLDecodeError(f'Found "{state.char()!r}" after a key. Expected "="')
+    if state.try_char() != "=":
+        raise TOMLDecodeError('Expected "=" after a key in a key-to-value mapping')
     state.pos += 1
     _skip_chars(state, TOML_WS)
     value = _parse_value(state)
@@ -303,7 +301,7 @@ def _parse_key(state: ParseState) -> Tuple[str, ...]:
     """
     key_parts = [_parse_key_part(state)]
     _skip_chars(state, TOML_WS)
-    while state.char() == ".":
+    while state.try_char() == ".":
         state.pos += 1
         _skip_chars(state, TOML_WS)
         key_parts.append(_parse_key_part(state))
@@ -316,7 +314,7 @@ def _parse_key_part(state: ParseState) -> str:
 
     Move state.pos after the key part. Throw if parsing fails.
     """
-    char = state.char()
+    char = state.try_char()
     if char in BARE_KEY_CHARS:
         start_pos = state.pos
         _skip_chars(state, BARE_KEY_CHARS)
@@ -331,8 +329,10 @@ def _parse_key_part(state: ParseState) -> str:
 def _parse_basic_str(state: ParseState) -> str:
     state.pos += 1
     result = ""
-    while not state.done():
-        c = state.char()
+    while True:
+        c = state.try_char()
+        if not c:
+            raise TOMLDecodeError("Closing quote of a string not found")
         if c == '"':
             state.pos += 1
             return result
@@ -345,33 +345,33 @@ def _parse_basic_str(state: ParseState) -> str:
             result += c
             state.pos += 1
 
-    raise TOMLDecodeError("Closing quote of a string not found")
-
 
 def _parse_array(state: ParseState) -> list:
     state.pos += 1
     array: list = []
 
     _skip_comments_and_array_ws(state)
-    if state.char() == "]":
+    if state.try_char() == "]":
         state.pos += 1
         return array
     while True:
         array.append(_parse_value(state))
         _skip_comments_and_array_ws(state)
 
-        if state.char() == "]":
+        c = state.try_char()
+        if c == "]":
             state.pos += 1
             return array
-        elif state.char() != ",":
-            raise TOMLDecodeError(
-                f'Found "{state.char()!r}" after an array item. Expected "," or "]"'
-            )
+        if c != ",":
+            raise TOMLDecodeError("Unclosed array")
         state.pos += 1
 
         _skip_comments_and_array_ws(state)
 
-        if state.char() == "]":
+        c = state.try_char()
+        if not c:
+            raise TOMLDecodeError("Invalid array")
+        if c == "]":
             state.pos += 1
             return array
 
@@ -391,7 +391,10 @@ def _parse_inline_table(state: ParseState) -> dict:
     nested_dict = NestedDict({})
 
     _skip_chars(state, TOML_WS)
-    if state.char() == "}":
+    c = state.try_char()
+    if not c:
+        raise TOMLDecodeError("Unclosed inline table")
+    if c == "}":
         state.pos += 1
         return nested_dict.dict
     while True:
@@ -402,14 +405,12 @@ def _parse_inline_table(state: ParseState) -> dict:
             raise TOMLDecodeError(f'Duplicate inline table key "{key_stem}"')
         nest[key_stem] = value
         _skip_chars(state, TOML_WS)
-        if state.char() == "}":
+        c = state.try_char()
+        if c == "}":
             state.pos += 1
             return nested_dict.dict
-        if state.char() != ",":
-            raise TOMLDecodeError(
-                f'Found "{state.char()!r}" after an inline table key value pair. '
-                + 'Expected "," or "}"'
-            )
+        if c != ",":
+            raise TOMLDecodeError("Unclosed inline table")
         state.pos += 1
         _skip_chars(state, TOML_WS)
 
@@ -425,9 +426,10 @@ def _parse_basic_str_escape_sequence(state: ParseState, *, multiline: bool) -> s
         # the doc. Error if non-whitespace is found before newline.
         if escape_id != "\\\n":
             _skip_chars(state, TOML_WS)
-            if state.done():
+            char = state.try_char()
+            if not char:
                 return ""
-            if state.char() != "\n":
+            if char != "\n":
                 raise TOMLDecodeError('Unescaped "\\" character found in a string')
             state.pos += 1
         _skip_chars(state, TOML_WS | frozenset("\n"))
@@ -459,7 +461,7 @@ def _parse_literal_str(state: ParseState) -> str:
     start_pos = state.pos
     _skip_until(state, "'\n", error_on=ILLEGAL_LITERAL_STR_CHARS)
     end_pos = state.pos
-    if state.done() or state.char() == "\n":
+    if state.try_char() in {None, "\n"}:
         raise TOMLDecodeError("Literal string closing apostrophe not found")
     state.pos += 1
     return state.src[start_pos:end_pos]
@@ -467,21 +469,30 @@ def _parse_literal_str(state: ParseState) -> str:
 
 def _parse_multiline_literal_str(state: ParseState) -> str:
     state.pos += 3
-    if state.char() == "\n":
+    c = state.try_char()
+    if not c:
+        raise TOMLDecodeError(
+            "Multiline literal string not closed before end of document"
+        )
+    if c == "\n":
         state.pos += 1
     consecutive_apostrophes = 0
     start_pos = state.pos
-    while not state.done():
-        c = state.char()
+    while True:
+        c = state.try_char()
+        if not c:
+            raise TOMLDecodeError(
+                "Multiline literal string not closed before end of document"
+            )
         state.pos += 1
         if c == "'":
             consecutive_apostrophes += 1
             if consecutive_apostrophes == 3:
                 # Add at maximum two extra apostrophes if the end sequence is 4 or 5
                 # apostrophes long instead of just 3.
-                if not state.done() and state.char() == "'":
+                if state.try_char() == "'":
                     state.pos += 1
-                    if not state.done() and state.char() == "'":
+                    if state.try_char() == "'":
                         state.pos += 1
                 return state.src[start_pos : state.pos - 3]
             continue  # pragma: no cover
@@ -491,18 +502,21 @@ def _parse_multiline_literal_str(state: ParseState) -> str:
                 f'Illegal character "{c!r}" found in a multiline literal string'
             )
 
-    raise TOMLDecodeError(
-        "Multiline literal string not closed before end of the document"
-    )
 
-
-def _parse_multiline_basic_str(state: ParseState) -> str:
+def _parse_multiline_basic_str(state: ParseState) -> str:  # noqa: C901
     state.pos += 3
-    if state.char() == "\n":
+    c = state.try_char()
+    if not c:
+        raise TOMLDecodeError("Multiline string not closed before end of the document")
+    if c == "\n":
         state.pos += 1
     result = ""
-    while not state.done():
-        c = state.char()
+    while True:
+        c = state.try_char()
+        if not c:
+            raise TOMLDecodeError(
+                "Multiline string not closed before end of the document"
+            )
         if c == '"':
             next_five = state.src[state.pos : state.pos + 5]
             if next_five == '"""""':
@@ -533,8 +547,6 @@ def _parse_multiline_basic_str(state: ParseState) -> str:
         else:
             result += c
             state.pos += 1
-
-    raise TOMLDecodeError("Multiline string not closed before end of the document")
 
 
 def _parse_regex(state: ParseState, regex: re.Pattern) -> str:
@@ -583,7 +595,7 @@ def _parse_localtime(state: ParseState, match: re.Match) -> datetime.time:
 
 def _parse_value(state: ParseState) -> Any:  # noqa: C901
     src = state.src[state.pos :]
-    char = state.char()
+    char = state.try_char()
 
     # Basic strings
     if char == '"':
