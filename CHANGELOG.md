@@ -1,6 +1,6 @@
 # Changelog
 
-## **unreleased**
+## 0.2.3
 
 - Fixed
   - Error type was not TOMLDecodeError in some obscure cases
