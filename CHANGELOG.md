@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.4
+
+- Fixed
+  - `TOMLDecodeError` is now raised when attempting to overwrite a value in an inline table's or array's namespace with a table definition
+
 ## 0.2.3
 
 - Fixed

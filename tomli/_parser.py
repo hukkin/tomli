@@ -149,7 +149,7 @@ class NestedDict:
         self.mark_explicitly_created(keys)
         return container
 
-    def append_nest_to_list(self, keys: Tuple[str, ...]) -> dict:
+    def append_nest_to_list(self, keys: Tuple[str, ...]) -> None:
         container = self.get_or_create_nest(keys[:-1])
         nest: dict = {}
         last_key = keys[-1]
@@ -161,7 +161,6 @@ class NestedDict:
         else:
             container[last_key] = [nest]
         self.mark_explicitly_created(keys)
-        return nest
 
     def is_explicitly_created(self, keys: Tuple[str, ...]) -> bool:
         return keys in self._explicitly_created
@@ -223,15 +222,15 @@ def comment_rule(state: ParseState) -> None:
 def create_dict_rule(state: ParseState) -> None:
     state.pos += 1
     skip_chars(state, TOML_WS)
-    key_parts = parse_key(state)
+    key = parse_key(state)
 
-    if state.out.is_explicitly_created(key_parts):
-        raise TOMLDecodeError(f'Can not declare "{".".join(key_parts)}" twice')
+    if state.out.is_explicitly_created(key) or state.out.is_frozen(key):
+        raise TOMLDecodeError(f'Can not declare "{".".join(key)}" twice')
     try:
-        state.out.get_or_create_nest(key_parts)
+        state.out.get_or_create_nest(key)
     except KeyError:
         raise TOMLDecodeError("Can not overwrite a value")
-    state.header_namespace = key_parts
+    state.header_namespace = key
 
     if state.try_char() != "]":
         raise TOMLDecodeError('Expected "]" at the end of a table declaration')
@@ -241,17 +240,15 @@ def create_dict_rule(state: ParseState) -> None:
 def create_list_rule(state: ParseState) -> None:
     state.pos += 2
     skip_chars(state, TOML_WS)
-    key_parts = parse_key(state)
+    key = parse_key(state)
 
-    if state.out.is_frozen(key_parts):
-        raise TOMLDecodeError(
-            f'Can not mutate immutable namespace "{".".join(key_parts)}"'
-        )
+    if state.out.is_frozen(key):
+        raise TOMLDecodeError(f'Can not mutate immutable namespace "{".".join(key)}"')
     try:
-        state.out.append_nest_to_list(key_parts)
+        state.out.append_nest_to_list(key)
     except KeyError:
         raise TOMLDecodeError("Can not overwrite a value")
-    state.header_namespace = key_parts
+    state.header_namespace = key
 
     end_marker = state.src[state.pos : state.pos + 2]
     if not end_marker == "]]":
@@ -286,13 +283,13 @@ def key_value_rule(state: ParseState) -> None:
 
 
 def parse_key_value_pair(state: ParseState) -> Tuple[Tuple[str, ...], Any]:
-    key_parts = parse_key(state)
+    key = parse_key(state)
     if state.try_char() != "=":
         raise TOMLDecodeError('Expected "=" after a key in a key-to-value mapping')
     state.pos += 1
     skip_chars(state, TOML_WS)
     value = parse_value(state)
-    return key_parts, value
+    return key, value
 
 
 def parse_key(state: ParseState) -> Tuple[str, ...]:
@@ -301,14 +298,14 @@ def parse_key(state: ParseState) -> Tuple[str, ...]:
     Move state.pos after the key, to the start of the value that
     follows. Throw if parsing fails.
     """
-    key_parts = [parse_key_part(state)]
+    key = [parse_key_part(state)]
     skip_chars(state, TOML_WS)
     while state.try_char() == ".":
         state.pos += 1
         skip_chars(state, TOML_WS)
-        key_parts.append(parse_key_part(state))
+        key.append(parse_key_part(state))
         skip_chars(state, TOML_WS)
-    return tuple(key_parts)
+    return tuple(key)
 
 
 def parse_key_part(state: ParseState) -> str:
@@ -400,8 +397,8 @@ def parse_inline_table(state: ParseState) -> dict:
         state.pos += 1
         return nested_dict.dict
     while True:
-        keys, value = parse_key_value_pair(state)
-        key_parent, key_stem = keys[:-1], keys[-1]
+        key, value = parse_key_value_pair(state)
+        key_parent, key_stem = key[:-1], key[-1]
         nest = nested_dict.get_or_create_nest(key_parent)
         if key_stem in nest:
             raise TOMLDecodeError(f'Duplicate inline table key "{key_stem}"')
