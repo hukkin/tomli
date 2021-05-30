@@ -79,14 +79,33 @@ assert isinstance(toml_dict["precision-matters"], Decimal)
 
 ### Is comment preserving round-trip parsing supported?
 
-No. The `tomli.loads` function returns a plain `dict` that is populated with builtin types and types from the standard library only
-(`list`, `int`, `str`, `datetime.datetime` etc.).
+No.
+The `tomli.loads` function returns a plain `dict` that is populated with builtin types and types from the standard library only.
 Preserving comments requires a custom type to be returned so will not be supported,
 at least not by the `tomli.loads` function.
 
 ### Is there a `dumps`, `write` or `encode` function?
 
 Not yet, and it's possible there never will be.
+This library is deliberately minimal, and most TOML use cases are read-only.
+Also, most use cases where writes are relevant could also benefit from comment and whitespace preserving reads,
+which this library does not currently support.
+
+### How do TOML types map into Python types?
+
+| TOML type        | Python type         |
+| ---------------- | ------------------- |
+| Document root    | `dict`              |
+| String           | `str`               |
+| Integer          | `int`               |
+| Float            | `float`             |
+| Boolean          | `bool`              |
+| Offset Date-Time | `datetime.datetime` |
+| Local Date-Time  | `datetime.datetime` |
+| Local Date       | `datetime.date`     |
+| Local Time       | `datetime.time`     |
+| Array            | `list`              |
+| Inline Table     | `dict`              |
 
 ## Performance
 
