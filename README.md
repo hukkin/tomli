@@ -6,13 +6,11 @@
 
 > A lil' TOML parser
 
-Tomli is a Python library for parsing [TOML](https://toml.io).
-Tomli is fully compatible with [TOML v1.0.0](https://toml.io/en/v1.0.0).
-
 **Table of Contents**  *generated with [mdformat-toc](https://github.com/hukkinj1/mdformat-toc)*
 
 <!-- mdformat-toc start --slug=github --maxlevel=6 --minlevel=2 -->
 
+- [Intro](#intro)
 - [Installation](#installation)
 - [Usage](#usage)
   - [Parse a TOML string](#parse-a-toml-string)
@@ -27,6 +25,11 @@ Tomli is fully compatible with [TOML v1.0.0](https://toml.io/en/v1.0.0).
 - [Performance](#performance)
 
 <!-- mdformat-toc end -->
+
+## Intro<a name="intro"></a>
+
+Tomli is a Python library for parsing [TOML](https://toml.io).
+Tomli is fully compatible with [TOML v1.0.0](https://toml.io/en/v1.0.0).
 
 ## Installation<a name="installation"></a>
 
