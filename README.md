@@ -9,15 +9,34 @@
 Tomli is a Python library for parsing [TOML](https://toml.io).
 Tomli is fully compatible with [TOML v1.0.0](https://toml.io/en/v1.0.0).
 
-## Installation
+**Table of Contents**  *generated with [mdformat-toc](https://github.com/hukkinj1/mdformat-toc)*
+
+<!-- mdformat-toc start --slug=github --maxlevel=6 --minlevel=2 -->
+
+- [Installation](#installation)
+- [Usage](#usage)
+  - [Parse a TOML string](#parse-a-toml-string)
+  - [Parse a TOML file](#parse-a-toml-file)
+  - [Handle invalid TOML](#handle-invalid-toml)
+  - [Construct `decimal.Decimal`s from TOML floats](#construct-decimaldecimals-from-toml-floats)
+- [FAQ](#faq)
+  - [Why this parser?](#why-this-parser)
+  - [Is comment preserving round-trip parsing supported?](#is-comment-preserving-round-trip-parsing-supported)
+  - [Is there a `dumps`, `write` or `encode` function?](#is-there-a-dumps-write-or-encode-function)
+  - [How do TOML types map into Python types?](#how-do-toml-types-map-into-python-types)
+- [Performance](#performance)
+
+<!-- mdformat-toc end -->
+
+## Installation<a name="installation"></a>
 
 ```bash
 pip install tomli
 ```
 
-## Usage
+## Usage<a name="usage"></a>
 
-### Parse a TOML string
+### Parse a TOML string<a name="parse-a-toml-string"></a>
 
 ```python
 import tomli
@@ -33,7 +52,7 @@ toml_dict = tomli.loads(toml_str)
 assert toml_dict == {"gretzky": 99, "kurri": {"jari": 17}}
 ```
 
-### Parse a TOML file
+### Parse a TOML file<a name="parse-a-toml-file"></a>
 
 ```python
 import tomli
@@ -42,7 +61,7 @@ with open("path_to_file/conf.toml", encoding="utf-8") as f:
     toml_dict = tomli.load(f)
 ```
 
-### Handle invalid TOML
+### Handle invalid TOML<a name="handle-invalid-toml"></a>
 
 ```python
 import tomli
@@ -53,7 +72,7 @@ except tomli.TOMLDecodeError:
     print("Yep, definitely not valid.")
 ```
 
-### Construct `decimal.Decimal`s from TOML floats
+### Construct `decimal.Decimal`s from TOML floats<a name="construct-decimaldecimals-from-toml-floats"></a>
 
 ```python
 from decimal import Decimal
@@ -63,9 +82,9 @@ toml_dict = tomli.loads("precision-matters = 0.982492", parse_float=Decimal)
 assert isinstance(toml_dict["precision-matters"], Decimal)
 ```
 
-## FAQ
+## FAQ<a name="faq"></a>
 
-### Why this parser?
+### Why this parser?<a name="why-this-parser"></a>
 
 - it's lil'
 - pure Python with zero dependencies
@@ -77,21 +96,21 @@ assert isinstance(toml_dict["precision-matters"], Decimal)
   repository
 - 100% test coverage
 
-### Is comment preserving round-trip parsing supported?
+### Is comment preserving round-trip parsing supported?<a name="is-comment-preserving-round-trip-parsing-supported"></a>
 
 No.
 The `tomli.loads` function returns a plain `dict` that is populated with builtin types and types from the standard library only.
 Preserving comments requires a custom type to be returned so will not be supported,
 at least not by the `tomli.loads` function.
 
-### Is there a `dumps`, `write` or `encode` function?
+### Is there a `dumps`, `write` or `encode` function?<a name="is-there-a-dumps-write-or-encode-function"></a>
 
 Not yet, and it's possible there never will be.
 This library is deliberately minimal, and most TOML use cases are read-only.
 Also, most use cases where writes are relevant could also benefit from comment and whitespace preserving reads,
 which this library does not currently support.
 
-### How do TOML types map into Python types?
+### How do TOML types map into Python types?<a name="how-do-toml-types-map-into-python-types"></a>
 
 | TOML type        | Python type         |
 | ---------------- | ------------------- |
@@ -107,7 +126,7 @@ which this library does not currently support.
 | Array            | `list`              |
 | Inline Table     | `dict`              |
 
-## Performance
+## Performance<a name="performance"></a>
 
 The `benchmark/` folder in this repository contains a performance benchmark for comparing the various Python TOML parsers.
 The benchmark can be run with `tox -e benchmark-pypi`.

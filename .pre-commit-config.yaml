@@ -4,6 +4,7 @@ repos:
   hooks:
   - id: mdformat
     additional_dependencies:
+    - mdformat-toc
     - mdformat-gfm
     - mdformat-black
 - repo: https://github.com/pre-commit/pre-commit-hooks
