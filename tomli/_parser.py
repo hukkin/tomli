@@ -47,11 +47,14 @@ class TOMLDecodeError(ValueError):
 
 
 def load(fp: TextIO, *, parse_float: ParseFloat = float) -> Dict[str, Any]:
+    """Parse TOML from a file object."""
     s = fp.read()
     return loads(s, parse_float=parse_float)
 
 
 def loads(s: str, *, parse_float: ParseFloat = float) -> Dict[str, Any]:  # noqa: C901
+    """Parse TOML from a string."""
+
     # The spec allows converting "\r\n" to "\n", even in string
     # literals. Let's do so to simplify parsing.
     s = s.replace("\r\n", "\n")
@@ -64,7 +67,7 @@ def loads(s: str, *, parse_float: ParseFloat = float) -> Dict[str, Any]:  # noqa
         # 1. Skip line leading whitespace
         skip_chars(state, TOML_WS)
 
-        # 2. Parse rules. Do one of:
+        # 2. Parse rules. Expect one of the following:
         #    - end of file
         #    - end of line
         #    - comment
@@ -92,7 +95,7 @@ def loads(s: str, *, parse_float: ParseFloat = float) -> Dict[str, Any]:  # noqa
         skip_chars(state, TOML_WS)
         skip_comment(state)
 
-        # 4. Expect end of line of end of file
+        # 4. Expect end of line or end of file
         char = state.try_char()
         if not char:
             break
