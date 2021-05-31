@@ -24,6 +24,7 @@ ILLEGAL_MULTILINE_LITERAL_STR_CHARS = ASCII_CTRL - frozenset("\t\n")
 ILLEGAL_COMMENT_CHARS = ASCII_CTRL - frozenset("\t")
 
 TOML_WS = frozenset(" \t")
+TOML_WS_AND_NEWLINE = TOML_WS | {"\n"}
 BARE_KEY_CHARS = frozenset(string.ascii_letters + string.digits + "-_")
 
 BASIC_STR_ESCAPE_REPLACEMENTS = MappingProxyType(
@@ -376,10 +377,9 @@ def parse_array(state: ParseState) -> list:
 
 
 def skip_comments_and_array_ws(state: ParseState) -> None:
-    array_ws = TOML_WS | {"\n"}
     while True:
         pos_before_skip = state.pos
-        skip_chars(state, array_ws)
+        skip_chars(state, TOML_WS_AND_NEWLINE)
         skip_comment(state)
         if state.pos == pos_before_skip:
             break
@@ -431,7 +431,7 @@ def parse_basic_str_escape_sequence(state: ParseState, *, multiline: bool) -> st
             if char != "\n":
                 raise TOMLDecodeError('Unescaped "\\" character found in a string')
             state.pos += 1
-        skip_chars(state, TOML_WS | frozenset("\n"))
+        skip_chars(state, TOML_WS_AND_NEWLINE)
         return ""
     if escape_id in BASIC_STR_ESCAPE_REPLACEMENTS:
         return BASIC_STR_ESCAPE_REPLACEMENTS[escape_id]
@@ -578,7 +578,7 @@ def parse_datetime(
             )
         )
     elif "Z" in match_str:
-        tz = datetime.timezone(datetime.timedelta())
+        tz = datetime.timezone.utc
     else:  # local date-time
         tz = None
     return datetime.datetime(year, month, day, hour, minute, sec, micros, tzinfo=tz)
