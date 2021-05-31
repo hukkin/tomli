@@ -187,15 +187,17 @@ def skip_chars(state: ParseState, chars: Iterable[str]) -> None:
         pass
 
 
-def skip_until(
-    state: ParseState, chars: Iterable[str], *, error_on: Iterable[str]
-) -> None:
+def skip_until(state: ParseState, expect_char: str, *, error_on: Iterable[str]) -> None:
+    """Skip until `expect_char` is found.
+
+    Error if end of file or one of `error_on` is found.
+    """
     while True:
         try:
             char = state.src[state.pos]
         except IndexError:
-            break
-        if char in chars:
+            raise TOMLDecodeError(f'Expected but did not find "{expect_char!r}"')
+        if char == expect_char:
             break
         if char in error_on:
             raise TOMLDecodeError(f'Invalid character "{char!r}" found')
@@ -276,7 +278,7 @@ def key_value_rule(state: ParseState) -> None:
         raise TOMLDecodeError("Can not overwrite a value")
     if key_stem in nest:
         raise TOMLDecodeError(f'Can not define "{".".join(abs_key)}" twice')
-    # Mark inline table and array namespaces as recursively immutable
+    # Mark inline table and array namespaces recursively immutable
     if isinstance(value, (dict, list)):
         state.out.mark_explicitly_created(abs_key)
         state.out.mark_frozen(abs_key)
@@ -456,14 +458,12 @@ def parse_hex_char(state: ParseState, hex_len: int) -> str:
 
 
 def parse_literal_str(state: ParseState) -> str:
-    state.pos += 1
+    state.pos += 1  # Skip starting apostrophe
     start_pos = state.pos
-    skip_until(state, "'\n", error_on=ILLEGAL_LITERAL_STR_CHARS)
-    end_pos = state.pos
-    if state.try_char() in {None, "\n"}:
-        raise TOMLDecodeError("Literal string closing apostrophe not found")
-    state.pos += 1
-    return state.src[start_pos:end_pos]
+    skip_until(state, "'", error_on=ILLEGAL_LITERAL_STR_CHARS)
+    literal_str = state.src[start_pos : state.pos]
+    state.pos += 1  # Skip ending apostrophe
+    return literal_str
 
 
 def parse_multiline_literal_str(state: ParseState) -> str:
