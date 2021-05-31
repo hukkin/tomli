@@ -119,6 +119,7 @@ commands =
 
 
 [tool.coverage.run]
+branch = true
 omit = ["tests/*", "*/site-packages/*"]
 
 [tool.coverage.report]

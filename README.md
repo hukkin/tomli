@@ -97,7 +97,7 @@ assert isinstance(toml_dict["precision-matters"], Decimal)
   soon to be merged to the official
   [compliance tests for TOML](https://github.com/toml-lang/compliance)
   repository
-- 100% test coverage
+- 100% branch coverage
 
 ### Is comment preserving round-trip parsing supported?<a name="is-comment-preserving-round-trip-parsing-supported"></a>
 
