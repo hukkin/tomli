@@ -137,9 +137,9 @@ class NestedDict:
         # applies recursively to sub-structures.
         self._frozen: Set[Tuple[str, ...]] = set()
 
-    def get_or_create_nest(self, keys: Tuple[str, ...]) -> dict:
+    def get_or_create_nest(self, key: Tuple[str, ...]) -> dict:
         container: Any = self.dict
-        for k in keys:
+        for k in key:
             if k not in container:
                 container[k] = {}
             container = container[k]
@@ -147,13 +147,13 @@ class NestedDict:
                 container = container[-1]
             if not isinstance(container, dict):
                 raise KeyError("There is no nest behind this key")
-        self.mark_explicitly_created(keys)
+        self._explicitly_created.add(key)
         return container
 
-    def append_nest_to_list(self, keys: Tuple[str, ...]) -> None:
-        container = self.get_or_create_nest(keys[:-1])
+    def append_nest_to_list(self, key: Tuple[str, ...]) -> None:
+        container = self.get_or_create_nest(key[:-1])
         nest: dict = {}
-        last_key = keys[-1]
+        last_key = key[-1]
         if last_key in container:
             list_ = container[last_key]
             if not isinstance(list_, list):
@@ -161,22 +161,19 @@ class NestedDict:
             list_.append(nest)
         else:
             container[last_key] = [nest]
-        self.mark_explicitly_created(keys)
+        self._explicitly_created.add(key)
 
-    def is_explicitly_created(self, keys: Tuple[str, ...]) -> bool:
-        return keys in self._explicitly_created
+    def is_explicitly_created(self, key: Tuple[str, ...]) -> bool:
+        return key in self._explicitly_created
 
-    def mark_explicitly_created(self, keys: Tuple[str, ...]) -> None:
-        self._explicitly_created.add(keys)
-
-    def is_frozen(self, keys: Tuple[str, ...]) -> bool:
+    def is_frozen(self, key: Tuple[str, ...]) -> bool:
         for frozen_space in self._frozen:
-            if keys[: len(frozen_space)] == frozen_space:
+            if key[: len(frozen_space)] == frozen_space:
                 return True
         return False
 
-    def mark_frozen(self, keys: Tuple[str, ...]) -> None:
-        self._frozen.add(keys)
+    def mark_frozen(self, key: Tuple[str, ...]) -> None:
+        self._frozen.add(key)
 
 
 def skip_chars(state: ParseState, chars: Iterable[str]) -> None:
@@ -280,7 +277,6 @@ def key_value_rule(state: ParseState) -> None:
         raise TOMLDecodeError(f'Can not define "{".".join(abs_key)}" twice')
     # Mark inline table and array namespaces recursively immutable
     if isinstance(value, (dict, list)):
-        state.out.mark_explicitly_created(abs_key)
         state.out.mark_frozen(abs_key)
     nest[key_stem] = value
 
