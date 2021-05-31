@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.6
+
+- Added
+  - Over 5% performance boost
+
 ## 0.2.5
 
 - Fixed
