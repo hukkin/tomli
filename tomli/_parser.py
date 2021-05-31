@@ -177,11 +177,15 @@ class NestedDict:
 
 
 def skip_chars(state: ParseState, chars: Iterable[str]) -> None:
+    # Use local variables for performance. This is the hottest loop in the
+    # entire parser so the speedup seems to be well over 5% in CPython 3.8.
+    src, pos = state.src, state.pos
     try:
-        while state.src[state.pos] in chars:
-            state.pos += 1
+        while src[pos] in chars:
+            pos += 1
     except IndexError:
         pass
+    state.pos = pos
 
 
 def skip_until(state: ParseState, expect_char: str, *, error_on: Iterable[str]) -> None:
