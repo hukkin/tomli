@@ -588,6 +588,14 @@ def parse_localtime(state: ParseState, match: re.Match) -> datetime.time:
     return datetime.time(hour, minute, sec, micros)
 
 
+def parse_dec_or_float(state: ParseState, match: re.Match) -> Any:
+    match_str = match.group()
+    state.pos += len(match_str)
+    if "." in match_str or "e" in match_str or "E" in match_str:
+        return state.parse_float(match_str)
+    return int(match_str)
+
+
 def parse_value(state: ParseState) -> Any:  # noqa: C901
     src = state.src[state.pos :]
     char = state.try_char()
@@ -603,14 +611,6 @@ def parse_value(state: ParseState) -> Any:  # noqa: C901
         if src.startswith("'''"):
             return parse_multiline_literal_str(state)
         return parse_literal_str(state)
-
-    # Inline tables
-    if char == "{":
-        return parse_inline_table(state)
-
-    # Arrays
-    if char == "[":
-        return parse_array(state)
 
     # Booleans
     if src.startswith("true"):
@@ -630,14 +630,33 @@ def parse_value(state: ParseState) -> Any:  # noqa: C901
 
     # Non-decimal integers
     if src.startswith("0x"):
+        state.pos += 2
         hex_str = parse_regex(state, _re.HEX)
         return int(hex_str, 16)
     if src.startswith("0o"):
+        state.pos += 2
         oct_str = parse_regex(state, _re.OCT)
         return int(oct_str, 8)
     if src.startswith("0b"):
+        state.pos += 2
         bin_str = parse_regex(state, _re.BIN)
         return int(bin_str, 2)
+
+    # Decimal integers and "normal" floats.
+    # The regex will greedily match any type starting with a decimal
+    # char, so needs to be located after handling of non-decimal ints,
+    # and dates and times.
+    dec_match = _re.DEC_OR_FLOAT.match(src)
+    if dec_match:
+        return parse_dec_or_float(state, dec_match)
+
+    # Arrays
+    if char == "[":
+        return parse_array(state)
+
+    # Inline tables
+    if char == "{":
+        return parse_inline_table(state)
 
     # Special floats
     if src[:3] in {"inf", "nan"}:
@@ -646,14 +665,5 @@ def parse_value(state: ParseState) -> Any:  # noqa: C901
     if src[:4] in {"-inf", "+inf", "-nan", "+nan"}:
         state.pos += 4
         return state.parse_float(src[:4])
-
-    # Decimal integers and "normal" floats
-    dec_match = _re.DEC_OR_FLOAT.match(src)
-    if dec_match:
-        match_str = dec_match.group()
-        state.pos += len(match_str)
-        if "." in match_str or "e" in match_str or "E" in match_str:
-            return state.parse_float(match_str)
-        return int(match_str)
 
     raise TOMLDecodeError("Invalid value")
