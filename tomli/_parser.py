@@ -145,8 +145,8 @@ class NestedDict:
             container = container[k]
             if isinstance(container, list):
                 container = container[-1]
-        if not isinstance(container, dict):
-            raise KeyError("There is no nest behind this key")
+            if not isinstance(container, dict):
+                raise KeyError("There is no nest behind this key")
         self.mark_explicitly_created(keys)
         return container
 
