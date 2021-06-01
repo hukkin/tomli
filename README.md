@@ -85,23 +85,30 @@ toml_dict = tomli.loads("precision-matters = 0.982492", parse_float=Decimal)
 assert isinstance(toml_dict["precision-matters"], Decimal)
 ```
 
+Note that you may replace `decimal.Decimal` with any callable that converts a TOML float from string to any Python type (except `list` or `dict`).
+The `decimal.Decimal` type is, however, the most typical replacement when float inaccuracies can not be tolerated.
+
 ## FAQ<a name="faq"></a>
 
 ### Why this parser?<a name="why-this-parser"></a>
 
 - it's lil'
 - pure Python with zero dependencies
-- as fast as pure Python allows
-- 100% spec compliance: passes all tests in
+- the fastest pure Python parser [\*](#performance):
+  10x as fast as [tomlkit](https://pypi.org/project/tomlkit/),
+  1.4x as fast as [toml](https://pypi.org/project/toml/)
+- outputs [basic data types](#how-do-toml-types-map-into-python-types) only
+- 100% spec compliant: passes all tests in
   [a test set](https://github.com/toml-lang/compliance/pull/8)
   soon to be merged to the official
   [compliance tests for TOML](https://github.com/toml-lang/compliance)
   repository
-- 100% branch coverage
+- thoroughly tested: 100% branch coverage
 
 ### Is comment preserving round-trip parsing supported?<a name="is-comment-preserving-round-trip-parsing-supported"></a>
 
 No.
+
 The `tomli.loads` function returns a plain `dict` that is populated with builtin types and types from the standard library only.
 Preserving comments requires a custom type to be returned so will not be supported,
 at least not by the `tomli.loads` function.
@@ -109,6 +116,7 @@ at least not by the `tomli.loads` function.
 ### Is there a `dumps`, `write` or `encode` function?<a name="is-there-a-dumps-write-or-encode-function"></a>
 
 Not yet, and it's possible there never will be.
+
 This library is deliberately minimal, and most TOML use cases are read-only.
 Also, most use cases where writes are relevant could also benefit from comment and whitespace preserving reads,
 which this library does not currently support.
@@ -117,7 +125,7 @@ which this library does not currently support.
 
 | TOML type        | Python type         |
 | ---------------- | ------------------- |
-| Document root    | `dict`              |
+| Document Root    | `dict`              |
 | String           | `str`               |
 | Integer          | `int`               |
 | Float            | `float`             |
