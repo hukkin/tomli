@@ -117,6 +117,7 @@ description = run the benchmark script against a local Tomli version
 deps =
     -r benchmark/requirements.txt
 commands =
+    python --version
     python benchmark/run.py
 
 [testenv:benchmark-pypi]
@@ -126,6 +127,7 @@ deps =
     tomli
     -r benchmark/requirements.txt
 commands =
+    python --version
     python benchmark/run.py
 """
 

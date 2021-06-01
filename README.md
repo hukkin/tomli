@@ -144,12 +144,12 @@ The benchmark can be run with `tox -e benchmark-pypi`.
 On June 1 2021 running the benchmark output the following on my notebook computer.
 
 ```console
-foo@bar:~/dev/tomli$ python --version
-Python 3.8.0
 foo@bar:~/dev/tomli$ tox -e benchmark-pypi
 benchmark-pypi installed: attrs==19.3.0,click==7.1.2,pytomlpp==1.0.2,qtoml==0.3.0,rtoml==0.6.1,toml==0.10.2,tomli==0.2.6,tomlkit==0.7.2
 benchmark-pypi run-test-pre: PYTHONHASHSEED='3747534643'
-benchmark-pypi run-test: commands[0] | python benchmark/run.py
+benchmark-pypi run-test: commands[0] | python --version
+Python 3.8.0
+benchmark-pypi run-test: commands[1] | python benchmark/run.py
 Parsing data.toml 5000 times:
 ------------------------------------------------------
     parser |  exec time | performance (more is better)
