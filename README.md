@@ -139,6 +139,8 @@ which this library does not currently support.
 
 ## Performance<a name="performance"></a>
 
+
+
 The `benchmark/` folder in this repository contains a performance benchmark for comparing the various Python TOML parsers.
 The benchmark can be run with `tox -e benchmark-pypi`.
 On June 1 2021 running the benchmark output the following on my notebook computer.
