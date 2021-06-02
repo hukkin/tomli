@@ -9,8 +9,16 @@ def test_line_and_col():
     assert str(exc_info.value) == "Invalid value (at line 1, column 5)"
 
     with pytest.raises(tomli.TOMLDecodeError) as exc_info:
+        tomli.loads(".")
+    assert str(exc_info.value) == "Invalid statement (at line 1, column 1)"
+
+    with pytest.raises(tomli.TOMLDecodeError) as exc_info:
         tomli.loads("\n\nval=.")
     assert str(exc_info.value) == "Invalid value (at line 3, column 5)"
+
+    with pytest.raises(tomli.TOMLDecodeError) as exc_info:
+        tomli.loads("\n\n.")
+    assert str(exc_info.value) == "Invalid statement (at line 3, column 1)"
 
 
 def test_missing_value():

@@ -47,23 +47,6 @@ class TOMLDecodeError(ValueError):
     """An error raised if a document is not valid TOML."""
 
 
-def suffix_location(state: "ParseState", msg: str) -> str:
-    """Suffix an error message with location in source."""
-
-    def location_repr(state: "ParseState") -> str:
-        if not state.try_char():
-            return "end of document"
-        line = state.src.count("\n", 0, state.pos) + 1
-        column = 1
-        for c in state.src[: state.pos][::-1]:
-            if c == "\n":
-                break
-            column += 1
-        return f"line {line}, column {column}"
-
-    return f"{msg} (at {location_repr(state)})"
-
-
 def load(fp: TextIO, *, parse_float: ParseFloat = float) -> Dict[str, Any]:
     """Parse TOML from a file object."""
     s = fp.read()
@@ -107,7 +90,7 @@ def loads(s: str, *, parse_float: ParseFloat = float) -> Dict[str, Any]:  # noqa
         elif char == "[":
             create_dict_rule(state)
         else:
-            raise TOMLDecodeError(suffix_location(state, "Invalid TOML statement"))
+            raise TOMLDecodeError(suffix_location(state, "Invalid statement"))
 
         # 3. Skip trailing whitespace and line comment
         skip_chars(state, TOML_WS)
@@ -231,6 +214,15 @@ def skip_until(state: ParseState, expect_char: str, *, error_on: Iterable[str]) 
 def skip_comment(state: ParseState) -> None:
     if state.try_char() == "#":
         comment_rule(state)
+
+
+def skip_comments_and_array_ws(state: ParseState) -> None:
+    while True:
+        pos_before_skip = state.pos
+        skip_chars(state, TOML_WS_AND_NEWLINE)
+        skip_comment(state)
+        if state.pos == pos_before_skip:
+            break
 
 
 def comment_rule(state: ParseState) -> None:
@@ -422,15 +414,6 @@ def parse_array(state: ParseState) -> list:
         if c == "]":
             state.pos += 1
             return array
-
-
-def skip_comments_and_array_ws(state: ParseState) -> None:
-    while True:
-        pos_before_skip = state.pos
-        skip_chars(state, TOML_WS_AND_NEWLINE)
-        skip_comment(state)
-        if state.pos == pos_before_skip:
-            break
 
 
 def parse_inline_table(state: ParseState) -> dict:
@@ -729,3 +712,20 @@ def parse_value(state: ParseState) -> Any:  # noqa: C901
         return state.parse_float(src[:4])
 
     raise TOMLDecodeError(suffix_location(state, "Invalid value"))
+
+
+def suffix_location(state: ParseState, msg: str) -> str:
+    """Suffix an error message with location in source."""
+
+    def location_repr(state: ParseState) -> str:
+        if not state.try_char():
+            return "end of document"
+        line = state.src.count("\n", 0, state.pos) + 1
+        column = 1
+        for c in state.src[: state.pos][::-1]:
+            if c == "\n":
+                break
+            column += 1
+        return f"line {line}, column {column}"
+
+    return f"{msg} (at {location_repr(state)})"
