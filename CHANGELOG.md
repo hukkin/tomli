@@ -1,6 +1,6 @@
 # Changelog
 
-## **unreleased**
+## 0.2.7
 
 - Added
   - Improved `TOMLDecodeError` error messages.
