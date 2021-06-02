@@ -723,11 +723,10 @@ def suffix_location(state: ParseState, msg: str) -> str:
         if not state.try_char():
             return "end of document"
         line = state.src.count("\n", 0, state.pos) + 1
-        column = 1
-        for c in state.src[: state.pos][::-1]:
-            if c == "\n":
-                break
-            column += 1
+        if line == 1:
+            column = state.pos + 1
+        else:
+            column = state.pos - state.src.rindex("\n", 0, state.pos)
         return f"line {line}, column {column}"
 
     return f"{msg} (at {location_repr(state)})"
