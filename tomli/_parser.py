@@ -18,13 +18,13 @@ ASCII_CTRL = frozenset(chr(i) for i in range(32)) | frozenset(chr(127))
 ILLEGAL_BASIC_STR_CHARS = ASCII_CTRL - frozenset("\t")
 ILLEGAL_MULTILINE_BASIC_STR_CHARS = ASCII_CTRL - frozenset("\t\n\r")
 
-ILLEGAL_LITERAL_STR_CHARS = ASCII_CTRL - frozenset("\t")
+ILLEGAL_LITERAL_STR_CHARS = ILLEGAL_BASIC_STR_CHARS
 ILLEGAL_MULTILINE_LITERAL_STR_CHARS = ASCII_CTRL - frozenset("\t\n")
 
-ILLEGAL_COMMENT_CHARS = ASCII_CTRL - frozenset("\t")
+ILLEGAL_COMMENT_CHARS = ILLEGAL_BASIC_STR_CHARS
 
 TOML_WS = frozenset(" \t")
-TOML_WS_AND_NEWLINE = TOML_WS | {"\n"}
+TOML_WS_AND_NEWLINE = TOML_WS | frozenset("\n")
 BARE_KEY_CHARS = frozenset(string.ascii_letters + string.digits + "-_")
 
 BASIC_STR_ESCAPE_REPLACEMENTS = MappingProxyType(
