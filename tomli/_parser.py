@@ -517,25 +517,22 @@ def parse_multiline_basic_str(state: ParseState) -> str:  # noqa: C901
                 "Multiline string not closed before end of the document"
             )
         if c == '"':
-            next_five = state.src[state.pos : state.pos + 5]
-            if next_five == '"""""':
-                result += '""'
-                state.pos += 5
-                return result
-            if next_five.startswith('""""'):
+            state.pos += 1
+            if state.try_char() != '"':
                 result += '"'
-                state.pos += 4
-                return result
-            if next_five.startswith('"""'):
-                state.pos += 3
-                return result
-            if next_five.startswith('""'):
+                continue
+            state.pos += 1
+            if state.try_char() != '"':
                 result += '""'
-                state.pos += 2
-            else:
-                result += '"'
-                state.pos += 1
-            continue
+                continue
+            state.pos += 1
+            if state.try_char() != '"':
+                return result
+            state.pos += 1
+            if state.try_char() != '"':
+                return result + '"'
+            state.pos += 1
+            return result + '""'
         if c in ILLEGAL_MULTILINE_BASIC_STR_CHARS:
             raise TOMLDecodeError(
                 f'Illegal character "{c!r}" found in a multiline string'
