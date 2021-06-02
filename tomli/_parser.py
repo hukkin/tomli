@@ -361,7 +361,9 @@ def parse_key_part(state: ParseState) -> str:
         return parse_literal_str(state)
     if char == '"':
         return parse_basic_str(state)
-    raise TOMLDecodeError(suffix_location(state, "Invalid key definition"))
+    raise TOMLDecodeError(
+        suffix_location(state, "Invalid initial character for a key part")
+    )
 
 
 def parse_basic_str(state: ParseState) -> str:
