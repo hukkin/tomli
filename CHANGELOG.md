@@ -1,5 +1,11 @@
 # Changelog
 
+## **unreleased**
+
+- Added
+  - Improved `TOMLDecodeError` error messages.
+    Line and column are included when applicable.
+
 ## 0.2.6
 
 - Added
