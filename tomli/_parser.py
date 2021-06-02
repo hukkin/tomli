@@ -255,7 +255,7 @@ def create_list_rule(state: ParseState) -> None:
     state.header_namespace = key
 
     end_marker = state.src[state.pos : state.pos + 2]
-    if not end_marker == "]]":
+    if end_marker != "]]":
         raise TOMLDecodeError(
             f'Found "{end_marker!r}" at the end of an array declaration. Expected "]]"'
         )
@@ -418,7 +418,7 @@ def parse_inline_table(state: ParseState) -> dict:
 
 def parse_basic_str_escape_sequence(state: ParseState, *, multiline: bool) -> str:
     escape_id = state.src[state.pos : state.pos + 2]
-    if not len(escape_id) == 2:
+    if len(escape_id) != 2:
         raise TOMLDecodeError("String value not closed before end of document")
     state.pos += 2
 
@@ -446,7 +446,7 @@ def parse_basic_str_escape_sequence(state: ParseState, *, multiline: bool) -> st
 
 def parse_hex_char(state: ParseState, hex_len: int) -> str:
     hex_str = state.src[state.pos : state.pos + hex_len]
-    if not len(hex_str) == hex_len or any(c not in string.hexdigits for c in hex_str):
+    if len(hex_str) != hex_len or any(c not in string.hexdigits for c in hex_str):
         raise TOMLDecodeError("Invalid hex value")
     state.pos += hex_len
     hex_int = int(hex_str, 16)
