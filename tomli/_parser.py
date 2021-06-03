@@ -656,12 +656,12 @@ def parse_value(state: ParseState) -> Any:  # noqa: C901
 
     # Booleans
     if char == "t":
-        if not state.src[state.pos + 1 : state.pos + 4] == "rue":
+        if state.src[state.pos + 1 : state.pos + 4] != "rue":
             raise TOMLDecodeError(suffix_coord(state, "Invalid value"))
         state.pos += 4
         return True
     if char == "f":
-        if not state.src[state.pos + 1 : state.pos + 5] == "alse":
+        if state.src[state.pos + 1 : state.pos + 5] != "alse":
             raise TOMLDecodeError(suffix_coord(state, "Invalid value"))
         state.pos += 5
         return False
