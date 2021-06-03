@@ -105,7 +105,7 @@ def loads(s: str, *, parse_float: ParseFloat = float) -> Dict[str, Any]:  # noqa
         else:
             raise TOMLDecodeError(
                 suffix_coord(
-                    state, "End of line or end of document not found after a statement"
+                    state, "Expected newline or end of document after a statement"
                 )
             )
 
@@ -203,7 +203,7 @@ def skip_until(
             if error_on_eof:
                 state.pos = pos
                 raise TOMLDecodeError(
-                    suffix_coord(state, f'Expected but did not find "{expect_char!r}"')
+                    suffix_coord(state, f'Expected "{expect_char!r}"')
                 )
             break
         if char == expect_char:
@@ -211,7 +211,7 @@ def skip_until(
         if char in error_on:
             state.pos = pos
             raise TOMLDecodeError(
-                suffix_coord(state, f'Invalid character "{char!r}" found')
+                suffix_coord(state, f'Found invalid character "{char!r}"')
             )
         pos += 1
     state.pos = pos
@@ -443,9 +443,7 @@ def parse_inline_table(state: ParseState) -> dict:
 def parse_basic_str_escape_sequence(state: ParseState, *, multiline: bool) -> str:
     escape_id = state.src[state.pos : state.pos + 2]
     if len(escape_id) != 2:
-        raise TOMLDecodeError(
-            suffix_coord(state, "String value not closed before end of document")
-        )
+        raise TOMLDecodeError(suffix_coord(state, "Unterminated string"))
     state.pos += 2
 
     if multiline and escape_id in {"\\ ", "\\\t", "\\\n"}:
@@ -457,9 +455,7 @@ def parse_basic_str_escape_sequence(state: ParseState, *, multiline: bool) -> st
             if not char:
                 return ""
             if char != "\n":
-                raise TOMLDecodeError(
-                    suffix_coord(state, 'Unescaped "\\" character found in a string')
-                )
+                raise TOMLDecodeError(suffix_coord(state, 'Unescaped "\\" in a string'))
             state.pos += 1
         skip_chars(state, TOML_WS_AND_NEWLINE)
         return ""
@@ -469,9 +465,7 @@ def parse_basic_str_escape_sequence(state: ParseState, *, multiline: bool) -> st
         return parse_hex_char(state, 4)
     if escape_id == "\\U":
         return parse_hex_char(state, 8)
-    raise TOMLDecodeError(
-        suffix_coord(state, 'Unescaped "\\" character found in a string')
-    )
+    raise TOMLDecodeError(suffix_coord(state, 'Unescaped "\\" in a string'))
 
 
 def parse_hex_char(state: ParseState, hex_len: int) -> str:
