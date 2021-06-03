@@ -180,7 +180,7 @@ class NestedDict:
 
 def skip_chars(state: ParseState, chars: Iterable[str]) -> None:
     # Use local variables for performance. This is the hottest loop in the
-    # entire parser so the speedup seems to be well over 5% in CPython 3.8.
+    # entire parser so the speedup seems to be well over 5% (CPython 3.8).
     src, pos = state.src, state.pos
     try:
         while src[pos] in chars:
@@ -190,25 +190,33 @@ def skip_chars(state: ParseState, chars: Iterable[str]) -> None:
     state.pos = pos
 
 
-def skip_until(state: ParseState, expect_char: str, *, error_on: Iterable[str]) -> None:
-    """Skip until `expect_char` is found.
-
-    Error if end of file or one of `error_on` is found.
-    """
+def skip_until(
+    state: ParseState, expect_char: str, *, error_on: Iterable[str], error_on_eof: bool
+) -> None:
+    # Use local variables for performance. This is a hot loop so the entire
+    # parser seems to be a few percent faster as result (CPython 3.8).
+    src, pos = state.src, state.pos
     while True:
         try:
-            char = state.src[state.pos]
+            char = src[pos]
         except IndexError:
-            raise TOMLDecodeError(
-                suffix_location(state, f'Expected but did not find "{expect_char!r}"')
-            )
+            if error_on_eof:
+                state.pos = pos
+                raise TOMLDecodeError(
+                    suffix_location(
+                        state, f'Expected but did not find "{expect_char!r}"'
+                    )
+                )
+            break
         if char == expect_char:
             break
         if char in error_on:
+            state.pos = pos
             raise TOMLDecodeError(
                 suffix_location(state, f'Invalid character "{char!r}" found')
             )
-        state.pos += 1
+        pos += 1
+    state.pos = pos
 
 
 def skip_comment(state: ParseState) -> None:
@@ -227,17 +235,7 @@ def skip_comments_and_array_ws(state: ParseState) -> None:
 
 def comment_rule(state: ParseState) -> None:
     state.pos += 1
-    while True:
-        c = state.try_char()
-        if not c:
-            break
-        if c == "\n":
-            break
-        if c in ILLEGAL_COMMENT_CHARS:
-            raise TOMLDecodeError(
-                suffix_location(state, f'Illegal character "{c!r}" found in a comment')
-            )
-        state.pos += 1
+    skip_until(state, "\n", error_on=ILLEGAL_COMMENT_CHARS, error_on_eof=False)
 
 
 def create_dict_rule(state: ParseState) -> None:
@@ -501,7 +499,7 @@ def parse_hex_char(state: ParseState, hex_len: int) -> str:
 def parse_literal_str(state: ParseState) -> str:
     state.pos += 1  # Skip starting apostrophe
     start_pos = state.pos
-    skip_until(state, "'", error_on=ILLEGAL_LITERAL_STR_CHARS)
+    skip_until(state, "'", error_on=ILLEGAL_LITERAL_STR_CHARS, error_on_eof=True)
     literal_str = state.src[start_pos : state.pos]
     state.pos += 1  # Skip ending apostrophe
     return literal_str
