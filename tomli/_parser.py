@@ -180,7 +180,7 @@ class NestedDict:
 
 def skip_chars(state: ParseState, chars: Iterable[str]) -> None:
     # Use local variables for performance. This is the hottest loop in the
-    # entire parser so the speedup seems to be well over 5% in CPython 3.8.
+    # entire parser so the speedup seems to be well over 5% (CPython 3.8).
     src, pos = state.src, state.pos
     try:
         while src[pos] in chars:
@@ -193,15 +193,11 @@ def skip_chars(state: ParseState, chars: Iterable[str]) -> None:
 def skip_until(
     state: ParseState, expect_char: str, *, error_on: Iterable[str], error_on_eof: bool
 ) -> None:
-    """Skip until `expect_char` is found.
-
-    Error if end of file or one of `error_on` is found.
-    """
-    # Use local variables for performance.
+    # Use local variables for performance. This is a hot loop so the entire
+    # parser seems to be a few percent faster as result (CPython 3.8).
     src, pos = state.src, state.pos
     while True:
         try:
-            # char = state.src[state.pos]
             char = src[pos]
         except IndexError:
             if error_on_eof:
@@ -238,7 +234,6 @@ def skip_comments_and_array_ws(state: ParseState) -> None:
 
 
 def comment_rule(state: ParseState) -> None:
-    # Use local variables for performance.
     state.pos += 1
     skip_until(state, "\n", error_on=ILLEGAL_COMMENT_CHARS, error_on_eof=False)
 
