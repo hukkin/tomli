@@ -404,10 +404,7 @@ def parse_array(state: ParseState) -> list:
 
         skip_comments_and_array_ws(state)
 
-        c = state.try_char()
-        if not c:
-            raise TOMLDecodeError("Unclosed array")
-        if c == "]":
+        if state.try_char() == "]":
             state.pos += 1
             return array
 
