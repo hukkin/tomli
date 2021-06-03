@@ -656,15 +656,13 @@ def parse_value(state: ParseState) -> Any:  # noqa: C901
 
     # Booleans
     if char == "t":
-        if state.src[state.pos + 1 : state.pos + 4] != "rue":
-            raise TOMLDecodeError(suffix_coord(state, "Invalid value"))
-        state.pos += 4
-        return True
+        if state.src[state.pos + 1 : state.pos + 4] == "rue":
+            state.pos += 4
+            return True
     if char == "f":
-        if state.src[state.pos + 1 : state.pos + 5] != "alse":
-            raise TOMLDecodeError(suffix_coord(state, "Invalid value"))
-        state.pos += 5
-        return False
+        if state.src[state.pos + 1 : state.pos + 5] == "alse":
+            state.pos += 5
+            return False
 
     # Dates and times
     date_match = _re.DATETIME.match(state.src, state.pos)
