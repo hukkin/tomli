@@ -1,5 +1,10 @@
 # Changelog
 
+## **unreleased**
+
+- Added
+  - Significant boost to comment parsing speed
+
 ## 0.2.7
 
 - Added
