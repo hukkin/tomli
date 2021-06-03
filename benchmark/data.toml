@@ -19,16 +19,16 @@ naughty-self-close = 1916-09-21T01:53:27-02:59
 neck = 29653
 neck-crime-wistful = 1998-12-07
 rest-afraid = [
-    1912-06-23T07:00:07-07:46,
-    1910-11-17T13:10:34,
-    2014-08-03T04:37:12-06:36,
-    1966-11-22T18:08:23+06:10,
-    1985-03-01T08:11:38,
-    1976-09-04T20:46:46+00:29,
-    1964-05-18T20:13:27-01:25,
+    1912-06-23T07:00:07-07:46,  # this is a datetime
+    1910-11-17T13:10:34,        # pretty sure this is also a datetime
+    2014-08-03T04:37:12-06:36,  # and this
+    1966-11-22T18:08:23+06:10,  # and this
+    1985-03-01T08:11:38,        # what about this?
+    1976-09-04T20:46:46+00:29,  # yes that also
+    1964-05-18T20:13:27-01:25,  # ...
     1961-10-14T11:03:51.011555+06:23,
-    2005-07-13T02:57:15-01:46,
-    2007-02-01T17:09:54-08:45,
+    2005-07-13T02:57:15-01:46,  # wonder how many comments there are typically in
+    2007-02-01T17:09:54-08:45,  # a TOML file of this size
     1952-03-06T09:15:04+01:44,
     1962-12-25T23:00:11+04:28
 ]
@@ -106,6 +106,13 @@ name = "\n\nkahvi"
     name = "\"riisi\""
 [[dynamic-arrays.products]]
 name = "puuro \\ riisipuuro"
+
+
+# Fusce sit amet risus vel sapien vestibulum interdum. Aliquam finibus
+# finibus nibh, sed mattis nulla lacinia in. Nunc ac volutpat massa,
+# at fringilla dui. In dignissim pellentesque luctus. Cras ac ex metus.
+# Duis ut molestie augue. Donec vitae nulla massa. Sed blandit diam sit
+# amet mauris posuere consectetur.
 
 [multiline-strings]
 literal-str = '''

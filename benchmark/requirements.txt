@@ -1,6 +1,6 @@
 # NOTE
-# Tomli itself is not included here because these tox is used
-# to read this file and install the deps, and it handles the Tomli
+# Tomli itself is not included here because tox is used to read
+# this file and install the deps, and it handles the Tomli
 # installation separately.
 pytomlpp
 toml
