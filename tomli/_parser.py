@@ -242,9 +242,7 @@ def create_dict_rule(state: ParseState) -> None:
     key = parse_key(state)
 
     if state.out.is_explicitly_created(key) or state.out.is_frozen(key):
-        raise TOMLDecodeError(
-            suffix_coord(state, f'Can not declare "{".".join(key)}" twice')
-        )
+        raise TOMLDecodeError(suffix_coord(state, f"Can not declare {key} twice"))
     try:
         state.out.get_or_create_nest(key)
     except KeyError:
@@ -265,7 +263,7 @@ def create_list_rule(state: ParseState) -> None:
 
     if state.out.is_frozen(key):
         raise TOMLDecodeError(
-            suffix_coord(state, f'Can not mutate immutable namespace "{".".join(key)}"')
+            suffix_coord(state, f"Can not mutate immutable namespace {key}")
         )
     try:
         state.out.append_nest_to_list(key)
@@ -295,7 +293,7 @@ def key_value_rule(state: ParseState) -> None:
         raise TOMLDecodeError(
             suffix_coord(
                 state,
-                f'Can not mutate immutable namespace "{".".join(abs_key_parent)}"',
+                f"Can not mutate immutable namespace {abs_key_parent}",
             )
         )
     # Set the value in the right place in `state.out`
@@ -304,9 +302,7 @@ def key_value_rule(state: ParseState) -> None:
     except KeyError:
         raise TOMLDecodeError(suffix_coord(state, "Can not overwrite a value"))
     if key_stem in nest:
-        raise TOMLDecodeError(
-            suffix_coord(state, f'Can not define "{".".join(abs_key)}" twice')
-        )
+        raise TOMLDecodeError(suffix_coord(state, f"Can not define {abs_key} twice"))
     # Mark inline table and array namespaces recursively immutable
     if isinstance(value, (dict, list)):
         state.out.mark_frozen(abs_key)
