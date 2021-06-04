@@ -361,21 +361,20 @@ def parse_basic_str(state: ParseState) -> str:
     result = ""
     while True:
         c = state.try_char()
-        if not c:
-            raise TOMLDecodeError("Closing quote of a string not found")
         if c == '"':
             state.pos += 1
             return result
+        if c == "\\":
+            result += parse_basic_str_escape_sequence(state, multiline=False)
+            continue
         if c in ILLEGAL_BASIC_STR_CHARS:
             raise TOMLDecodeError(
                 suffix_coord(state, f'Illegal character "{c!r}" found in a string')
             )
-
-        if c == "\\":
-            result += parse_basic_str_escape_sequence(state, multiline=False)
-        else:
-            result += c
-            state.pos += 1
+        if not c:
+            raise TOMLDecodeError(suffix_coord(state, "Unterminated string"))
+        result += c
+        state.pos += 1
 
 
 def parse_array(state: ParseState) -> list:
@@ -399,7 +398,6 @@ def parse_array(state: ParseState) -> list:
         state.pos += 1
 
         skip_comments_and_array_ws(state)
-
         if state.try_char() == "]":
             state.pos += 1
             return array
