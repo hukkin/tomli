@@ -95,8 +95,8 @@ The `decimal.Decimal` type is, however, the most typical replacement when float 
 - it's lil'
 - pure Python with zero dependencies
 - the fastest pure Python parser [\*](#performance):
-  10x as fast as [tomlkit](https://pypi.org/project/tomlkit/),
-  1.4x as fast as [toml](https://pypi.org/project/toml/)
+  11x as fast as [tomlkit](https://pypi.org/project/tomlkit/),
+  1.9x as fast as [toml](https://pypi.org/project/toml/)
 - outputs [basic data types](#how-do-toml-types-map-into-python-types) only
 - 100% spec compliant: passes all tests in
   [a test set](https://github.com/toml-lang/compliance/pull/8)
@@ -145,21 +145,21 @@ On June 1 2021 running the benchmark output the following on my notebook compute
 
 ```console
 foo@bar:~/dev/tomli$ tox -e benchmark-pypi
-benchmark-pypi installed: attrs==19.3.0,click==7.1.2,pytomlpp==1.0.2,qtoml==0.3.0,rtoml==0.6.1,toml==0.10.2,tomli==0.2.6,tomlkit==0.7.2
-benchmark-pypi run-test-pre: PYTHONHASHSEED='3747534643'
+benchmark-pypi installed: attrs==19.3.0,click==7.1.2,pytomlpp==1.0.2,qtoml==0.3.0,rtoml==0.6.1,toml==0.10.2,tomli==0.2.8,tomlkit==0.7.2
+benchmark-pypi run-test-pre: PYTHONHASHSEED='324344419'
 benchmark-pypi run-test: commands[0] | python --version
-Python 3.8.0
+Python 3.8.5
 benchmark-pypi run-test: commands[1] | python benchmark/run.py
 Parsing data.toml 5000 times:
 ------------------------------------------------------
     parser |  exec time | performance (more is better)
 -----------+------------+-----------------------------
-  pytomlpp |     1.14 s | baseline (100%)
-     rtoml |     1.16 s | 98.05%
-     tomli |     6.72 s | 16.93%
-      toml |     9.32 s | 12.19%
-     qtoml |     15.3 s | 7.41%
-   tomlkit |     67.2 s | 1.69%
+  pytomlpp |     1.13 s | baseline (100%)
+     rtoml |     1.15 s | 98.36%
+     tomli |     4.98 s | 22.63%
+      toml |     9.55 s | 11.81%
+     qtoml |     11.8 s | 9.52%
+   tomlkit |     56.9 s | 1.98%
 ```
 
 The parsers are ordered from fastest to slowest, using the fastest parser (pytomlpp) as baseline.
