@@ -242,9 +242,7 @@ def create_dict_rule(state: ParseState) -> None:
     key = parse_key(state)
 
     if state.out.is_explicitly_created(key) or state.out.is_frozen(key):
-        raise TOMLDecodeError(
-            suffix_coord(state, f'Can not declare "{".".join(key)}" twice')
-        )
+        raise TOMLDecodeError(suffix_coord(state, f"Can not declare {key} twice"))
     try:
         state.out.get_or_create_nest(key)
     except KeyError:
@@ -265,7 +263,7 @@ def create_list_rule(state: ParseState) -> None:
 
     if state.out.is_frozen(key):
         raise TOMLDecodeError(
-            suffix_coord(state, f'Can not mutate immutable namespace "{".".join(key)}"')
+            suffix_coord(state, f"Can not mutate immutable namespace {key}")
         )
     try:
         state.out.append_nest_to_list(key)
@@ -295,7 +293,7 @@ def key_value_rule(state: ParseState) -> None:
         raise TOMLDecodeError(
             suffix_coord(
                 state,
-                f'Can not mutate immutable namespace "{".".join(abs_key_parent)}"',
+                f"Can not mutate immutable namespace {abs_key_parent}",
             )
         )
     # Set the value in the right place in `state.out`
@@ -304,9 +302,7 @@ def key_value_rule(state: ParseState) -> None:
     except KeyError:
         raise TOMLDecodeError(suffix_coord(state, "Can not overwrite a value"))
     if key_stem in nest:
-        raise TOMLDecodeError(
-            suffix_coord(state, f'Can not define "{".".join(abs_key)}" twice')
-        )
+        raise TOMLDecodeError(suffix_coord(state, f"Can not define {abs_key} twice"))
     # Mark inline table and array namespaces recursively immutable
     if isinstance(value, (dict, list)):
         state.out.mark_frozen(abs_key)
@@ -365,21 +361,20 @@ def parse_basic_str(state: ParseState) -> str:
     result = ""
     while True:
         c = state.try_char()
-        if not c:
-            raise TOMLDecodeError("Closing quote of a string not found")
         if c == '"':
             state.pos += 1
             return result
+        if c == "\\":
+            result += parse_basic_str_escape_sequence(state, multiline=False)
+            continue
         if c in ILLEGAL_BASIC_STR_CHARS:
             raise TOMLDecodeError(
                 suffix_coord(state, f'Illegal character "{c!r}" found in a string')
             )
-
-        if c == "\\":
-            result += parse_basic_str_escape_sequence(state, multiline=False)
-        else:
-            result += c
-            state.pos += 1
+        if not c:
+            raise TOMLDecodeError(suffix_coord(state, "Unterminated string"))
+        result += c
+        state.pos += 1
 
 
 def parse_array(state: ParseState) -> list:
@@ -403,7 +398,6 @@ def parse_array(state: ParseState) -> list:
         state.pos += 1
 
         skip_comments_and_array_ws(state)
-
         if state.try_char() == "]":
             state.pos += 1
             return array
@@ -577,11 +571,11 @@ def parse_multiline_basic_str(state: ParseState) -> str:  # noqa: C901
 
 
 def parse_regex(state: ParseState, regex: re.Pattern) -> str:
-    match = regex.match(state.src[state.pos :])
+    match = regex.match(state.src, state.pos)
     if not match:
         raise TOMLDecodeError(suffix_coord(state, "Unexpected sequence"))
     match_str = match.group()
-    state.pos += len(match_str)
+    state.pos = match.end()
     return match_str
 
 
@@ -589,7 +583,7 @@ def parse_datetime(
     state: ParseState, match: re.Match
 ) -> Union[datetime.datetime, datetime.date]:
     match_str = match.group()
-    state.pos += len(match_str)
+    state.pos = match.end()
     groups: Any = match.groups()
     year, month, day = int(groups[0]), int(groups[1]), int(groups[2])
     hour_str = groups[3]
@@ -615,16 +609,17 @@ def parse_datetime(
 
 
 def parse_localtime(state: ParseState, match: re.Match) -> datetime.time:
-    state.pos += len(match.group())
+    state.pos = match.end()
     groups = match.groups()
-    hour, minute, sec = (int(x) for x in groups[:3])
-    micros = int(groups[3][1:].ljust(6, "0")[:6]) if groups[3] else 0
+    hour, minute, sec = int(groups[0]), int(groups[1]), int(groups[2])
+    micros_str = groups[3]
+    micros = int(micros_str[1:].ljust(6, "0")[:6]) if micros_str else 0
     return datetime.time(hour, minute, sec, micros)
 
 
 def parse_dec_or_float(state: ParseState, match: re.Match) -> Any:
     match_str = match.group()
-    state.pos += len(match_str)
+    state.pos = match.end()
     if "." in match_str or "e" in match_str or "E" in match_str:
         return state.parse_float(match_str)
     return int(match_str)
