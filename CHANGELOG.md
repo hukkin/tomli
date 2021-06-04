@@ -1,6 +1,6 @@
 # Changelog
 
-## **unreleased**
+## 0.2.8
 
 - Added
   - Significant boost to comment parsing speed
