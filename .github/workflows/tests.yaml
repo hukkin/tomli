@@ -28,6 +28,7 @@ jobs:
     - name: run linters
       run: |
         mypy .
+        pre-commit run -a
 
   tests:
     runs-on: ${{ matrix.os }}

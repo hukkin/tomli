@@ -117,6 +117,7 @@ description = run the benchmark script against a local Tomli version
 deps =
     -r benchmark/requirements.txt
 commands =
+    python -c 'import datetime; print(datetime.date.today())'
     python --version
     python benchmark/run.py
 
@@ -127,6 +128,7 @@ deps =
     tomli
     -r benchmark/requirements.txt
 commands =
+    python -c 'import datetime; print(datetime.date.today())'
     python --version
     python benchmark/run.py
 """
