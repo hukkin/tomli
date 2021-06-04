@@ -7,15 +7,6 @@ repos:
     - mdformat-toc
     - mdformat-gfm
     - mdformat-black
-- repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: 38b88246ccc552bffaaf54259d064beeee434539  # frozen: v4.0.1
-  hooks:
-  - id: check-yaml
-- repo: https://github.com/pre-commit/pygrep-hooks
-  rev: 58ace0d0dc6b2439b737a5ea353f836f6a2bad13  # frozen: v1.8.0
-  hooks:
-  - id: python-use-type-annotations
-  - id: python-check-blanket-noqa
 - repo: https://github.com/timothycrosley/isort
   rev: a6222a8a125ec719724e628a5d3d0d5c60923281  # frozen: 5.8.0
   hooks:
@@ -28,6 +19,15 @@ repos:
   rev: 67919ee01837761f2d954d7fbb08c12cdd38ec5a  # frozen: v1.4
   hooks:
   - id: docformatter
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: 38b88246ccc552bffaaf54259d064beeee434539  # frozen: v4.0.1
+  hooks:
+  - id: check-yaml
+- repo: https://github.com/pre-commit/pygrep-hooks
+  rev: 58ace0d0dc6b2439b737a5ea353f836f6a2bad13  # frozen: v1.8.0
+  hooks:
+  - id: python-use-type-annotations
+  - id: python-check-blanket-noqa
 - repo: https://gitlab.com/pycqa/flake8
   rev: dcd740bc0ebaf2b3d43e59a0060d157c97de13f3  # frozen: 3.9.2
   hooks:

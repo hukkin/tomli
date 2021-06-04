@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.9
+
+- Fixed
+  - `TOMLDecodeError` now raised when opening a table implicitly created by a key/value pair
+  - Don't error when two array-of-tables items open a subtable with the same name
+  - Don't error when opening parent table of an already defined array-of-tables item
+
 ## 0.2.8
 
 - Added
