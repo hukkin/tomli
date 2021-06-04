@@ -1,6 +1,7 @@
 import copy
 import datetime
 from decimal import Decimal as D
+from pathlib import Path
 
 import tomli
 
@@ -70,3 +71,10 @@ def test_deepcopy():
         }
     }
     assert obj_copy == expected_obj
+
+
+def test_own_pyproject():
+    pyproject_path = Path(__file__).parent.parent / "pyproject.toml"
+    with open(pyproject_path, encoding="utf-8") as f:
+        pyproject = tomli.load(f)
+    assert pyproject["tool"]["poetry"]["version"] == tomli.__version__

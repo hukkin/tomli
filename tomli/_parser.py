@@ -139,7 +139,9 @@ class NestedDict:
         # applies recursively to sub-structures.
         self._frozen: Set[Tuple[str, ...]] = set()
 
-    def get_or_create_nest(self, key: Tuple[str, ...]) -> dict:
+    def get_or_create_nest(
+        self, key: Tuple[str, ...], *, explicit_access: bool = True
+    ) -> dict:
         container: Any = self.dict
         for k in key:
             if k not in container:
@@ -149,11 +151,12 @@ class NestedDict:
                 container = container[-1]
             if not isinstance(container, dict):
                 raise KeyError("There is no nest behind this key")
-        self._explicitly_created.add(key)
+        if explicit_access:
+            self._explicitly_created.add(key)
         return container
 
     def append_nest_to_list(self, key: Tuple[str, ...]) -> None:
-        container = self.get_or_create_nest(key[:-1])
+        container = self.get_or_create_nest(key[:-1], explicit_access=False)
         nest: dict = {}
         last_key = key[-1]
         if last_key in container:
@@ -176,6 +179,21 @@ class NestedDict:
 
     def mark_frozen(self, key: Tuple[str, ...]) -> None:
         self._frozen.add(key)
+
+    def mark_relative_path_explicitly_created(
+        self, head_key: Tuple[str, ...], rel_key: Tuple[str, ...]
+    ) -> None:
+        for i in range(len(rel_key)):
+            self._explicitly_created.add(head_key + rel_key[: i + 1])
+
+    def reset(self, key: Tuple[str, ...]) -> None:
+        """Recursively unmark explicitly created and frozen statuses in the
+        namespace."""
+        len_key = len(key)
+        self._frozen = {f for f in self._frozen if f[:len_key] != key}
+        self._explicitly_created = {
+            e for e in self._explicitly_created if e[:len_key] != key
+        }
 
 
 def skip_chars(state: ParseState, chars: Iterable[str]) -> None:
@@ -265,6 +283,8 @@ def create_list_rule(state: ParseState) -> None:
         raise TOMLDecodeError(
             suffix_coord(state, f"Can not mutate immutable namespace {key}")
         )
+    # Free the namespace again now that it points to another empty list item
+    state.out.reset(key)
     try:
         state.out.append_nest_to_list(key)
     except KeyError:
@@ -296,6 +316,8 @@ def key_value_rule(state: ParseState) -> None:
                 f"Can not mutate immutable namespace {abs_key_parent}",
             )
         )
+    # Containers in the relative path can't be opened with the table syntax after this
+    state.out.mark_relative_path_explicitly_created(state.header_namespace, key_parent)
     # Set the value in the right place in `state.out`
     try:
         nest = state.out.get_or_create_nest(abs_key_parent)
@@ -405,6 +427,8 @@ def parse_array(state: ParseState) -> list:
 
 def parse_inline_table(state: ParseState) -> dict:
     state.pos += 1
+    # A normal dict could be used here, but the get_or_create_nest method
+    # is convenient. Possible performance increase with normal dict?
     nested_dict = NestedDict({})
 
     skip_chars(state, TOML_WS)
