@@ -577,11 +577,11 @@ def parse_multiline_basic_str(state: ParseState) -> str:  # noqa: C901
 
 
 def parse_regex(state: ParseState, regex: re.Pattern) -> str:
-    match = regex.match(state.src[state.pos :])
+    match = regex.match(state.src, state.pos)
     if not match:
         raise TOMLDecodeError(suffix_coord(state, "Unexpected sequence"))
     match_str = match.group()
-    state.pos += len(match_str)
+    state.pos = match.end()
     return match_str
 
 
@@ -589,7 +589,7 @@ def parse_datetime(
     state: ParseState, match: re.Match
 ) -> Union[datetime.datetime, datetime.date]:
     match_str = match.group()
-    state.pos += len(match_str)
+    state.pos = match.end()
     groups: Any = match.groups()
     year, month, day = int(groups[0]), int(groups[1]), int(groups[2])
     hour_str = groups[3]
@@ -615,16 +615,17 @@ def parse_datetime(
 
 
 def parse_localtime(state: ParseState, match: re.Match) -> datetime.time:
-    state.pos += len(match.group())
+    state.pos = match.end()
     groups = match.groups()
-    hour, minute, sec = (int(x) for x in groups[:3])
-    micros = int(groups[3][1:].ljust(6, "0")[:6]) if groups[3] else 0
+    hour, minute, sec = int(groups[0]), int(groups[1]), int(groups[2])
+    micros_str = groups[3]
+    micros = int(micros_str[1:].ljust(6, "0")[:6]) if micros_str else 0
     return datetime.time(hour, minute, sec, micros)
 
 
 def parse_dec_or_float(state: ParseState, match: re.Match) -> Any:
     match_str = match.group()
-    state.pos += len(match_str)
+    state.pos = match.end()
     if "." in match_str or "e" in match_str or "E" in match_str:
         return state.parse_float(match_str)
     return int(match_str)
