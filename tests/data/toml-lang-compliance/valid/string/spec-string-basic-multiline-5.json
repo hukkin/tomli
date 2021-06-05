@@ -1,2 +1,2 @@
 {"ml-escaped-nl":
-  {"type":"string","value":"  foo bar \\\\n  baz \\quux"}}
+  {"type":"string","value":"  foo bar \\\n  baz \\quux"}}
