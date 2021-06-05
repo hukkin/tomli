@@ -140,14 +140,18 @@ class NestedDict:
         self._frozen: Set[Tuple[str, ...]] = set()
 
     def get_or_create_nest(
-        self, key: Tuple[str, ...], *, explicit_access: bool = True
+        self,
+        key: Tuple[str, ...],
+        *,
+        explicit_access: bool = True,
+        access_lists: bool = True,
     ) -> dict:
         container: Any = self.dict
         for k in key:
             if k not in container:
                 container[k] = {}
             container = container[k]
-            if isinstance(container, list):
+            if access_lists and isinstance(container, list):
                 container = container[-1]
             if not isinstance(container, dict):
                 raise KeyError("There is no nest behind this key")
@@ -446,7 +450,9 @@ def parse_inline_table(state: ParseState) -> dict:
             raise TOMLDecodeError(
                 suffix_coord(state, f"Can not mutate immutable namespace {key}")
             )
-        nest = nested_dict.get_or_create_nest(key_parent, explicit_access=False)
+        nest = nested_dict.get_or_create_nest(
+            key_parent, explicit_access=False, access_lists=False
+        )
         if key_stem in nest:
             raise TOMLDecodeError(
                 suffix_coord(state, f'Duplicate inline table key "{key_stem}"')
