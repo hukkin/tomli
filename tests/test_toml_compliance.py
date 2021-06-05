@@ -53,5 +53,5 @@ def test_valid(valid, expected):
     toml_str = valid.read_text(encoding="utf-8")
     actual = tomli.loads(toml_str)
     actual = burntsushi.convert(actual)
-    expected = burntsushi.normalize_floats(expected)
+    expected = burntsushi.normalize(expected)
     assert actual == expected
