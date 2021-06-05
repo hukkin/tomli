@@ -116,7 +116,7 @@ class ParseState:
     def __init__(self, src: str, parse_float: ParseFloat):
         # Read only
         self.src: str = src
-        self.out: NestedDict = NestedDict({})
+        self.out: NestedDict = NestedDict()
         self.parse_float = parse_float
 
         # Read and write
@@ -131,8 +131,8 @@ class ParseState:
 
 
 class NestedDict:
-    def __init__(self, wrapped_dict: dict):
-        self.dict: Dict[str, Any] = wrapped_dict
+    def __init__(self) -> None:
+        self.dict: Dict[str, Any] = {}
         # Keep track of keys that have been explicitly set
         self._explicitly_created: Set[Tuple[str, ...]] = set()
         # Keep track of keys that hold immutable values. Immutability
@@ -335,7 +335,7 @@ def parse_key_value_pair(state: ParseState) -> Tuple[Tuple[str, ...], Any]:
     key = parse_key(state)
     if state.try_char() != "=":
         raise TOMLDecodeError(
-            suffix_coord(state, 'Expected "=" after a key in a key-to-value mapping')
+            suffix_coord(state, 'Expected "=" after a key in a key/value pair')
         )
     state.pos += 1
     skip_chars(state, TOML_WS)
@@ -427,9 +427,10 @@ def parse_array(state: ParseState) -> list:
 
 def parse_inline_table(state: ParseState) -> dict:
     state.pos += 1
-    # A normal dict could be used here, but the get_or_create_nest method
-    # is convenient. Possible performance increase with normal dict?
-    nested_dict = NestedDict({})
+    # We use a subset of the functionality NestedDict provides. We use it for
+    # the convenient getter, and recursive freeze for inner arrays and tables.
+    # Cutting a new lighter NestedDict base class could work here?
+    nested_dict = NestedDict()
 
     skip_chars(state, TOML_WS)
     c = state.try_char()
@@ -441,7 +442,11 @@ def parse_inline_table(state: ParseState) -> dict:
     while True:
         key, value = parse_key_value_pair(state)
         key_parent, key_stem = key[:-1], key[-1]
-        nest = nested_dict.get_or_create_nest(key_parent)
+        if nested_dict.is_frozen(key):
+            raise TOMLDecodeError(
+                suffix_coord(state, f"Can not mutate immutable namespace {key}")
+            )
+        nest = nested_dict.get_or_create_nest(key_parent, explicit_access=False)
         if key_stem in nest:
             raise TOMLDecodeError(
                 suffix_coord(state, f'Duplicate inline table key "{key_stem}"')
@@ -454,6 +459,8 @@ def parse_inline_table(state: ParseState) -> dict:
             return nested_dict.dict
         if c != ",":
             raise TOMLDecodeError(suffix_coord(state, "Unclosed inline table"))
+        if isinstance(value, (dict, list)):
+            nested_dict.mark_frozen(key)
         state.pos += 1
         skip_chars(state, TOML_WS)
 

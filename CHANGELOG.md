@@ -1,5 +1,10 @@
 # Changelog
 
+## **unreleased**
+
+- Fixed
+  - Raise `TOMLDecodeError` if overwriting nested inline tables from the parent inline
+
 ## 0.2.9
 
 - Fixed
