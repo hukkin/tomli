@@ -4,6 +4,7 @@
 
 - Fixed
   - Raise `TOMLDecodeError` if overwriting nested inline tables from the parent inline
+  - Raise `TOMLDecodeError` if escaped Unicode character is not a Unicode scalar value
 
 ## 0.2.9
 
