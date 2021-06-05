@@ -1,7 +1,6 @@
 """Utilities for tests that are in the "burntsushi" format."""
 
 import datetime
-import json
 from typing import Any
 
 import dateutil.parser
@@ -10,20 +9,7 @@ import pytest
 
 def convert(obj):  # noqa: C901
     if isinstance(obj, str):
-        # The test case JSONs seem to have inconsistent escape chars. E.g. tab is
-        # escaped with '\\t' (two backspaces), but quotation mark with '\"' (only one
-        # backspace. This line does its best to fix such issues.
-        normalized_str = (
-            json.dumps(obj)[1:-1]
-            .replace('\\"', '"')
-            .replace("\\\\", "\\")
-            .replace("\\u00e9", "é")
-        )
-        return {
-            "type": "string",
-            "value": normalized_str,
-        }
-        # return {"type": "string", "value": obj}
+        return {"type": "string", "value": obj}
     elif isinstance(obj, bool):
         return {"type": "boolean", "value": str(obj).lower()}
     elif isinstance(obj, int):
