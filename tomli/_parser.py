@@ -131,7 +131,7 @@ class ParseState:
 
 
 class NestedDict:
-    def __init__(self):
+    def __init__(self) -> None:
         self.dict: Dict[str, Any] = {}
         # Keep track of keys that have been explicitly set
         self._explicitly_created: Set[Tuple[str, ...]] = set()
