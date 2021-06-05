@@ -41,16 +41,16 @@ def convert(obj):  # noqa: C901
     raise Exception("unsupported type")
 
 
-def normalize_floats(d: dict) -> dict:
+def normalize(d: dict) -> dict:
     normalized: Any = {}
     for k, v in d.items():
         if isinstance(v, list):
-            normalized[k] = [normalize_floats(item) for item in v]
+            normalized[k] = [normalize(item) for item in v]
         elif isinstance(v, dict):
             if "type" in v and "value" in v:
                 if v["type"] == "float":
                     normalized[k] = v.copy()
-                    normalized[k]["value"] = str(float(normalized[k]["value"]))
+                    normalized[k]["value"] = normalize_float_str(normalized[k]["value"])
                 elif v["type"] in {"offset datetime", "local datetime"}:
                     normalized[k] = v.copy()
                     normalized[k]["value"] = normalize_datetime_str(
@@ -67,3 +67,7 @@ def normalize_floats(d: dict) -> dict:
 
 def normalize_datetime_str(dt_str: str) -> str:
     return dateutil.parser.isoparse(dt_str).isoformat()
+
+
+def normalize_float_str(float_str: str) -> str:
+    return str(float(float_str))
