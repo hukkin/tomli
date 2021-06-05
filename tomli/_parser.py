@@ -499,13 +499,11 @@ def parse_hex_char(state: ParseState, hex_len: int) -> str:
         raise TOMLDecodeError(suffix_coord(state, "Invalid hex value"))
     state.pos += hex_len
     hex_int = int(hex_str, 16)
-    try:
-        char = chr(hex_int)
-    except (ValueError, OverflowError):
+    if not is_unicode_scalar_value(hex_int):
         raise TOMLDecodeError(
-            suffix_coord(state, "Hex value too large to convert into a character")
+            suffix_coord(state, "Escaped character is not a Unicode scalar value")
         )
-    return char
+    return chr(hex_int)
 
 
 def parse_literal_str(state: ParseState) -> str:
@@ -748,3 +746,7 @@ def suffix_coord(state: ParseState, msg: str) -> str:
         return f"line {line}, column {column}"
 
     return f"{msg} (at {coord_repr(state)})"
+
+
+def is_unicode_scalar_value(codepoint: int) -> bool:
+    return (0 <= codepoint <= 55295) or (57344 <= codepoint <= 1114111)
