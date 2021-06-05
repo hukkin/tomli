@@ -1,0 +1,10 @@
+{
+    "people":  {
+        "type": "array",
+        "value": [
+        {
+            "first_name": {"type": "string", "value": "Bruce"},
+            "last_name": {"type": "string", "value": "Springsteen"}
+        }
+    ]}
+}
