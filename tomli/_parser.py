@@ -384,23 +384,13 @@ def parse_key_part(state: ParseState) -> str:
 
 def parse_basic_str(state: ParseState) -> str:
     state.pos += 1
-    result = ""
-    while True:
-        c = state.try_char()
-        if c == '"':
-            state.pos += 1
-            return result
-        if c == "\\":
-            result += parse_basic_str_escape_sequence(state, multiline=False)
-            continue
-        if c in ILLEGAL_BASIC_STR_CHARS:
-            raise TOMLDecodeError(
-                suffix_coord(state, f'Illegal character "{c!r}" found in a string')
-            )
-        if not c:
-            raise TOMLDecodeError(suffix_coord(state, "Unterminated string"))
-        result += c
-        state.pos += 1
+    return parse_until_count(
+        state,
+        '"',
+        1,
+        error_on=ILLEGAL_BASIC_STR_CHARS,
+        escape_parser=parse_basic_str_escape_sequence,
+    )
 
 
 def parse_array(state: ParseState) -> list:
@@ -471,7 +461,9 @@ def parse_inline_table(state: ParseState) -> dict:
         skip_chars(state, TOML_WS)
 
 
-def parse_basic_str_escape_sequence(state: ParseState, *, multiline: bool) -> str:
+def parse_basic_str_escape_sequence(
+    state: ParseState, *, multiline: bool = False
+) -> str:
     escape_id = state.src[state.pos : state.pos + 2]
     if len(escape_id) != 2:
         raise TOMLDecodeError(suffix_coord(state, "Unterminated string"))
@@ -499,6 +491,10 @@ def parse_basic_str_escape_sequence(state: ParseState, *, multiline: bool) -> st
     raise TOMLDecodeError(suffix_coord(state, 'Unescaped "\\" in a string'))
 
 
+def parse_basic_str_escape_sequence_multiline(state: ParseState) -> str:
+    return parse_basic_str_escape_sequence(state, multiline=True)
+
+
 def parse_hex_char(state: ParseState, hex_len: int) -> str:
     hex_str = state.src[state.pos : state.pos + hex_len]
     if len(hex_str) != hex_len or any(c not in string.hexdigits for c in hex_str):
@@ -521,88 +517,74 @@ def parse_literal_str(state: ParseState) -> str:
     return literal_str
 
 
-def parse_multiline_literal_str(state: ParseState) -> str:
-    state.pos += 3
-    c = state.try_char()
-    if not c:
-        raise TOMLDecodeError(
-            "Multiline literal string not closed before end of document"
-        )
-    if c == "\n":
-        state.pos += 1
-    consecutive_apostrophes = 0
-    start_pos = state.pos
-    while True:
-        c = state.try_char()
-        if not c:
-            raise TOMLDecodeError(
-                "Multiline literal string not closed before end of document"
-            )
-        state.pos += 1
-        if c == "'":
-            consecutive_apostrophes += 1
-            if consecutive_apostrophes == 3:
-                # Add at maximum two extra apostrophes if the end sequence is 4 or 5
-                # apostrophes long instead of just 3.
-                if state.try_char() == "'":
-                    state.pos += 1
-                    if state.try_char() == "'":
-                        state.pos += 1
-                return state.src[start_pos : state.pos - 3]
-            continue  # pragma: no cover
-        consecutive_apostrophes = 0
-        if c in ILLEGAL_MULTILINE_LITERAL_STR_CHARS:
-            raise TOMLDecodeError(
-                suffix_coord(
-                    state,
-                    f'Illegal character "{c!r}" found in a multiline literal string',
-                )
-            )
-
-
-def parse_multiline_basic_str(state: ParseState) -> str:  # noqa: C901
+def parse_multiline_str(state: ParseState, *, literal: bool) -> str:
     state.pos += 3
     c = state.try_char()
     if not c:
         raise TOMLDecodeError("Multiline string not closed before end of the document")
     if c == "\n":
         state.pos += 1
-    result = ""
-    while True:
-        c = state.try_char()
-        if not c:
-            raise TOMLDecodeError(
-                "Multiline string not closed before end of the document"
-            )
-        if c == '"':
-            state.pos += 1
-            if state.try_char() != '"':
-                result += '"'
-                continue
-            state.pos += 1
-            if state.try_char() != '"':
-                result += '""'
-                continue
-            state.pos += 1
-            if state.try_char() != '"':
-                return result
-            state.pos += 1
-            if state.try_char() != '"':
-                return result + '"'
-            state.pos += 1
-            return result + '""'
-        if c in ILLEGAL_MULTILINE_BASIC_STR_CHARS:
-            raise TOMLDecodeError(
-                suffix_coord(
-                    state, f'Illegal character "{c!r}" found in a multiline string'
-                )
-            )
 
-        if c == "\\":
-            result += parse_basic_str_escape_sequence(state, multiline=True)
-        else:
-            result += c
-            state.pos += 1
+    if literal:
+        delim = "'"
+        illegal_chars = ILLEGAL_MULTILINE_LITERAL_STR_CHARS
+        escape_parser = None
+    else:
+        delim = '"'
+        illegal_chars = ILLEGAL_MULTILINE_BASIC_STR_CHARS
+        escape_parser = parse_basic_str_escape_sequence_multiline
+    result = parse_until_count(
+        state, delim, 3, error_on=illegal_chars, escape_parser=escape_parser
+    )
+
+    # Add at maximum two extra apostrophes if the end sequence is 4 or 5
+    # apostrophes long instead of just 3.
+    if state.try_char() != delim:
+        return result
+    state.pos += 1
+    if state.try_char() != delim:
+        return result + delim
+    state.pos += 1
+    return result + (delim * 2)
+
+
+def parse_until_count(
+    state: ParseState,
+    expect_char: str,
+    expect_count: int,
+    *,
+    error_on: Iterable[str],
+    escape_parser: Optional[Callable] = None,
+) -> str:
+    src, pos = state.src, state.pos
+    expect_after = expect_char * (expect_count - 1)
+    result = ""
+    start_pos = pos
+    while True:
+        try:
+            char = src[pos]
+        except IndexError:
+            state.pos = pos
+            raise TOMLDecodeError(
+                suffix_coord(state, f'Expected "{expect_char*expect_count!r}"')
+            )
+        if char == expect_char:
+            if src[pos + 1 : pos + expect_count] == expect_after:
+                end_pos = pos
+                state.pos = pos + expect_count
+                return result + src[start_pos:end_pos]
+            pos += 1
+            continue
+        if escape_parser and char == "\\":
+            result += src[start_pos:pos]
+            state.pos = pos
+            result += escape_parser(state)
+            pos = start_pos = state.pos
+            continue
+        if char in error_on:
+            state.pos = pos
+            raise TOMLDecodeError(suffix_coord(state, f'Illegal character "{char!r}"'))
+        pos += 1
 
 
 def parse_regex(state: ParseState, regex: re.Pattern) -> str:
@@ -666,13 +648,13 @@ def parse_value(state: ParseState) -> Any:  # noqa: C901
     # Basic strings
     if char == '"':
         if state.src[state.pos + 1 : state.pos + 3] == '""':
-            return parse_multiline_basic_str(state)
+            return parse_multiline_str(state, literal=False)
         return parse_basic_str(state)
 
     # Literal strings
     if char == "'":
         if state.src[state.pos + 1 : state.pos + 3] == "''":
-            return parse_multiline_literal_str(state)
+            return parse_multiline_str(state, literal=True)
         return parse_literal_str(state)
 
     # Booleans
