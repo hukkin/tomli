@@ -140,14 +140,18 @@ class NestedDict:
         self._frozen: Set[Tuple[str, ...]] = set()
 
     def get_or_create_nest(
-        self, key: Tuple[str, ...], *, explicit_access: bool = True
+        self,
+        key: Tuple[str, ...],
+        *,
+        explicit_access: bool = True,
+        access_lists: bool = True,
     ) -> dict:
         container: Any = self.dict
         for k in key:
             if k not in container:
                 container[k] = {}
             container = container[k]
-            if isinstance(container, list):
+            if access_lists and isinstance(container, list):
                 container = container[-1]
             if not isinstance(container, dict):
                 raise KeyError("There is no nest behind this key")
@@ -380,23 +384,13 @@ def parse_key_part(state: ParseState) -> str:
 
 def parse_basic_str(state: ParseState) -> str:
     state.pos += 1
-    result = ""
-    while True:
-        c = state.try_char()
-        if c == '"':
-            state.pos += 1
-            return result
-        if c == "\\":
-            result += parse_basic_str_escape_sequence(state, multiline=False)
-            continue
-        if c in ILLEGAL_BASIC_STR_CHARS:
-            raise TOMLDecodeError(
-                suffix_coord(state, f'Illegal character "{c!r}" found in a string')
-            )
-        if not c:
-            raise TOMLDecodeError(suffix_coord(state, "Unterminated string"))
-        result += c
-        state.pos += 1
+    return parse_string(
+        state,
+        delim='"',
+        delim_len=1,
+        error_on=ILLEGAL_BASIC_STR_CHARS,
+        parse_escapes=parse_basic_str_escape,
+    )
 
 
 def parse_array(state: ParseState) -> list:
@@ -446,7 +440,9 @@ def parse_inline_table(state: ParseState) -> dict:
             raise TOMLDecodeError(
                 suffix_coord(state, f"Can not mutate immutable namespace {key}")
             )
-        nest = nested_dict.get_or_create_nest(key_parent, explicit_access=False)
+        nest = nested_dict.get_or_create_nest(
+            key_parent, explicit_access=False, access_lists=False
+        )
         if key_stem in nest:
             raise TOMLDecodeError(
                 suffix_coord(state, f'Duplicate inline table key "{key_stem}"')
@@ -465,7 +461,7 @@ def parse_inline_table(state: ParseState) -> dict:
         skip_chars(state, TOML_WS)
 
 
-def parse_basic_str_escape_sequence(state: ParseState, *, multiline: bool) -> str:
+def parse_basic_str_escape(state: ParseState, *, multiline: bool = False) -> str:
     escape_id = state.src[state.pos : state.pos + 2]
     if len(escape_id) != 2:
         raise TOMLDecodeError(suffix_coord(state, "Unterminated string"))
@@ -493,6 +489,10 @@ def parse_basic_str_escape_sequence(state: ParseState, *, multiline: bool) -> st
     raise TOMLDecodeError(suffix_coord(state, 'Unescaped "\\" in a string'))
 
 
+def parse_basic_str_escape_multiline(state: ParseState) -> str:
+    return parse_basic_str_escape(state, multiline=True)
+
+
 def parse_hex_char(state: ParseState, hex_len: int) -> str:
     hex_str = state.src[state.pos : state.pos + hex_len]
     if len(hex_str) != hex_len or any(c not in string.hexdigits for c in hex_str):
@@ -515,88 +515,73 @@ def parse_literal_str(state: ParseState) -> str:
     return literal_str
 
 
-def parse_multiline_literal_str(state: ParseState) -> str:
+def parse_multiline_str(state: ParseState, *, literal: bool) -> str:
     state.pos += 3
-    c = state.try_char()
-    if not c:
-        raise TOMLDecodeError(
-            "Multiline literal string not closed before end of document"
-        )
-    if c == "\n":
+    if state.try_char() == "\n":
         state.pos += 1
-    consecutive_apostrophes = 0
-    start_pos = state.pos
-    while True:
-        c = state.try_char()
-        if not c:
-            raise TOMLDecodeError(
-                "Multiline literal string not closed before end of document"
-            )
-        state.pos += 1
-        if c == "'":
-            consecutive_apostrophes += 1
-            if consecutive_apostrophes == 3:
-                # Add at maximum two extra apostrophes if the end sequence is 4 or 5
-                # apostrophes long instead of just 3.
-                if state.try_char() == "'":
-                    state.pos += 1
-                    if state.try_char() == "'":
-                        state.pos += 1
-                return state.src[start_pos : state.pos - 3]
-            continue  # pragma: no cover
-        consecutive_apostrophes = 0
-        if c in ILLEGAL_MULTILINE_LITERAL_STR_CHARS:
-            raise TOMLDecodeError(
-                suffix_coord(
-                    state,
-                    f'Illegal character "{c!r}" found in a multiline literal string',
-                )
-            )
+
+    if literal:
+        delim = "'"
+        illegal_chars = ILLEGAL_MULTILINE_LITERAL_STR_CHARS
+        escape_parser = None
+    else:
+        delim = '"'
+        illegal_chars = ILLEGAL_MULTILINE_BASIC_STR_CHARS
+        escape_parser = parse_basic_str_escape_multiline
+    result = parse_string(
+        state,
+        delim=delim,
+        delim_len=3,
+        error_on=illegal_chars,
+        parse_escapes=escape_parser,
+    )
+
+    # Add at maximum two extra apostrophes/quotes if the end sequence
+    # is 4 or 5 chars long instead of just 3.
+    if state.try_char() != delim:
+        return result
+    state.pos += 1
+    if state.try_char() != delim:
+        return result + delim
+    state.pos += 1
+    return result + (delim * 2)
 
 
-def parse_multiline_basic_str(state: ParseState) -> str:  # noqa: C901
-    state.pos += 3
-    c = state.try_char()
-    if not c:
-        raise TOMLDecodeError("Multiline string not closed before end of the document")
-    if c == "\n":
-        state.pos += 1
+def parse_string(
+    state: ParseState,
+    *,
+    delim: str,
+    delim_len: int,
+    error_on: Iterable[str],
+    parse_escapes: Optional[Callable] = None,
+) -> str:
+    src, pos = state.src, state.pos
+    expect_after = delim * (delim_len - 1)
     result = ""
+    start_pos = pos
     while True:
-        c = state.try_char()
-        if not c:
-            raise TOMLDecodeError(
-                "Multiline string not closed before end of the document"
-            )
-        if c == '"':
-            state.pos += 1
-            if state.try_char() != '"':
-                result += '"'
-                continue
-            state.pos += 1
-            if state.try_char() != '"':
-                result += '""'
-                continue
-            state.pos += 1
-            if state.try_char() != '"':
-                return result
-            state.pos += 1
-            if state.try_char() != '"':
-                return result + '"'
-            state.pos += 1
-            return result + '""'
-        if c in ILLEGAL_MULTILINE_BASIC_STR_CHARS:
-            raise TOMLDecodeError(
-                suffix_coord(
-                    state, f'Illegal character "{c!r}" found in a multiline string'
-                )
-            )
-
-        if c == "\\":
-            result += parse_basic_str_escape_sequence(state, multiline=True)
-        else:
-            result += c
-            state.pos += 1
+        try:
+            char = src[pos]
+        except IndexError:
+            state.pos = pos
+            raise TOMLDecodeError(suffix_coord(state, "Unterminated string"))
+        if char == delim:
+            if src[pos + 1 : pos + delim_len] == expect_after:
+                end_pos = pos
+                state.pos = pos + delim_len
+                return result + src[start_pos:end_pos]
+            pos += 1
+            continue
+        if parse_escapes and char == "\\":
+            result += src[start_pos:pos]
+            state.pos = pos
+            result += parse_escapes(state)
+            pos = start_pos = state.pos
+            continue
+        if char in error_on:
+            state.pos = pos
+            raise TOMLDecodeError(suffix_coord(state, f'Illegal character "{char!r}"'))
+        pos += 1
 
 
 def parse_regex(state: ParseState, regex: re.Pattern) -> str:
@@ -660,13 +645,13 @@ def parse_value(state: ParseState) -> Any:  # noqa: C901
     # Basic strings
     if char == '"':
         if state.src[state.pos + 1 : state.pos + 3] == '""':
-            return parse_multiline_basic_str(state)
+            return parse_multiline_str(state, literal=False)
         return parse_basic_str(state)
 
     # Literal strings
     if char == "'":
         if state.src[state.pos + 1 : state.pos + 3] == "''":
-            return parse_multiline_literal_str(state)
+            return parse_multiline_str(state, literal=True)
         return parse_literal_str(state)
 
     # Booleans
