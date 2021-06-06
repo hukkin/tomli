@@ -384,12 +384,12 @@ def parse_key_part(state: ParseState) -> str:
 
 def parse_basic_str(state: ParseState) -> str:
     state.pos += 1
-    return parse_until_count(
+    return parse_string(
         state,
-        '"',
-        1,
+        delim='"',
+        delim_len=1,
         error_on=ILLEGAL_BASIC_STR_CHARS,
-        escape_parser=parse_basic_str_escape_sequence,
+        parse_escapes=parse_basic_str_escape,
     )
 
 
@@ -461,9 +461,7 @@ def parse_inline_table(state: ParseState) -> dict:
         skip_chars(state, TOML_WS)
 
 
-def parse_basic_str_escape_sequence(
-    state: ParseState, *, multiline: bool = False
-) -> str:
+def parse_basic_str_escape(state: ParseState, *, multiline: bool = False) -> str:
     escape_id = state.src[state.pos : state.pos + 2]
     if len(escape_id) != 2:
         raise TOMLDecodeError(suffix_coord(state, "Unterminated string"))
@@ -491,8 +489,8 @@ def parse_basic_str_escape_sequence(
     raise TOMLDecodeError(suffix_coord(state, 'Unescaped "\\" in a string'))
 
 
-def parse_basic_str_escape_sequence_multiline(state: ParseState) -> str:
-    return parse_basic_str_escape_sequence(state, multiline=True)
+def parse_basic_str_escape_multiline(state: ParseState) -> str:
+    return parse_basic_str_escape(state, multiline=True)
 
 
 def parse_hex_char(state: ParseState, hex_len: int) -> str:
@@ -519,10 +517,7 @@ def parse_literal_str(state: ParseState) -> str:
 
 def parse_multiline_str(state: ParseState, *, literal: bool) -> str:
     state.pos += 3
-    c = state.try_char()
-    if not c:
-        raise TOMLDecodeError("Multiline string not closed before end of the document")
-    if c == "\n":
+    if state.try_char() == "\n":
         state.pos += 1
 
     if literal:
@@ -532,9 +527,13 @@ def parse_multiline_str(state: ParseState, *, literal: bool) -> str:
     else:
         delim = '"'
         illegal_chars = ILLEGAL_MULTILINE_BASIC_STR_CHARS
-        escape_parser = parse_basic_str_escape_sequence_multiline
-    result = parse_until_count(
-        state, delim, 3, error_on=illegal_chars, escape_parser=escape_parser
+        escape_parser = parse_basic_str_escape_multiline
+    result = parse_string(
+        state,
+        delim=delim,
+        delim_len=3,
+        error_on=illegal_chars,
+        parse_escapes=escape_parser,
     )
 
     # Add at maximum two extra apostrophes if the end sequence is 4 or 5
@@ -548,16 +547,16 @@ def parse_multiline_str(state: ParseState, *, literal: bool) -> str:
     return result + (delim * 2)
 
 
-def parse_until_count(
+def parse_string(
     state: ParseState,
-    expect_char: str,
-    expect_count: int,
     *,
+    delim: str,
+    delim_len: int,
     error_on: Iterable[str],
-    escape_parser: Optional[Callable] = None,
+    parse_escapes: Optional[Callable] = None,
 ) -> str:
     src, pos = state.src, state.pos
-    expect_after = expect_char * (expect_count - 1)
+    expect_after = delim * (delim_len - 1)
     result = ""
     start_pos = pos
     while True:
@@ -565,20 +564,18 @@ def parse_until_count(
             char = src[pos]
         except IndexError:
             state.pos = pos
-            raise TOMLDecodeError(
-                suffix_coord(state, f'Expected "{expect_char*expect_count!r}"')
-            )
-        if char == expect_char:
-            if src[pos + 1 : pos + expect_count] == expect_after:
+            raise TOMLDecodeError(suffix_coord(state, "Unterminated string"))
+        if char == delim:
+            if src[pos + 1 : pos + delim_len] == expect_after:
                 end_pos = pos
-                state.pos = pos + expect_count
+                state.pos = pos + delim_len
                 return result + src[start_pos:end_pos]
             pos += 1
             continue
-        if escape_parser and char == "\\":
+        if parse_escapes and char == "\\":
             result += src[start_pos:pos]
             state.pos = pos
-            result += escape_parser(state)
+            result += parse_escapes(state)
             pos = start_pos = state.pos
             continue
         if char in error_on:
