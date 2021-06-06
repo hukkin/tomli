@@ -536,8 +536,8 @@ def parse_multiline_str(state: ParseState, *, literal: bool) -> str:
         parse_escapes=escape_parser,
     )
 
-    # Add at maximum two extra apostrophes if the end sequence is 4 or 5
-    # apostrophes long instead of just 3.
+    # Add at maximum two extra apostrophes/quotes if the end sequence
+    # is 4 or 5 chars long instead of just 3.
     if state.try_char() != delim:
         return result
     state.pos += 1
