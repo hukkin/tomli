@@ -56,7 +56,7 @@ BASIC_STR_ESCAPE_REPLACEMENTS = MappingProxyType(
 )
 
 ParseFloat = Callable[[str], Any]
-Namespace = Tuple[str, ...]
+Key = Tuple[str, ...]
 
 
 class TOMLDecodeError(ValueError):
@@ -69,14 +69,14 @@ def load(fp: TextIO, *, parse_float: ParseFloat = float) -> Dict[str, Any]:
     return loads(s, parse_float=parse_float)
 
 
-def loads(s: str, *, parse_float: ParseFloat = float) -> Dict[str, Any]:  # noqa: C901
+def loads(s: str, *, parse_float: ParseFloat = float) -> Dict[str, Any]:
     """Parse TOML from a string."""
 
     # The spec allows converting "\r\n" to "\n", even in string
     # literals. Let's do so to simplify parsing.
     s = s.replace("\r\n", "\n")
 
-    state = ParseState(s, parse_float)
+    state = State(s, parse_float)
 
     # Parse one statement at a time
     # (typically means one line in TOML source)
@@ -128,16 +128,16 @@ def loads(s: str, *, parse_float: ParseFloat = float) -> Dict[str, Any]:  # noqa
     return state.out.dict
 
 
-class ParseState:
+class State:
     def __init__(self, src: str, parse_float: ParseFloat):
         # Read only
-        self.src: str = src
-        self.out: NestedDict = NestedDict()
+        self.src = src
+        self.out = NestedDict()
         self.parse_float = parse_float
 
         # Read and write
-        self.pos: int = 0
-        self.header_namespace: Namespace = ()
+        self.pos = 0
+        self.header_namespace: Key = ()
 
     def try_char(self) -> Optional[str]:
         try:
@@ -150,14 +150,14 @@ class NestedDict:
     def __init__(self) -> None:
         self.dict: Dict[str, Any] = {}
         # Keep track of keys that have been explicitly set
-        self._explicitly_created: Set[Tuple[str, ...]] = set()
+        self._explicitly_created: Set[Key] = set()
         # Keep track of keys that hold immutable values. Immutability
         # applies recursively to sub-structures.
-        self._frozen: Set[Tuple[str, ...]] = set()
+        self._frozen: Set[Key] = set()
 
     def get_or_create_nest(
         self,
-        key: Tuple[str, ...],
+        key: Key,
         *,
         explicit_access: bool = True,
         access_lists: bool = True,
@@ -175,7 +175,7 @@ class NestedDict:
             self._explicitly_created.add(key)
         return container
 
-    def append_nest_to_list(self, key: Tuple[str, ...]) -> None:
+    def append_nest_to_list(self, key: Key) -> None:
         container = self.get_or_create_nest(key[:-1], explicit_access=False)
         nest: dict = {}
         last_key = key[-1]
@@ -188,25 +188,25 @@ class NestedDict:
             container[last_key] = [nest]
         self._explicitly_created.add(key)
 
-    def is_explicitly_created(self, key: Tuple[str, ...]) -> bool:
+    def is_explicitly_created(self, key: Key) -> bool:
         return key in self._explicitly_created
 
-    def is_frozen(self, key: Tuple[str, ...]) -> bool:
+    def is_frozen(self, key: Key) -> bool:
         for frozen_space in self._frozen:
             if key[: len(frozen_space)] == frozen_space:
                 return True
         return False
 
-    def mark_frozen(self, key: Tuple[str, ...]) -> None:
+    def mark_frozen(self, key: Key) -> None:
         self._frozen.add(key)
 
     def mark_relative_path_explicitly_created(
-        self, head_key: Tuple[str, ...], rel_key: Tuple[str, ...]
+        self, head_key: Key, rel_key: Key
     ) -> None:
         for i in range(len(rel_key)):
             self._explicitly_created.add(head_key + rel_key[: i + 1])
 
-    def reset(self, key: Tuple[str, ...]) -> None:
+    def reset(self, key: Key) -> None:
         """Recursively unmark explicitly created and frozen statuses in the
         namespace."""
         len_key = len(key)
@@ -216,7 +216,7 @@ class NestedDict:
         }
 
 
-def skip_chars(state: ParseState, chars: Iterable[str]) -> None:
+def skip_chars(state: State, chars: Iterable[str]) -> None:
     src, pos = state.src, state.pos
     try:
         while src[pos] in chars:
@@ -227,7 +227,7 @@ def skip_chars(state: ParseState, chars: Iterable[str]) -> None:
 
 
 def skip_until(
-    state: ParseState, expect_char: str, *, error_on: Iterable[str], error_on_eof: bool
+    state: State, expect_char: str, *, error_on: Iterable[str], error_on_eof: bool
 ) -> None:
     src, pos = state.src, state.pos
     while True:
@@ -251,12 +251,12 @@ def skip_until(
     state.pos = pos
 
 
-def skip_comment(state: ParseState) -> None:
+def skip_comment(state: State) -> None:
     if state.try_char() == "#":
         comment_rule(state)
 
 
-def skip_comments_and_array_ws(state: ParseState) -> None:
+def skip_comments_and_array_ws(state: State) -> None:
     while True:
         pos_before_skip = state.pos
         skip_chars(state, TOML_WS_AND_NEWLINE)
@@ -265,12 +265,12 @@ def skip_comments_and_array_ws(state: ParseState) -> None:
             break
 
 
-def comment_rule(state: ParseState) -> None:
+def comment_rule(state: State) -> None:
     state.pos += 1
     skip_until(state, "\n", error_on=ILLEGAL_COMMENT_CHARS, error_on_eof=False)
 
 
-def create_dict_rule(state: ParseState) -> None:
+def create_dict_rule(state: State) -> None:
     state.pos += 1
     skip_chars(state, TOML_WS)
     key = parse_key(state)
@@ -290,7 +290,7 @@ def create_dict_rule(state: ParseState) -> None:
     state.pos += 1
 
 
-def create_list_rule(state: ParseState) -> None:
+def create_list_rule(state: State) -> None:
     state.pos += 2
     skip_chars(state, TOML_WS)
     key = parse_key(state)
@@ -319,7 +319,7 @@ def create_list_rule(state: ParseState) -> None:
     state.pos += 2
 
 
-def key_value_rule(state: ParseState) -> None:
+def key_value_rule(state: State) -> None:
     key, value = parse_key_value_pair(state)
     key_parent, key_stem = key[:-1], key[-1]
     abs_key_parent = state.header_namespace + key_parent
@@ -347,7 +347,7 @@ def key_value_rule(state: ParseState) -> None:
     nest[key_stem] = value
 
 
-def parse_key_value_pair(state: ParseState) -> Tuple[Tuple[str, ...], Any]:
+def parse_key_value_pair(state: State) -> Tuple[Key, Any]:
     key = parse_key(state)
     if state.try_char() != "=":
         raise TOMLDecodeError(
@@ -359,7 +359,7 @@ def parse_key_value_pair(state: ParseState) -> Tuple[Tuple[str, ...], Any]:
     return key, value
 
 
-def parse_key(state: ParseState) -> Tuple[str, ...]:
+def parse_key(state: State) -> Key:
     """Return parsed key as list of strings.
 
     Move state.pos after the key, to the start of the value that
@@ -375,7 +375,7 @@ def parse_key(state: ParseState) -> Tuple[str, ...]:
     return tuple(key)
 
 
-def parse_key_part(state: ParseState) -> str:
+def parse_key_part(state: State) -> str:
     """Return parsed key part.
 
     Move state.pos after the key part. Throw if parsing fails.
@@ -394,7 +394,7 @@ def parse_key_part(state: ParseState) -> str:
     )
 
 
-def parse_basic_str(state: ParseState) -> str:
+def parse_basic_str(state: State) -> str:
     state.pos += 1
     return parse_string(
         state,
@@ -405,7 +405,7 @@ def parse_basic_str(state: ParseState) -> str:
     )
 
 
-def parse_array(state: ParseState) -> list:
+def parse_array(state: State) -> list:
     state.pos += 1
     array: list = []
 
@@ -431,7 +431,7 @@ def parse_array(state: ParseState) -> list:
             return array
 
 
-def parse_inline_table(state: ParseState) -> dict:
+def parse_inline_table(state: State) -> dict:
     state.pos += 1
     # We use a subset of the functionality NestedDict provides. We use it for
     # the convenient getter, and recursive freeze for inner arrays and tables.
@@ -473,7 +473,7 @@ def parse_inline_table(state: ParseState) -> dict:
         skip_chars(state, TOML_WS)
 
 
-def parse_basic_str_escape(state: ParseState, *, multiline: bool = False) -> str:
+def parse_basic_str_escape(state: State, *, multiline: bool = False) -> str:
     escape_id = state.src[state.pos : state.pos + 2]
     if len(escape_id) != 2:
         raise TOMLDecodeError(suffix_coord(state, "Unterminated string"))
@@ -501,11 +501,11 @@ def parse_basic_str_escape(state: ParseState, *, multiline: bool = False) -> str
     raise TOMLDecodeError(suffix_coord(state, 'Unescaped "\\" in a string'))
 
 
-def parse_basic_str_escape_multiline(state: ParseState) -> str:
+def parse_basic_str_escape_multiline(state: State) -> str:
     return parse_basic_str_escape(state, multiline=True)
 
 
-def parse_hex_char(state: ParseState, hex_len: int) -> str:
+def parse_hex_char(state: State, hex_len: int) -> str:
     hex_str = state.src[state.pos : state.pos + hex_len]
     if len(hex_str) != hex_len or any(c not in string.hexdigits for c in hex_str):
         raise TOMLDecodeError(suffix_coord(state, "Invalid hex value"))
@@ -518,7 +518,7 @@ def parse_hex_char(state: ParseState, hex_len: int) -> str:
     return chr(hex_int)
 
 
-def parse_literal_str(state: ParseState) -> str:
+def parse_literal_str(state: State) -> str:
     state.pos += 1  # Skip starting apostrophe
     start_pos = state.pos
     skip_until(state, "'", error_on=ILLEGAL_LITERAL_STR_CHARS, error_on_eof=True)
@@ -527,7 +527,7 @@ def parse_literal_str(state: ParseState) -> str:
     return literal_str
 
 
-def parse_multiline_str(state: ParseState, *, literal: bool) -> str:
+def parse_multiline_str(state: State, *, literal: bool) -> str:
     state.pos += 3
     if state.try_char() == "\n":
         state.pos += 1
@@ -560,12 +560,12 @@ def parse_multiline_str(state: ParseState, *, literal: bool) -> str:
 
 
 def parse_string(
-    state: ParseState,
+    state: State,
     *,
     delim: str,
     delim_len: int,
     error_on: Iterable[str],
-    parse_escapes: Optional[Callable] = None,
+    parse_escapes: Optional[Callable[[State], str]] = None,
 ) -> str:
     src, pos = state.src, state.pos
     expect_after = delim * (delim_len - 1)
@@ -596,7 +596,7 @@ def parse_string(
         pos += 1
 
 
-def parse_regex(state: ParseState, regex: "Pattern") -> str:
+def parse_regex(state: State, regex: "Pattern") -> str:
     match = regex.match(state.src, state.pos)
     if not match:
         raise TOMLDecodeError(suffix_coord(state, "Unexpected sequence"))
@@ -605,7 +605,7 @@ def parse_regex(state: ParseState, regex: "Pattern") -> str:
     return match_str
 
 
-def parse_datetime(state: ParseState, match: "Match") -> Union[datetime, date]:
+def parse_datetime(state: State, match: "Match") -> Union[datetime, date]:
     match_str = match.group()
     state.pos = match.end()
     groups: Any = match.groups()
@@ -632,7 +632,7 @@ def parse_datetime(state: ParseState, match: "Match") -> Union[datetime, date]:
     return datetime(year, month, day, hour, minute, sec, micros, tzinfo=tz)
 
 
-def parse_localtime(state: ParseState, match: "Match") -> time:
+def parse_localtime(state: State, match: "Match") -> time:
     state.pos = match.end()
     groups = match.groups()
     hour, minute, sec = int(groups[0]), int(groups[1]), int(groups[2])
@@ -641,7 +641,7 @@ def parse_localtime(state: ParseState, match: "Match") -> time:
     return time(hour, minute, sec, micros)
 
 
-def parse_dec_or_float(state: ParseState, match: "Match") -> Any:
+def parse_dec_or_float(state: State, match: "Match") -> Any:
     match_str = match.group()
     state.pos = match.end()
     if "." in match_str or "e" in match_str or "E" in match_str:
@@ -649,7 +649,7 @@ def parse_dec_or_float(state: ParseState, match: "Match") -> Any:
     return int(match_str)
 
 
-def parse_value(state: ParseState) -> Any:  # noqa: C901
+def parse_value(state: State) -> Any:  # noqa: C901
     src, pos = state.src, state.pos
     char = src[pos : pos + 1]
 
@@ -728,10 +728,10 @@ def parse_value(state: ParseState) -> Any:  # noqa: C901
     raise TOMLDecodeError(suffix_coord(state, "Invalid value"))
 
 
-def suffix_coord(state: ParseState, msg: str) -> str:
+def suffix_coord(state: State, msg: str) -> str:
     """Suffix an error message with coordinates in source."""
 
-    def coord_repr(state: ParseState) -> str:
+    def coord_repr(state: State) -> str:
         if not state.try_char():
             return "end of document"
         line = state.src.count("\n", 0, state.pos) + 1
