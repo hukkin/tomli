@@ -69,7 +69,7 @@ def load(fp: TextIO, *, parse_float: ParseFloat = float) -> Dict[str, Any]:
     return loads(s, parse_float=parse_float)
 
 
-def loads(s: str, *, parse_float: ParseFloat = float) -> Dict[str, Any]:  # noqa: C901
+def loads(s: str, *, parse_float: ParseFloat = float) -> Dict[str, Any]:
     """Parse TOML from a string."""
 
     # The spec allows converting "\r\n" to "\n", even in string
