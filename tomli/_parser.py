@@ -565,7 +565,7 @@ def parse_string(
     delim: str,
     delim_len: int,
     error_on: Iterable[str],
-    parse_escapes: Optional[Callable] = None,
+    parse_escapes: Optional[Callable[[State], str]] = None,
 ) -> str:
     src, pos = state.src, state.pos
     expect_after = delim * (delim_len - 1)
