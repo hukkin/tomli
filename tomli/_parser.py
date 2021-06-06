@@ -1,15 +1,31 @@
-import datetime
+from datetime import date, datetime, time, timedelta, timezone, tzinfo
 import string
-import sys
 from types import MappingProxyType
-from typing import Any, Callable, Dict, Iterable, Optional, Set, TextIO, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    Optional,
+    Set,
+    TextIO,
+    Tuple,
+    Union,
+)
 
-from tomli import _re
+from tomli._re import (
+    RE_BIN,
+    RE_DATETIME,
+    RE_DEC_OR_FLOAT,
+    RE_HEX,
+    RE_LOCAL_TIME,
+    RE_OCT,
+)
 
-if sys.version_info < (3, 7):
-    from typing import re  # pragma: no cover
-else:
-    import re  # pragma: no cover
+if TYPE_CHECKING:
+    from re import Match, Pattern
+
 
 ASCII_CTRL = frozenset(chr(i) for i in range(32)) | frozenset(chr(127))
 
@@ -201,8 +217,6 @@ class NestedDict:
 
 
 def skip_chars(state: ParseState, chars: Iterable[str]) -> None:
-    # Use local variables for performance. This is the hottest loop in the
-    # entire parser so the speedup seems to be well over 5% (CPython 3.8).
     src, pos = state.src, state.pos
     try:
         while src[pos] in chars:
@@ -215,8 +229,6 @@ def skip_chars(state: ParseState, chars: Iterable[str]) -> None:
 def skip_until(
     state: ParseState, expect_char: str, *, error_on: Iterable[str], error_on_eof: bool
 ) -> None:
-    # Use local variables for performance. This is a hot loop so the entire
-    # parser seems to be a few percent faster as result (CPython 3.8).
     src, pos = state.src, state.pos
     while True:
         try:
@@ -584,7 +596,7 @@ def parse_string(
         pos += 1
 
 
-def parse_regex(state: ParseState, regex: re.Pattern) -> str:
+def parse_regex(state: ParseState, regex: "Pattern") -> str:
     match = regex.match(state.src, state.pos)
     if not match:
         raise TOMLDecodeError(suffix_coord(state, "Unexpected sequence"))
@@ -593,9 +605,7 @@ def parse_regex(state: ParseState, regex: re.Pattern) -> str:
     return match_str
 
 
-def parse_datetime(
-    state: ParseState, match: re.Match
-) -> Union[datetime.datetime, datetime.date]:
+def parse_datetime(state: ParseState, match: "Match") -> Union[datetime, date]:
     match_str = match.group()
     state.pos = match.end()
     groups: Any = match.groups()
@@ -603,35 +613,35 @@ def parse_datetime(
     hour_str = groups[3]
     if hour_str is None:
         # Returning local date
-        return datetime.date(year, month, day)
+        return date(year, month, day)
     hour, minute, sec = int(hour_str), int(groups[4]), int(groups[5])
     micros_str, offset_hour_str = groups[6], groups[7]
     micros = int(micros_str[1:].ljust(6, "0")[:6]) if micros_str else 0
     if offset_hour_str is not None:
         offset_dir = 1 if "+" in match_str else -1
-        tz: Optional[datetime.tzinfo] = datetime.timezone(
-            datetime.timedelta(
+        tz: Optional[tzinfo] = timezone(
+            timedelta(
                 hours=offset_dir * int(offset_hour_str),
                 minutes=offset_dir * int(groups[8]),
             )
         )
     elif "Z" in match_str:
-        tz = datetime.timezone.utc
+        tz = timezone.utc
     else:  # local date-time
         tz = None
-    return datetime.datetime(year, month, day, hour, minute, sec, micros, tzinfo=tz)
+    return datetime(year, month, day, hour, minute, sec, micros, tzinfo=tz)
 
 
-def parse_localtime(state: ParseState, match: re.Match) -> datetime.time:
+def parse_localtime(state: ParseState, match: "Match") -> time:
     state.pos = match.end()
     groups = match.groups()
     hour, minute, sec = int(groups[0]), int(groups[1]), int(groups[2])
     micros_str = groups[3]
     micros = int(micros_str[1:].ljust(6, "0")[:6]) if micros_str else 0
-    return datetime.time(hour, minute, sec, micros)
+    return time(hour, minute, sec, micros)
 
 
-def parse_dec_or_float(state: ParseState, match: re.Match) -> Any:
+def parse_dec_or_float(state: ParseState, match: "Match") -> Any:
     match_str = match.group()
     state.pos = match.end()
     if "." in match_str or "e" in match_str or "E" in match_str:
@@ -640,59 +650,60 @@ def parse_dec_or_float(state: ParseState, match: re.Match) -> Any:
 
 
 def parse_value(state: ParseState) -> Any:  # noqa: C901
-    char = state.try_char()
+    src, pos = state.src, state.pos
+    char = src[pos : pos + 1]
 
     # Basic strings
     if char == '"':
-        if state.src[state.pos + 1 : state.pos + 3] == '""':
+        if src[pos + 1 : pos + 3] == '""':
             return parse_multiline_str(state, literal=False)
         return parse_basic_str(state)
 
     # Literal strings
     if char == "'":
-        if state.src[state.pos + 1 : state.pos + 3] == "''":
+        if src[pos + 1 : pos + 3] == "''":
             return parse_multiline_str(state, literal=True)
         return parse_literal_str(state)
 
     # Booleans
     if char == "t":
-        if state.src[state.pos + 1 : state.pos + 4] == "rue":
-            state.pos += 4
+        if src[pos + 1 : pos + 4] == "rue":
+            state.pos = pos + 4
             return True
     if char == "f":
-        if state.src[state.pos + 1 : state.pos + 5] == "alse":
-            state.pos += 5
+        if src[pos + 1 : pos + 5] == "alse":
+            state.pos = pos + 5
             return False
 
     # Dates and times
-    date_match = _re.DATETIME.match(state.src, state.pos)
+    date_match = RE_DATETIME.match(src, pos)
     if date_match:
         return parse_datetime(state, date_match)
-    localtime_match = _re.LOCAL_TIME.match(state.src, state.pos)
+    localtime_match = RE_LOCAL_TIME.match(src, pos)
     if localtime_match:
         return parse_localtime(state, localtime_match)
 
     # Non-decimal integers
     if char == "0":
-        second_char = state.src[state.pos + 1 : state.pos + 2]
+        second_char = src[pos + 1 : pos + 2]
         if second_char == "x":
-            state.pos += 2
-            hex_str = parse_regex(state, _re.HEX)
+            state.pos = pos + 2
+            hex_str = parse_regex(state, RE_HEX)
             return int(hex_str, 16)
         if second_char == "o":
-            state.pos += 2
-            oct_str = parse_regex(state, _re.OCT)
+            state.pos = pos + 2
+            oct_str = parse_regex(state, RE_OCT)
             return int(oct_str, 8)
         if second_char == "b":
-            state.pos += 2
-            bin_str = parse_regex(state, _re.BIN)
+            state.pos = pos + 2
+            bin_str = parse_regex(state, RE_BIN)
             return int(bin_str, 2)
 
     # Decimal integers and "normal" floats.
     # The regex will greedily match any type starting with a decimal
     # char, so needs to be located after handling of non-decimal ints,
     # and dates and times.
-    dec_match = _re.DEC_OR_FLOAT.match(state.src, state.pos)
+    dec_match = RE_DEC_OR_FLOAT.match(src, pos)
     if dec_match:
         return parse_dec_or_float(state, dec_match)
 
@@ -705,13 +716,13 @@ def parse_value(state: ParseState) -> Any:  # noqa: C901
         return parse_inline_table(state)
 
     # Special floats
-    first_three = state.src[state.pos : state.pos + 3]
+    first_three = src[pos : pos + 3]
     if first_three in {"inf", "nan"}:
-        state.pos += 3
+        state.pos = pos + 3
         return state.parse_float(first_three)
-    first_four = state.src[state.pos : state.pos + 4]
+    first_four = src[pos : pos + 4]
     if first_four in {"-inf", "+inf", "-nan", "+nan"}:
-        state.pos += 4
+        state.pos = pos + 4
         return state.parse_float(first_four)
 
     raise TOMLDecodeError(suffix_coord(state, "Invalid value"))
