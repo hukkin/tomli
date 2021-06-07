@@ -148,12 +148,18 @@ class State:
 
 class NestedDict:
     def __init__(self) -> None:
+        # The parsed content of the TOML document
         self.dict: Dict[str, Any] = {}
         # Keep track of keys that have been explicitly set
         self._explicitly_created: Set[Key] = set()
-        # Keep track of keys that hold immutable values. Immutability
-        # applies recursively to sub-structures.
-        self._frozen: Set[Key] = set()
+        # Keep track of keys that hold immutable values. Immutability applies
+        # recursively to sub-structures. The structure is as follows:
+        # {
+        #   "key1": {"frozen": True, "nested": {...}},
+        #   "key2": {"frozen": False, "nested": {...}},
+        # }
+        # where "nested" values are structured the same as the root dict.
+        self._frozen: Dict[str, dict] = {}
 
     def get_or_create_nest(
         self,
@@ -192,13 +198,25 @@ class NestedDict:
         return key in self._explicitly_created
 
     def is_frozen(self, key: Key) -> bool:
-        for frozen_space in self._frozen:
-            if key[: len(frozen_space)] == frozen_space:
-                return True
+        container = self._frozen
+        for k in key:  # pragma: no cover  # coverage.py seems broken in py3.10 here
+            if k in container:
+                status_container = container[k]
+                if status_container["frozen"]:
+                    return True
+                container = status_container["nested"]
+                continue
+            break
         return False
 
     def mark_frozen(self, key: Key) -> None:
-        self._frozen.add(key)
+        container = self._frozen
+        key_parent, key_stem = key[:-1], key[-1]
+        for k in key_parent:
+            if k not in container:
+                container[k] = {"frozen": False, "nested": {}}
+            container = container[k]["nested"]
+        container[key_stem] = {"frozen": True, "nested": {}}
 
     def mark_relative_path_explicitly_created(
         self, head_key: Key, rel_key: Key
@@ -210,10 +228,18 @@ class NestedDict:
         """Recursively unmark explicitly created and frozen statuses in the
         namespace."""
         len_key = len(key)
-        self._frozen = {f for f in self._frozen if f[:len_key] != key}
+        # Reset explicitly created
         self._explicitly_created = {
             e for e in self._explicitly_created if e[:len_key] != key
         }
+        # Reset frozen
+        key_parent, key_stem = key[:-1], key[-1]
+        cont = self._frozen
+        for k in key_parent:
+            if k not in cont:
+                return
+            cont = cont[k]["nested"]
+        cont[key_stem] = {"frozen": False, "nested": {}}
 
 
 def skip_chars(state: State, chars: Iterable[str]) -> None:
