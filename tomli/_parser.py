@@ -218,10 +218,7 @@ class NestedDict:
             if k not in cont:
                 cont[k] = {"frozen": False, "nested": {}}
             cont = cont[k]["nested"]
-        if key_stem in cont:
-            cont[key_stem]["frozen"] = True
-        else:
-            cont[key_stem] = {"frozen": True, "nested": {}}
+        cont[key_stem] = {"frozen": True, "nested": {}}
 
     def mark_relative_path_explicitly_created(
         self, head_key: Key, rel_key: Key
