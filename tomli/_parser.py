@@ -165,7 +165,6 @@ class NestedDict:
         self,
         key: Key,
         *,
-        explicit_access: bool = True,
         access_lists: bool = True,
     ) -> dict:
         container: Any = self.dict
@@ -177,12 +176,10 @@ class NestedDict:
                 container = container[-1]
             if not isinstance(container, dict):
                 raise KeyError("There is no nest behind this key")
-        if explicit_access:
-            self._explicitly_created.add(key)
         return container
 
     def append_nest_to_list(self, key: Key) -> None:
-        container = self.get_or_create_nest(key[:-1], explicit_access=False)
+        container = self.get_or_create_nest(key[:-1])
         nest: dict = {}
         last_key = key[-1]
         if last_key in container:
@@ -192,7 +189,6 @@ class NestedDict:
             list_.append(nest)
         else:
             container[last_key] = [nest]
-        self._explicitly_created.add(key)
 
     def is_explicitly_created(self, key: Key) -> bool:
         return key in self._explicitly_created
@@ -217,6 +213,9 @@ class NestedDict:
                 container[k] = {"frozen": False, "nested": {}}
             container = container[k]["nested"]
         container[key_stem] = {"frozen": True, "nested": {}}
+
+    def mark_explicitly_created(self, key: Key) -> None:
+        self._explicitly_created.add(key)
 
     def mark_relative_path_explicitly_created(
         self, head_key: Key, rel_key: Key
@@ -303,6 +302,7 @@ def create_dict_rule(state: State) -> None:
 
     if state.out.is_explicitly_created(key) or state.out.is_frozen(key):
         raise TOMLDecodeError(suffix_coord(state, f"Can not declare {key} twice"))
+    state.out.mark_explicitly_created(key)
     try:
         state.out.get_or_create_nest(key)
     except KeyError:
@@ -325,8 +325,10 @@ def create_list_rule(state: State) -> None:
         raise TOMLDecodeError(
             suffix_coord(state, f"Can not mutate immutable namespace {key}")
         )
-    # Free the namespace again now that it points to another empty list item
+    # Free the namespace now that it points to another empty list item...
     state.out.reset(key)
+    # ...but this key precisely is still prohibited from table declaration
+    state.out.mark_explicitly_created(key)
     try:
         state.out.append_nest_to_list(key)
     except KeyError:
@@ -359,7 +361,7 @@ def key_value_rule(state: State) -> None:
             )
         )
     # Containers in the relative path can't be opened with the table syntax after this
-    state.out.mark_relative_path_explicitly_created(state.header_namespace, key_parent)
+    state.out.mark_relative_path_explicitly_created(state.header_namespace, key)
     # Set the value in the right place in `state.out`
     try:
         nest = state.out.get_or_create_nest(abs_key_parent)
@@ -478,9 +480,7 @@ def parse_inline_table(state: State) -> dict:
             raise TOMLDecodeError(
                 suffix_coord(state, f"Can not mutate immutable namespace {key}")
             )
-        nest = nested_dict.get_or_create_nest(
-            key_parent, explicit_access=False, access_lists=False
-        )
+        nest = nested_dict.get_or_create_nest(key_parent, access_lists=False)
         if key_stem in nest:
             raise TOMLDecodeError(
                 suffix_coord(state, f'Duplicate inline table key "{key_stem}"')
