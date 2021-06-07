@@ -6,9 +6,9 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 name = "tomli"
 version = "0.2.10"  # DO NOT EDIT THIS LINE MANUALLY. LET bump2version UTILITY DO IT
-authors = ["Taneli Hukkinen <hukkinj1@users.noreply.github.com>"]
+authors = ["Taneli Hukkinen <hukkin@users.noreply.github.com>"]
 description = "A lil' TOML parser"
-repository = "https://github.com/hukkinj1/tomli"
+repository = "https://github.com/hukkin/tomli"
 readme = "README.md"
 license = "MIT"
 classifiers = [
@@ -26,7 +26,7 @@ packages = [
 include = ["tomli/py.typed"]
 
 [tool.poetry.urls]
-"Changelog" = "https://github.com/hukkinj1/tomli/blob/master/CHANGELOG.md"
+"Changelog" = "https://github.com/hukkin/tomli/blob/master/CHANGELOG.md"
 
 [tool.poetry.dependencies]
 python = ">=3.6"
