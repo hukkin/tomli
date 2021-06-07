@@ -148,14 +148,12 @@ class State:
 
 class NestedDict:
     def __init__(self) -> None:
+        # The parsed content of the TOML document
         self.dict: Dict[str, Any] = {}
         # Keep track of keys that have been explicitly set
         self._explicitly_created: Set[Key] = set()
-
-        # Keep track of keys that hold immutable values. Immutability
-        # applies recursively to sub-structures.
-        #
-        # The dict is structured like:
+        # Keep track of keys that hold immutable values. Immutability applies
+        # recursively to sub-structures. The structure is as follows:
         # {
         #   "key1": {"frozen": True, "nested": {...}},
         #   "key2": {"frozen": False, "nested": {...}},
@@ -200,25 +198,25 @@ class NestedDict:
         return key in self._explicitly_created
 
     def is_frozen(self, key: Key) -> bool:
-        cont = self._frozen
-        for k in key:
-            if k in cont:
-                status_cont = cont[k]
-                if status_cont["frozen"]:
+        container = self._frozen
+        for k in key:  # pragma: no cover  # coverage.py seems broken in py3.10 here
+            if k in container:
+                status_container = container[k]
+                if status_container["frozen"]:
                     return True
-                cont = status_cont["nested"]
+                container = status_container["nested"]
                 continue
             break
         return False
 
     def mark_frozen(self, key: Key) -> None:
-        cont = self._frozen
+        container = self._frozen
         key_parent, key_stem = key[:-1], key[-1]
         for k in key_parent:
-            if k not in cont:
-                cont[k] = {"frozen": False, "nested": {}}
-            cont = cont[k]["nested"]
-        cont[key_stem] = {"frozen": True, "nested": {}}
+            if k not in container:
+                container[k] = {"frozen": False, "nested": {}}
+            container = container[k]["nested"]
+        container[key_stem] = {"frozen": True, "nested": {}}
 
     def mark_relative_path_explicitly_created(
         self, head_key: Key, rel_key: Key
