@@ -207,8 +207,8 @@ class NestedDict:
                 if status_cont["frozen"]:
                     return True
                 cont = status_cont["nested"]
-            else:
-                break
+                continue
+            break
         return False
 
     def mark_frozen(self, key: Key) -> None:
