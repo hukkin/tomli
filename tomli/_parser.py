@@ -470,10 +470,7 @@ def parse_inline_table(state: State) -> dict:  # noqa: C901
     flags = Flags()
 
     skip_chars(state, TOML_WS)
-    c = state.try_char()
-    if not c:
-        raise TOMLDecodeError("Unclosed inline table")
-    if c == "}":
+    if state.try_char() == "}":
         state.pos += 1
         return nested_dict.dict
     while True:
@@ -507,10 +504,7 @@ def parse_inline_table(state: State) -> dict:  # noqa: C901
 
 def parse_basic_str_escape(state: State, *, multiline: bool = False) -> str:
     escape_id = state.src[state.pos : state.pos + 2]
-    if len(escape_id) != 2:
-        raise TOMLDecodeError(suffix_coord(state, "Unterminated string"))
     state.pos += 2
-
     if multiline and escape_id in {"\\ ", "\\\t", "\\\n"}:
         # Skip whitespace until next non-whitespace character or end of
         # the doc. Error if non-whitespace is found before newline.
@@ -530,6 +524,8 @@ def parse_basic_str_escape(state: State, *, multiline: bool = False) -> str:
         return parse_hex_char(state, 4)
     if escape_id == "\\U":
         return parse_hex_char(state, 8)
+    if len(escape_id) != 2:
+        raise TOMLDecodeError(suffix_coord(state, "Unterminated string"))
     raise TOMLDecodeError(suffix_coord(state, 'Unescaped "\\" in a string'))
 
 
