@@ -129,10 +129,13 @@ def loads(s: str, *, parse_float: ParseFloat = float) -> Dict[str, Any]:
 
 class State:
     def __init__(self, src: str, parse_float: ParseFloat):
-        # Read only
+        # Immutable read-only
         self.src = src
-        self.out = NestedDict()
         self.parse_float = parse_float
+
+        # Mutable read-only
+        self.out = NestedDict()
+        self.flags = Flags()
 
         # Read and write
         self.pos = 0
@@ -146,6 +149,8 @@ class State:
 
 
 class Flags:
+    """Metadata flags: data of immutable and explicitly created structures."""
+
     FREEZE = 0
     EXPLICITLY_SET = 1
 
@@ -211,8 +216,6 @@ class NestedDict:
     def __init__(self) -> None:
         # The parsed content of the TOML document
         self.dict: Dict[str, Any] = {}
-        # Metadata flags: data of immutable and explicitly created structures
-        self.flags = Flags()
 
     def get_or_create_nest(
         self,
@@ -303,11 +306,9 @@ def create_dict_rule(state: State) -> None:
     skip_chars(state, TOML_WS)
     key = parse_key(state)
 
-    if state.out.flags.has(key, Flags.EXPLICITLY_SET) or state.out.flags.has(
-        key, Flags.FREEZE
-    ):
+    if state.flags.has(key, Flags.EXPLICITLY_SET) or state.flags.has(key, Flags.FREEZE):
         raise TOMLDecodeError(suffix_coord(state, f"Can not declare {key} twice"))
-    state.out.flags.set(key, Flags.EXPLICITLY_SET, recursive=False)
+    state.flags.set(key, Flags.EXPLICITLY_SET, recursive=False)
     try:
         state.out.get_or_create_nest(key)
     except KeyError:
@@ -326,14 +327,14 @@ def create_list_rule(state: State) -> None:
     skip_chars(state, TOML_WS)
     key = parse_key(state)
 
-    if state.out.flags.has(key, Flags.FREEZE):
+    if state.flags.has(key, Flags.FREEZE):
         raise TOMLDecodeError(
             suffix_coord(state, f"Can not mutate immutable namespace {key}")
         )
     # Free the namespace now that it points to another empty list item...
-    state.out.flags.reset(key)
+    state.flags.reset(key)
     # ...but this key precisely is still prohibited from table declaration
-    state.out.flags.set(key, Flags.EXPLICITLY_SET, recursive=False)
+    state.flags.set(key, Flags.EXPLICITLY_SET, recursive=False)
     try:
         state.out.append_nest_to_list(key)
     except KeyError:
@@ -358,7 +359,7 @@ def key_value_rule(state: State) -> None:
     abs_key_parent = state.header_namespace + key_parent
     abs_key = state.header_namespace + key
 
-    if state.out.flags.has(abs_key_parent, Flags.FREEZE):
+    if state.flags.has(abs_key_parent, Flags.FREEZE):
         raise TOMLDecodeError(
             suffix_coord(
                 state,
@@ -366,7 +367,7 @@ def key_value_rule(state: State) -> None:
             )
         )
     # Containers in the relative path can't be opened with the table syntax after this
-    state.out.flags.set_relative_path(state.header_namespace, key, Flags.EXPLICITLY_SET)
+    state.flags.set_relative_path(state.header_namespace, key, Flags.EXPLICITLY_SET)
     # Set the value in the right place in `state.out`
     try:
         nest = state.out.get_or_create_nest(abs_key_parent)
@@ -376,7 +377,7 @@ def key_value_rule(state: State) -> None:
         raise TOMLDecodeError(suffix_coord(state, f"Can not define {abs_key} twice"))
     # Mark inline table and array namespaces recursively immutable
     if isinstance(value, (dict, list)):
-        state.out.flags.set(abs_key, Flags.FREEZE, recursive=True)
+        state.flags.set(abs_key, Flags.FREEZE, recursive=True)
     nest[key_stem] = value
 
 
@@ -470,6 +471,7 @@ def parse_inline_table(state: State) -> dict:  # noqa: C901
     # the convenient getter, and recursive freeze for inner arrays and tables.
     # Cutting a new lighter NestedDict base class could work here?
     nested_dict = NestedDict()
+    flags = Flags()
 
     skip_chars(state, TOML_WS)
     c = state.try_char()
@@ -481,7 +483,7 @@ def parse_inline_table(state: State) -> dict:  # noqa: C901
     while True:
         key, value = parse_key_value_pair(state)
         key_parent, key_stem = key[:-1], key[-1]
-        if nested_dict.flags.has(key, Flags.FREEZE):
+        if flags.has(key, Flags.FREEZE):
             raise TOMLDecodeError(
                 suffix_coord(state, f"Can not mutate immutable namespace {key}")
             )
@@ -502,7 +504,7 @@ def parse_inline_table(state: State) -> dict:  # noqa: C901
         if c != ",":
             raise TOMLDecodeError(suffix_coord(state, "Unclosed inline table"))
         if isinstance(value, (dict, list)):
-            nested_dict.flags.set(key, Flags.FREEZE, recursive=True)
+            flags.set(key, Flags.FREEZE, recursive=True)
         state.pos += 1
         skip_chars(state, TOML_WS)
 
