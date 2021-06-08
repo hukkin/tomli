@@ -158,24 +158,24 @@ class Flags:
         self._meta: Dict[str, dict] = {}
 
     def reset(self, key: Key) -> None:
-        key_parent, key_stem = key[:-1], key[-1]
         cont = self._meta
-        for k in key_parent:
+        for k in key[:-1]:
             if k not in cont:
                 return
             cont = cont[k]["nested"]
-        cont[key_stem] = {"flags": set(), "recursive_flags": set(), "nested": {}}
+        cont.pop(key[-1], None)
 
-    def set_relative_path(self, head_key: Key, rel_key: Key, flag: int) -> None:
+    def set_for_relative_key(self, head_key: Key, rel_key: Key, flag: int) -> None:
         container = self._meta
         for k in head_key:
             if k not in container:
                 container[k] = {"flags": set(), "recursive_flags": set(), "nested": {}}
             container = container[k]["nested"]
         for k in rel_key:
-            if k not in container:
-                container[k] = {"flags": set(), "recursive_flags": set(), "nested": {}}
-            container[k]["flags"].add(flag)
+            if k in container:
+                container[k]["flags"].add(flag)
+            else:
+                container[k] = {"flags": {flag}, "recursive_flags": set(), "nested": {}}
             container = container[k]["nested"]
 
     def set(self, key: Key, flag: int, *, recursive: bool) -> None:  # noqa: A003
@@ -367,7 +367,7 @@ def key_value_rule(state: State) -> None:
             )
         )
     # Containers in the relative path can't be opened with the table syntax after this
-    state.flags.set_relative_path(state.header_namespace, key, Flags.EXPLICITLY_SET)
+    state.flags.set_for_relative_key(state.header_namespace, key, Flags.EXPLICITLY_SET)
     # Set the value in the right place in `state.out`
     try:
         nest = state.out.get_or_create_nest(abs_key_parent)
