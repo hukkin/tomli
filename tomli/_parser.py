@@ -459,7 +459,7 @@ def parse_array(state: State) -> list:
             return array
 
 
-def parse_inline_table(state: State) -> dict:
+def parse_inline_table(state: State) -> dict:  # noqa: C901
     state.pos += 1
     # We use a subset of the functionality NestedDict provides. We use it for
     # the convenient getter, and recursive freeze for inner arrays and tables.
@@ -480,7 +480,10 @@ def parse_inline_table(state: State) -> dict:
             raise TOMLDecodeError(
                 suffix_coord(state, f"Can not mutate immutable namespace {key}")
             )
-        nest = nested_dict.get_or_create_nest(key_parent, access_lists=False)
+        try:
+            nest = nested_dict.get_or_create_nest(key_parent, access_lists=False)
+        except KeyError:
+            raise TOMLDecodeError(suffix_coord(state, "Can not overwrite a value"))
         if key_stem in nest:
             raise TOMLDecodeError(
                 suffix_coord(state, f'Duplicate inline table key "{key_stem}"')
