@@ -8,7 +8,6 @@ from typing import (
     Dict,
     Iterable,
     Optional,
-    Set,
     TextIO,
     Tuple,
     Union,
@@ -130,10 +129,13 @@ def loads(s: str, *, parse_float: ParseFloat = float) -> Dict[str, Any]:
 
 class State:
     def __init__(self, src: str, parse_float: ParseFloat):
-        # Read only
+        # Immutable read-only
         self.src = src
-        self.out = NestedDict()
         self.parse_float = parse_float
+
+        # Mutable read-only
+        self.out = NestedDict()
+        self.flags = Flags()
 
         # Read and write
         self.pos = 0
@@ -146,20 +148,76 @@ class State:
             return None
 
 
+class Flags:
+    """Flags that map to parsed keys/namespaces."""
+
+    # Marks an immutable namespace (inline array or inline table).
+    FROZEN = 0
+    # Marks a nest that has been explicitly created and can no longer
+    # be opened using the "[table]" syntax.
+    EXPLICIT_NEST = 1
+
+    def __init__(self) -> None:
+        self._meta: Dict[str, dict] = {}
+
+    def unset_all(self, key: Key) -> None:
+        cont = self._meta
+        for k in key[:-1]:
+            if k not in cont:
+                return
+            cont = cont[k]["nested"]
+        cont.pop(key[-1], None)
+
+    def set_for_relative_key(self, head_key: Key, rel_key: Key, flag: int) -> None:
+        container = self._meta
+        for k in head_key:
+            if k not in container:
+                container[k] = {"flags": set(), "recursive_flags": set(), "nested": {}}
+            container = container[k]["nested"]
+        for k in rel_key:
+            if k in container:
+                container[k]["flags"].add(flag)
+            else:
+                container[k] = {"flags": {flag}, "recursive_flags": set(), "nested": {}}
+            container = container[k]["nested"]
+
+    def set(self, key: Key, flag: int, *, recursive: bool) -> None:  # noqa: A003
+        container = self._meta
+        key_parent, key_stem = key[:-1], key[-1]
+        for k in key_parent:
+            if k not in container:
+                container[k] = {"flags": set(), "recursive_flags": set(), "nested": {}}
+            container = container[k]["nested"]
+        if key_stem not in container:
+            container[key_stem] = {
+                "flags": set(),
+                "recursive_flags": set(),
+                "nested": {},
+            }
+        container[key_stem]["recursive_flags" if recursive else "flags"].add(flag)
+
+    def is_(self, key: Key, flag: int) -> bool:
+        if not key:
+            return False  # document root has no flags
+        container = self._meta
+        for k in key[:-1]:
+            if k not in container:
+                return False
+            status_container = container[k]
+            if flag in status_container["recursive_flags"]:
+                return True
+            container = status_container["nested"]
+        key_stem = key[-1]
+        if key_stem in container:
+            container = container[key_stem]
+            return flag in container["flags"] or flag in container["recursive_flags"]
+        return False
+
+
 class NestedDict:
     def __init__(self) -> None:
         # The parsed content of the TOML document
         self.dict: Dict[str, Any] = {}
-        # Keep track of keys that have been explicitly set
-        self._explicitly_created: Set[Key] = set()
-        # Keep track of keys that hold immutable values. Immutability applies
-        # recursively to sub-structures. The structure is as follows:
-        # {
-        #   "key1": {"frozen": True, "nested": {...}},
-        #   "key2": {"frozen": False, "nested": {...}},
-        # }
-        # where "nested" values are structured the same as the root dict.
-        self._frozen: Dict[str, dict] = {}
 
     def get_or_create_nest(
         self,
@@ -180,65 +238,14 @@ class NestedDict:
 
     def append_nest_to_list(self, key: Key) -> None:
         container = self.get_or_create_nest(key[:-1])
-        nest: dict = {}
         last_key = key[-1]
         if last_key in container:
             list_ = container[last_key]
             if not isinstance(list_, list):
                 raise KeyError("An object other than list found behind this key")
-            list_.append(nest)
+            list_.append({})
         else:
-            container[last_key] = [nest]
-
-    def is_explicitly_created(self, key: Key) -> bool:
-        return key in self._explicitly_created
-
-    def is_frozen(self, key: Key) -> bool:
-        container = self._frozen
-        for k in key:  # pragma: no cover  # coverage.py seems broken in py3.10 here
-            if k in container:
-                status_container = container[k]
-                if status_container["frozen"]:
-                    return True
-                container = status_container["nested"]
-                continue
-            break
-        return False
-
-    def mark_frozen(self, key: Key) -> None:
-        container = self._frozen
-        key_parent, key_stem = key[:-1], key[-1]
-        for k in key_parent:
-            if k not in container:
-                container[k] = {"frozen": False, "nested": {}}
-            container = container[k]["nested"]
-        container[key_stem] = {"frozen": True, "nested": {}}
-
-    def mark_explicitly_created(self, key: Key) -> None:
-        self._explicitly_created.add(key)
-
-    def mark_relative_path_explicitly_created(
-        self, head_key: Key, rel_key: Key
-    ) -> None:
-        for i in range(len(rel_key)):
-            self._explicitly_created.add(head_key + rel_key[: i + 1])
-
-    def reset(self, key: Key) -> None:
-        """Recursively unmark explicitly created and frozen statuses in the
-        namespace."""
-        len_key = len(key)
-        # Reset explicitly created
-        self._explicitly_created = {
-            e for e in self._explicitly_created if e[:len_key] != key
-        }
-        # Reset frozen
-        key_parent, key_stem = key[:-1], key[-1]
-        cont = self._frozen
-        for k in key_parent:
-            if k not in cont:
-                return
-            cont = cont[k]["nested"]
-        cont[key_stem] = {"frozen": False, "nested": {}}
+            container[last_key] = [{}]
 
 
 def skip_chars(state: State, chars: Iterable[str]) -> None:
@@ -300,9 +307,9 @@ def create_dict_rule(state: State) -> None:
     skip_chars(state, TOML_WS)
     key = parse_key(state)
 
-    if state.out.is_explicitly_created(key) or state.out.is_frozen(key):
+    if state.flags.is_(key, Flags.EXPLICIT_NEST) or state.flags.is_(key, Flags.FROZEN):
         raise TOMLDecodeError(suffix_coord(state, f"Can not declare {key} twice"))
-    state.out.mark_explicitly_created(key)
+    state.flags.set(key, Flags.EXPLICIT_NEST, recursive=False)
     try:
         state.out.get_or_create_nest(key)
     except KeyError:
@@ -321,14 +328,14 @@ def create_list_rule(state: State) -> None:
     skip_chars(state, TOML_WS)
     key = parse_key(state)
 
-    if state.out.is_frozen(key):
+    if state.flags.is_(key, Flags.FROZEN):
         raise TOMLDecodeError(
             suffix_coord(state, f"Can not mutate immutable namespace {key}")
         )
     # Free the namespace now that it points to another empty list item...
-    state.out.reset(key)
+    state.flags.unset_all(key)
     # ...but this key precisely is still prohibited from table declaration
-    state.out.mark_explicitly_created(key)
+    state.flags.set(key, Flags.EXPLICIT_NEST, recursive=False)
     try:
         state.out.append_nest_to_list(key)
     except KeyError:
@@ -353,7 +360,7 @@ def key_value_rule(state: State) -> None:
     abs_key_parent = state.header_namespace + key_parent
     abs_key = state.header_namespace + key
 
-    if state.out.is_frozen(abs_key_parent):
+    if state.flags.is_(abs_key_parent, Flags.FROZEN):
         raise TOMLDecodeError(
             suffix_coord(
                 state,
@@ -361,8 +368,7 @@ def key_value_rule(state: State) -> None:
             )
         )
     # Containers in the relative path can't be opened with the table syntax after this
-    state.out.mark_relative_path_explicitly_created(state.header_namespace, key)
-    # Set the value in the right place in `state.out`
+    state.flags.set_for_relative_key(state.header_namespace, key, Flags.EXPLICIT_NEST)
     try:
         nest = state.out.get_or_create_nest(abs_key_parent)
     except KeyError:
@@ -371,7 +377,7 @@ def key_value_rule(state: State) -> None:
         raise TOMLDecodeError(suffix_coord(state, f"Can not define {abs_key} twice"))
     # Mark inline table and array namespaces recursively immutable
     if isinstance(value, (dict, list)):
-        state.out.mark_frozen(abs_key)
+        state.flags.set(abs_key, Flags.FROZEN, recursive=True)
     nest[key_stem] = value
 
 
@@ -465,6 +471,7 @@ def parse_inline_table(state: State) -> dict:  # noqa: C901
     # the convenient getter, and recursive freeze for inner arrays and tables.
     # Cutting a new lighter NestedDict base class could work here?
     nested_dict = NestedDict()
+    flags = Flags()
 
     skip_chars(state, TOML_WS)
     c = state.try_char()
@@ -476,7 +483,7 @@ def parse_inline_table(state: State) -> dict:  # noqa: C901
     while True:
         key, value = parse_key_value_pair(state)
         key_parent, key_stem = key[:-1], key[-1]
-        if nested_dict.is_frozen(key):
+        if flags.is_(key, Flags.FROZEN):
             raise TOMLDecodeError(
                 suffix_coord(state, f"Can not mutate immutable namespace {key}")
             )
@@ -497,7 +504,7 @@ def parse_inline_table(state: State) -> dict:  # noqa: C901
         if c != ",":
             raise TOMLDecodeError(suffix_coord(state, "Unclosed inline table"))
         if isinstance(value, (dict, list)):
-            nested_dict.mark_frozen(key)
+            flags.set(key, Flags.FROZEN, recursive=True)
         state.pos += 1
         skip_chars(state, TOML_WS)
 
