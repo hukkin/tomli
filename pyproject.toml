@@ -41,9 +41,8 @@ types-python-dateutil = "*"
 
 # Tools
 pre-commit = "*"
-# TODO: switch from git to pypi after next mypy release. also move to pre-commit-config.yaml then
-#mypy = "*"  # this is separate to pre-commit, since it requires an external env
-mypy = { git = "https://github.com/python/mypy.git", branch = "master" }
+# TODO: move mypy to pre-commit-config.yaml
+mypy = "*"  # this is separate to pre-commit, since it requires an external env
 bump2version = "*"
 
 
