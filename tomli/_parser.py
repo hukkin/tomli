@@ -96,7 +96,7 @@ def loads(s: str, *, parse_float: ParseFloat = float) -> Dict[str, Any]:
         if char == "\n":
             state.pos += 1
             continue
-        elif char == "#":
+        if char == "#":
             comment_rule(state)
         elif char in BARE_KEY_CHARS or char in "\"'":
             key_value_rule(state)
