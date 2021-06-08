@@ -1,5 +1,10 @@
 # Changelog
 
+## **unreleased**
+
+- Fixed
+  - Raise `TOMLDecodeError` instead of `KeyError` when overwriting implicitly in an inline table
+
 ## 0.2.10
 
 - Fixed
