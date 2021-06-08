@@ -196,7 +196,7 @@ class Flags:
             }
         container[key_stem]["recursive_flags" if recursive else "flags"].add(flag)
 
-    def has(self, key: Key, flag: int) -> bool:
+    def is_(self, key: Key, flag: int) -> bool:
         if not key:
             return False  # document root has no flags
         container = self._meta
@@ -307,7 +307,7 @@ def create_dict_rule(state: State) -> None:
     skip_chars(state, TOML_WS)
     key = parse_key(state)
 
-    if state.flags.has(key, Flags.EXPLICIT_NEST) or state.flags.has(key, Flags.FROZEN):
+    if state.flags.is_(key, Flags.EXPLICIT_NEST) or state.flags.is_(key, Flags.FROZEN):
         raise TOMLDecodeError(suffix_coord(state, f"Can not declare {key} twice"))
     state.flags.set(key, Flags.EXPLICIT_NEST, recursive=False)
     try:
@@ -328,7 +328,7 @@ def create_list_rule(state: State) -> None:
     skip_chars(state, TOML_WS)
     key = parse_key(state)
 
-    if state.flags.has(key, Flags.FROZEN):
+    if state.flags.is_(key, Flags.FROZEN):
         raise TOMLDecodeError(
             suffix_coord(state, f"Can not mutate immutable namespace {key}")
         )
@@ -360,7 +360,7 @@ def key_value_rule(state: State) -> None:
     abs_key_parent = state.header_namespace + key_parent
     abs_key = state.header_namespace + key
 
-    if state.flags.has(abs_key_parent, Flags.FROZEN):
+    if state.flags.is_(abs_key_parent, Flags.FROZEN):
         raise TOMLDecodeError(
             suffix_coord(
                 state,
@@ -483,7 +483,7 @@ def parse_inline_table(state: State) -> dict:  # noqa: C901
     while True:
         key, value = parse_key_value_pair(state)
         key_parent, key_stem = key[:-1], key[-1]
-        if flags.has(key, Flags.FROZEN):
+        if flags.is_(key, Flags.FROZEN):
             raise TOMLDecodeError(
                 suffix_coord(state, f"Can not mutate immutable namespace {key}")
             )
