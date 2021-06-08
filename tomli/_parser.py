@@ -158,10 +158,10 @@ class Flags:
     EXPLICIT_NEST = 1
 
     def __init__(self) -> None:
-        self._meta: Dict[str, dict] = {}
+        self._flags: Dict[str, dict] = {}
 
     def unset_all(self, key: Key) -> None:
-        cont = self._meta
+        cont = self._flags
         for k in key[:-1]:
             if k not in cont:
                 return
@@ -169,48 +169,44 @@ class Flags:
         cont.pop(key[-1], None)
 
     def set_for_relative_key(self, head_key: Key, rel_key: Key, flag: int) -> None:
-        container = self._meta
+        cont = self._flags
         for k in head_key:
-            if k not in container:
-                container[k] = {"flags": set(), "recursive_flags": set(), "nested": {}}
-            container = container[k]["nested"]
+            if k not in cont:
+                cont[k] = {"flags": set(), "recursive_flags": set(), "nested": {}}
+            cont = cont[k]["nested"]
         for k in rel_key:
-            if k in container:
-                container[k]["flags"].add(flag)
+            if k in cont:
+                cont[k]["flags"].add(flag)
             else:
-                container[k] = {"flags": {flag}, "recursive_flags": set(), "nested": {}}
-            container = container[k]["nested"]
+                cont[k] = {"flags": {flag}, "recursive_flags": set(), "nested": {}}
+            cont = cont[k]["nested"]
 
     def set(self, key: Key, flag: int, *, recursive: bool) -> None:  # noqa: A003
-        container = self._meta
+        cont = self._flags
         key_parent, key_stem = key[:-1], key[-1]
         for k in key_parent:
-            if k not in container:
-                container[k] = {"flags": set(), "recursive_flags": set(), "nested": {}}
-            container = container[k]["nested"]
-        if key_stem not in container:
-            container[key_stem] = {
-                "flags": set(),
-                "recursive_flags": set(),
-                "nested": {},
-            }
-        container[key_stem]["recursive_flags" if recursive else "flags"].add(flag)
+            if k not in cont:
+                cont[k] = {"flags": set(), "recursive_flags": set(), "nested": {}}
+            cont = cont[k]["nested"]
+        if key_stem not in cont:
+            cont[key_stem] = {"flags": set(), "recursive_flags": set(), "nested": {}}
+        cont[key_stem]["recursive_flags" if recursive else "flags"].add(flag)
 
     def is_(self, key: Key, flag: int) -> bool:
         if not key:
             return False  # document root has no flags
-        container = self._meta
+        cont = self._flags
         for k in key[:-1]:
-            if k not in container:
+            if k not in cont:
                 return False
-            status_container = container[k]
-            if flag in status_container["recursive_flags"]:
+            inner_cont = cont[k]
+            if flag in inner_cont["recursive_flags"]:
                 return True
-            container = status_container["nested"]
+            cont = inner_cont["nested"]
         key_stem = key[-1]
-        if key_stem in container:
-            container = container[key_stem]
-            return flag in container["flags"] or flag in container["recursive_flags"]
+        if key_stem in cont:
+            cont = cont[key_stem]
+            return flag in cont["flags"] or flag in cont["recursive_flags"]
         return False
 
 
@@ -225,27 +221,27 @@ class NestedDict:
         *,
         access_lists: bool = True,
     ) -> dict:
-        container: Any = self.dict
+        cont: Any = self.dict
         for k in key:
-            if k not in container:
-                container[k] = {}
-            container = container[k]
-            if access_lists and isinstance(container, list):
-                container = container[-1]
-            if not isinstance(container, dict):
+            if k not in cont:
+                cont[k] = {}
+            cont = cont[k]
+            if access_lists and isinstance(cont, list):
+                cont = cont[-1]
+            if not isinstance(cont, dict):
                 raise KeyError("There is no nest behind this key")
-        return container
+        return cont
 
     def append_nest_to_list(self, key: Key) -> None:
-        container = self.get_or_create_nest(key[:-1])
+        cont = self.get_or_create_nest(key[:-1])
         last_key = key[-1]
-        if last_key in container:
-            list_ = container[last_key]
+        if last_key in cont:
+            list_ = cont[last_key]
             if not isinstance(list_, list):
                 raise KeyError("An object other than list found behind this key")
             list_.append({})
         else:
-            container[last_key] = [{}]
+            cont[last_key] = [{}]
 
 
 def skip_chars(state: State, chars: Iterable[str]) -> None:

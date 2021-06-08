@@ -1,6 +1,6 @@
 # Changelog
 
-## **unreleased**
+## 1.0.0
 
 - Fixed
   - Raise `TOMLDecodeError` instead of `KeyError` when overwriting implicitly in an inline table
