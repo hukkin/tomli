@@ -369,7 +369,6 @@ def key_value_rule(state: State) -> None:
         )
     # Containers in the relative path can't be opened with the table syntax after this
     state.flags.set_for_relative_key(state.header_namespace, key, Flags.EXPLICIT_NEST)
-    # Set the value in the right place in `state.out`
     try:
         nest = state.out.get_or_create_nest(abs_key_parent)
     except KeyError:
