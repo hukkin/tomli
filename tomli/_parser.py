@@ -160,7 +160,7 @@ class Flags:
     def __init__(self) -> None:
         self._meta: Dict[str, dict] = {}
 
-    def reset(self, key: Key) -> None:
+    def unset_all(self, key: Key) -> None:
         cont = self._meta
         for k in key[:-1]:
             if k not in cont:
@@ -333,7 +333,7 @@ def create_list_rule(state: State) -> None:
             suffix_coord(state, f"Can not mutate immutable namespace {key}")
         )
     # Free the namespace now that it points to another empty list item...
-    state.flags.reset(key)
+    state.flags.unset_all(key)
     # ...but this key precisely is still prohibited from table declaration
     state.flags.set(key, Flags.EXPLICIT_NEST, recursive=False)
     try:
