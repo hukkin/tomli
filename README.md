@@ -75,6 +75,9 @@ except tomli.TOMLDecodeError:
     print("Yep, definitely not valid.")
 ```
 
+Note that while the `TOMLDecodeError` type is public API, error messages of raised instances of it are not.
+Error messages should not be assumed to stay constant across Tomli versions.
+
 ### Construct `decimal.Decimal`s from TOML floats<a name="construct-decimaldecimals-from-toml-floats"></a>
 
 ```python
