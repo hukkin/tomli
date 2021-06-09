@@ -21,15 +21,12 @@ jobs:
 
     - name: Installation (deps and package)
       run: |
-        pip install "poetry==1.1.6"
-        poetry config virtualenvs.create false
-        poetry install --no-interaction --no-ansi
+        pip install pre-commit
 
     - name: run linters
       # pre-commit also runs in pre-commit.ci, but let's have it here too
       # to block `pypi-publish` job from triggering if pre-commit fails
       run: |
-        mypy .
         pre-commit run -a
 
   tests:
