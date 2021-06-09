@@ -41,6 +41,7 @@ ILLEGAL_COMMENT_CHARS = ILLEGAL_BASIC_STR_CHARS
 TOML_WS = frozenset(" \t")
 TOML_WS_AND_NEWLINE = TOML_WS | frozenset("\n")
 BARE_KEY_CHARS = frozenset(string.ascii_letters + string.digits + "-_")
+KEY_INITIAL_CHARS = BARE_KEY_CHARS | frozenset("\"'")
 
 BASIC_STR_ESCAPE_REPLACEMENTS = MappingProxyType(
     {
@@ -91,19 +92,19 @@ def loads(s: str, *, parse_float: ParseFloat = float) -> Dict[str, Any]:
         #    - append dict to list (and move to its namespace)
         #    - create dict (and move to its namespace)
         char = state.try_char()
-        if not char:
-            break
         if char == "\n":
             state.pos += 1
             continue
-        if char == "#":
+        elif char == "#":
             comment_rule(state)
-        elif char in BARE_KEY_CHARS or char in "\"'":
+        elif char in KEY_INITIAL_CHARS:
             key_value_rule(state)
         elif state.src[state.pos : state.pos + 2] == "[[":
             create_list_rule(state)
         elif char == "[":
             create_dict_rule(state)
+        elif not char:
+            break
         else:
             raise TOMLDecodeError(suffix_coord(state, "Invalid statement"))
 
@@ -113,10 +114,10 @@ def loads(s: str, *, parse_float: ParseFloat = float) -> Dict[str, Any]:
 
         # 4. Expect end of line or end of file
         char = state.try_char()
-        if not char:
-            break
         if char == "\n":
             state.pos += 1
+        elif not char:
+            break
         else:
             raise TOMLDecodeError(
                 suffix_coord(
