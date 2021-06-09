@@ -126,19 +126,21 @@ which this library does not currently support.
 
 ### How do TOML types map into Python types?<a name="how-do-toml-types-map-into-python-types"></a>
 
-| TOML type        | Python type         |
-| ---------------- | ------------------- |
-| Document Root    | `dict`              |
-| String           | `str`               |
-| Integer          | `int`               |
-| Float            | `float`             |
-| Boolean          | `bool`              |
-| Offset Date-Time | `datetime.datetime` |
-| Local Date-Time  | `datetime.datetime` |
-| Local Date       | `datetime.date`     |
-| Local Time       | `datetime.time`     |
-| Array            | `list`              |
-| Inline Table     | `dict`              |
+| TOML type        | Python type         | Details                                                      |
+| ---------------- | ------------------- | ------------------------------------------------------------ |
+| Document Root    | `dict`              |                                                              |
+| Key              | `str`               |                                                              |
+| String           | `str`               |                                                              |
+| Integer          | `int`               |                                                              |
+| Float            | `float`             |                                                              |
+| Boolean          | `bool`              |                                                              |
+| Offset Date-Time | `datetime.datetime` | `tzinfo` attribute set to an instance of `datetime.timezone` |
+| Local Date-Time  | `datetime.datetime` | `tzinfo` attribute set to `None`                             |
+| Local Date       | `datetime.date`     |                                                              |
+| Local Time       | `datetime.time`     |                                                              |
+| Array            | `list`              |                                                              |
+| Table            | `dict`              |                                                              |
+| Inline Table     | `dict`              |                                                              |
 
 ## Performance<a name="performance"></a>
 
