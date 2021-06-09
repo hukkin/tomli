@@ -36,3 +36,11 @@ repos:
     - flake8-bugbear
     - flake8-builtins
     - flake8-comprehensions
+- repo: https://github.com/pre-commit/mirrors-mypy
+  rev: 0f75d9fd2d6e07a5f96515d1b82c7161b23aed7d  # frozen: v0.901
+  hooks:
+  - id: mypy
+    args: ["--scripts-are-modules"]
+    additional_dependencies:
+    - types-python-dateutil
+    - pytest

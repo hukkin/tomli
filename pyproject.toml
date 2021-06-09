@@ -29,21 +29,14 @@ include = ["tomli/py.typed"]
 "Changelog" = "https://github.com/hukkin/tomli/blob/master/CHANGELOG.md"
 
 [tool.poetry.dependencies]
-python = ">=3.6"
+python = "^3.6"
 
 [tool.poetry.dev-dependencies]
 # Tests
 pytest = "*"
 pytest-randomly = "*"
-pytest-cov = "*"
+pytest-cov = ">=2.12.1"
 python-dateutil = "*"
-types-python-dateutil = "*"
-
-# Tools
-pre-commit = "*"
-# TODO: move mypy to pre-commit-config.yaml
-mypy = "*"  # this is separate to pre-commit, since it requires an external env
-bump2version = "*"
 
 
 [tool.isort]
@@ -97,19 +90,10 @@ commands =
     python -c 'import pathlib; print("profiler svg output under file://\\{0\\}".format(pathlib.Path(r"{toxworkdir}") / "prof" / "combined.svg"))'
 
 [testenv:pre-commit]
-description = run linters (except mypy)
+description = run linters
 skip_install = True
 deps = pre-commit
 commands = pre-commit run {posargs:--all}
-
-[testenv:mypy]
-description = run mypy
-basepython = python3.8
-commands_pre =
-    # TODO: Use --dev-only flag when poetry 1.2 is released
-    poetry install --no-root
-commands =
-    mypy {posargs:.}
 
 [testenv:benchmark]
 description = run the benchmark script against a local Tomli version
