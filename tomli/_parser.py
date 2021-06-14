@@ -82,7 +82,7 @@ def loads(s: str, *, parse_float: ParseFloat = float) -> Dict[str, Any]:
     # (typically means one line in TOML source)
     while True:
         # 1. Skip line leading whitespace
-        skip_chars(state, TOML_WS)
+        state.pos = skip_chars(state.src, state.pos, TOML_WS)
 
         # 2. Parse rules. Expect one of the following:
         #    - end of file
@@ -96,7 +96,7 @@ def loads(s: str, *, parse_float: ParseFloat = float) -> Dict[str, Any]:
             state.pos += 1
             continue
         elif char == "#":
-            comment_rule(state)
+            state.pos = expect_comment(state.src, state.pos)
         elif char in KEY_INITIAL_CHARS:
             key_value_rule(state)
         elif state.src[state.pos : state.pos + 2] == "[[":
@@ -109,8 +109,8 @@ def loads(s: str, *, parse_float: ParseFloat = float) -> Dict[str, Any]:
             raise TOMLDecodeError(suffix_coord(state, "Invalid statement"))
 
         # 3. Skip trailing whitespace and line comment
-        skip_chars(state, TOML_WS)
-        skip_comment(state)
+        state.pos = skip_chars(state.src, state.pos, TOML_WS)
+        state.pos = skip_comment(state.src, state.pos)
 
         # 4. Expect end of line or end of file
         char = state.try_char()
@@ -245,63 +245,65 @@ class NestedDict:
             cont[last_key] = [{}]
 
 
-def skip_chars(state: State, chars: Iterable[str]) -> None:
-    src, pos = state.src, state.pos
+def skip_chars(src: str, pos: int, chars: Iterable[str]) -> int:
     try:
         while src[pos] in chars:
             pos += 1
     except IndexError:
         pass
-    state.pos = pos
+    return pos
 
 
 def skip_until(
-    state: State, expect_char: str, *, error_on: Iterable[str], error_on_eof: bool
-) -> None:
-    src, pos = state.src, state.pos
+    src: str, pos: int, expect_char: str, *, error_on: Iterable[str], error_on_eof: bool
+) -> int:
     while True:
         try:
             char = src[pos]
         except IndexError:
             if error_on_eof:
-                state.pos = pos
                 raise TOMLDecodeError(
-                    suffix_coord(state, f'Expected "{expect_char!r}"')
+                    suffix_coord_from_srcpos(src, pos, f'Expected "{expect_char!r}"')
                 )
             break
         if char == expect_char:
             break
         if char in error_on:
-            state.pos = pos
             raise TOMLDecodeError(
-                suffix_coord(state, f'Found invalid character "{char!r}"')
+                suffix_coord_from_srcpos(
+                    src, pos, f'Found invalid character "{char!r}"'
+                )
             )
         pos += 1
-    state.pos = pos
+    return pos
 
 
-def skip_comment(state: State) -> None:
-    if state.try_char() == "#":
-        comment_rule(state)
+def skip_comment(src: str, pos: int) -> int:
+    if src[pos : pos + 1] == "#":
+        return expect_comment(src, pos)
+    return pos
 
 
-def skip_comments_and_array_ws(state: State) -> None:
+def skip_comments_and_array_ws(src: str, pos: int) -> int:
     while True:
-        pos_before_skip = state.pos
-        skip_chars(state, TOML_WS_AND_NEWLINE)
-        skip_comment(state)
-        if state.pos == pos_before_skip:
+        pos_before_skip = pos
+        pos = skip_chars(src, pos, TOML_WS_AND_NEWLINE)
+        pos = skip_comment(src, pos)
+        if pos == pos_before_skip:
             break
+    return pos
 
 
-def comment_rule(state: State) -> None:
-    state.pos += 1
-    skip_until(state, "\n", error_on=ILLEGAL_COMMENT_CHARS, error_on_eof=False)
+def expect_comment(src: str, pos: int) -> int:
+    pos += 1
+    return skip_until(
+        src, pos, "\n", error_on=ILLEGAL_COMMENT_CHARS, error_on_eof=False
+    )
 
 
 def create_dict_rule(state: State) -> None:
     state.pos += 1
-    skip_chars(state, TOML_WS)
+    state.pos = skip_chars(state.src, state.pos, TOML_WS)
     key = parse_key(state)
 
     if state.flags.is_(key, Flags.EXPLICIT_NEST) or state.flags.is_(key, Flags.FROZEN):
@@ -322,7 +324,7 @@ def create_dict_rule(state: State) -> None:
 
 def create_list_rule(state: State) -> None:
     state.pos += 2
-    skip_chars(state, TOML_WS)
+    state.pos = skip_chars(state.src, state.pos, TOML_WS)
     key = parse_key(state)
 
     if state.flags.is_(key, Flags.FROZEN):
@@ -385,7 +387,7 @@ def parse_key_value_pair(state: State) -> Tuple[Key, Any]:
             suffix_coord(state, 'Expected "=" after a key in a key/value pair')
         )
     state.pos += 1
-    skip_chars(state, TOML_WS)
+    state.pos = skip_chars(state.src, state.pos, TOML_WS)
     value = parse_value(state)
     return key, value
 
@@ -397,12 +399,12 @@ def parse_key(state: State) -> Key:
     follows. Throw if parsing fails.
     """
     key = [parse_key_part(state)]
-    skip_chars(state, TOML_WS)
+    state.pos = skip_chars(state.src, state.pos, TOML_WS)
     while state.try_char() == ".":
         state.pos += 1
-        skip_chars(state, TOML_WS)
+        state.pos = skip_chars(state.src, state.pos, TOML_WS)
         key.append(parse_key_part(state))
-        skip_chars(state, TOML_WS)
+        state.pos = skip_chars(state.src, state.pos, TOML_WS)
     return tuple(key)
 
 
@@ -414,7 +416,7 @@ def parse_key_part(state: State) -> str:
     char = state.try_char()
     if char in BARE_KEY_CHARS:
         start_pos = state.pos
-        skip_chars(state, BARE_KEY_CHARS)
+        state.pos = skip_chars(state.src, state.pos, BARE_KEY_CHARS)
         return state.src[start_pos : state.pos]
     if char == "'":
         return parse_literal_str(state)
@@ -440,13 +442,13 @@ def parse_array(state: State) -> list:
     state.pos += 1
     array: list = []
 
-    skip_comments_and_array_ws(state)
+    state.pos = skip_comments_and_array_ws(state.src, state.pos)
     if state.try_char() == "]":
         state.pos += 1
         return array
     while True:
         array.append(parse_value(state))
-        skip_comments_and_array_ws(state)
+        state.pos = skip_comments_and_array_ws(state.src, state.pos)
 
         c = state.try_char()
         if c == "]":
@@ -456,7 +458,7 @@ def parse_array(state: State) -> list:
             raise TOMLDecodeError(suffix_coord(state, "Unclosed array"))
         state.pos += 1
 
-        skip_comments_and_array_ws(state)
+        state.pos = skip_comments_and_array_ws(state.src, state.pos)
         if state.try_char() == "]":
             state.pos += 1
             return array
@@ -470,7 +472,7 @@ def parse_inline_table(state: State) -> dict:  # noqa: C901
     nested_dict = NestedDict()
     flags = Flags()
 
-    skip_chars(state, TOML_WS)
+    state.pos = skip_chars(state.src, state.pos, TOML_WS)
     if state.try_char() == "}":
         state.pos += 1
         return nested_dict.dict
@@ -490,7 +492,7 @@ def parse_inline_table(state: State) -> dict:  # noqa: C901
                 suffix_coord(state, f'Duplicate inline table key "{key_stem}"')
             )
         nest[key_stem] = value
-        skip_chars(state, TOML_WS)
+        state.pos = skip_chars(state.src, state.pos, TOML_WS)
         c = state.try_char()
         if c == "}":
             state.pos += 1
@@ -500,7 +502,7 @@ def parse_inline_table(state: State) -> dict:  # noqa: C901
         if isinstance(value, (dict, list)):
             flags.set(key, Flags.FROZEN, recursive=True)
         state.pos += 1
-        skip_chars(state, TOML_WS)
+        state.pos = skip_chars(state.src, state.pos, TOML_WS)
 
 
 def parse_basic_str_escape(state: State, *, multiline: bool = False) -> str:
@@ -510,14 +512,14 @@ def parse_basic_str_escape(state: State, *, multiline: bool = False) -> str:
         # Skip whitespace until next non-whitespace character or end of
         # the doc. Error if non-whitespace is found before newline.
         if escape_id != "\\\n":
-            skip_chars(state, TOML_WS)
+            state.pos = skip_chars(state.src, state.pos, TOML_WS)
             char = state.try_char()
             if not char:
                 return ""
             if char != "\n":
                 raise TOMLDecodeError(suffix_coord(state, 'Unescaped "\\" in a string'))
             state.pos += 1
-        skip_chars(state, TOML_WS_AND_NEWLINE)
+        state.pos = skip_chars(state.src, state.pos, TOML_WS_AND_NEWLINE)
         return ""
     if escape_id in BASIC_STR_ESCAPE_REPLACEMENTS:
         return BASIC_STR_ESCAPE_REPLACEMENTS[escape_id]
@@ -550,7 +552,9 @@ def parse_hex_char(state: State, hex_len: int) -> str:
 def parse_literal_str(state: State) -> str:
     state.pos += 1  # Skip starting apostrophe
     start_pos = state.pos
-    skip_until(state, "'", error_on=ILLEGAL_LITERAL_STR_CHARS, error_on_eof=True)
+    state.pos = skip_until(
+        state.src, state.pos, "'", error_on=ILLEGAL_LITERAL_STR_CHARS, error_on_eof=True
+    )
     literal_str = state.src[start_pos : state.pos]
     state.pos += 1  # Skip ending apostrophe
     return literal_str
@@ -759,18 +763,21 @@ def parse_value(state: State) -> Any:  # noqa: C901
 
 def suffix_coord(state: State, msg: str) -> str:
     """Suffix an error message with coordinates in source."""
+    return suffix_coord_from_srcpos(state.src, state.pos, msg)
 
-    def coord_repr(state: State) -> str:
-        if not state.try_char():
+
+def suffix_coord_from_srcpos(src: str, pos: int, msg: str) -> str:
+    def coord_repr(src: str, pos: int) -> str:
+        if pos >= len(src):
             return "end of document"
-        line = state.src.count("\n", 0, state.pos) + 1
+        line = src.count("\n", 0, pos) + 1
         if line == 1:
-            column = state.pos + 1
+            column = pos + 1
         else:
-            column = state.pos - state.src.rindex("\n", 0, state.pos)
+            column = pos - src.rindex("\n", 0, pos)
         return f"line {line}, column {column}"
 
-    return f"{msg} (at {coord_repr(state)})"
+    return f"{msg} (at {coord_repr(src, pos)})"
 
 
 def is_unicode_scalar_value(codepoint: int) -> bool:
