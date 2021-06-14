@@ -268,7 +268,11 @@ def skip_until(
 
 
 def skip_comment(src: str, pos: Pos) -> Pos:
-    if src[pos : pos + 1] == "#":
+    try:
+        char: Optional[str] = src[pos]
+    except IndexError:
+        char = None
+    if char == "#":
         return expect_comment(src, pos)
     return pos
 
@@ -352,9 +356,7 @@ def key_value_rule(src: str, pos: Pos, state: State, parse_float: ParseFloat) ->
     if state.flags.is_(abs_key_parent, Flags.FROZEN):
         raise TOMLDecodeError(
             suffix_coord(
-                src,
-                pos,
-                f"Can not mutate immutable namespace {abs_key_parent}",
+                src, pos, f"Can not mutate immutable namespace {abs_key_parent}"
             )
         )
     # Containers in the relative path can't be opened with the table syntax after this
@@ -376,7 +378,11 @@ def parse_key_value_pair(
     src: str, pos: Pos, parse_float: ParseFloat
 ) -> Tuple[Pos, Key, Any]:
     pos, key = parse_key(src, pos)
-    if src[pos : pos + 1] != "=":
+    try:
+        char: Optional[str] = src[pos]
+    except IndexError:
+        char = None
+    if char != "=":
         raise TOMLDecodeError(
             suffix_coord(src, pos, 'Expected "=" after a key in a key/value pair')
         )
@@ -390,7 +396,13 @@ def parse_key(src: str, pos: Pos) -> Tuple[Pos, Key]:
     pos, key_part = parse_key_part(src, pos)
     key = [key_part]
     pos = skip_chars(src, pos, TOML_WS)
-    while src[pos : pos + 1] == ".":
+    while True:
+        try:
+            char: Optional[str] = src[pos]
+        except IndexError:
+            char = None
+        if char != ".":
+            break
         pos += 1
         pos = skip_chars(src, pos, TOML_WS)
         pos, key_part = parse_key_part(src, pos)
@@ -400,7 +412,10 @@ def parse_key(src: str, pos: Pos) -> Tuple[Pos, Key]:
 
 
 def parse_key_part(src: str, pos: Pos) -> Tuple[Pos, str]:
-    char = src[pos : pos + 1]
+    try:
+        char: Optional[str] = src[pos]
+    except IndexError:
+        char = None
     if char in BARE_KEY_CHARS:
         start_pos = pos
         pos = skip_chars(src, pos, BARE_KEY_CHARS)
@@ -545,9 +560,7 @@ def parse_literal_str(src: str, pos: Pos) -> Tuple[Pos, str]:
     pos = skip_until(
         src, pos, "'", error_on=ILLEGAL_LITERAL_STR_CHARS, error_on_eof=True
     )
-    literal_str = src[start_pos:pos]
-    pos += 1  # Skip ending apostrophe
-    return pos, literal_str
+    return pos + 1, src[start_pos:pos]  # Skip ending apostrophe
 
 
 def parse_multiline_str(src: str, pos: Pos, *, literal: bool) -> Tuple[Pos, str]:
@@ -678,7 +691,10 @@ def parse_dec_or_float(
 def parse_value(  # noqa: C901
     src: str, pos: Pos, parse_float: ParseFloat
 ) -> Tuple[Pos, Any]:
-    char = src[pos : pos + 1]
+    try:
+        char: Optional[str] = src[pos]
+    except IndexError:
+        char = None
 
     # Basic strings
     if char == '"':
