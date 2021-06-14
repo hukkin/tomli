@@ -1,5 +1,10 @@
 # Changelog
 
+## **unreleased**
+
+- Added
+  - Performance boost
+
 ## 1.0.0
 
 - Fixed
