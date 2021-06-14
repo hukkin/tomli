@@ -76,7 +76,7 @@ def loads(s: str, *, parse_float: ParseFloat = float) -> Dict[str, Any]:  # noqa
     # The spec allows converting "\r\n" to "\n", even in string
     # literals. Let's do so to simplify parsing.
     src = s.replace("\r\n", "\n")
-    pos = Pos(0)
+    pos = 0
     state = State()
 
     # Parse one statement at a time
