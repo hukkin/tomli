@@ -19,6 +19,8 @@
         "type": "string",
         "value": "This string has a \u000D carriage return character."
     },
+    "delete": {"type": "string",
+            "value": "This string has a \u007F delete control code."},
     "quote": {
         "type": "string",
         "value": "This string has a \u0022 quote character."
@@ -42,5 +44,7 @@
     "notunicode4": {
         "type": "string",
         "value": "This string does not have a unicode \\\u0075 escape."
-    }
+    },
+    "unitseparator": {"type": "string",
+                   "value": "This string has a \u001F unit separator control code."}
 }

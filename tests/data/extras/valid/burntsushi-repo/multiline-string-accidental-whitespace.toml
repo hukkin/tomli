@@ -1,0 +1,5 @@
+three_lines = """\
+       The quick brown \
+       fox jumps over \   
+       the lazy dog.\
+       """
