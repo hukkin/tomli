@@ -47,8 +47,8 @@ def run(run_count: int) -> None:
     )
     print("-" * col_width[0] + "-+-" + "-" * col_width[1] + "-+-" + col_width[2] * "-")
     # fmt: off
-    baseline = benchmark("pytomlpp", run_count, lambda: pytomlpp.loads(test_data), col_width)  # noqa: E501
-    benchmark("rtoml", run_count, lambda: rtoml.loads(test_data), col_width, compare_to=baseline)  # noqa: E501
+    baseline = benchmark("rtoml", run_count, lambda: rtoml.loads(test_data), col_width)  # noqa: E501
+    benchmark("pytomlpp", run_count, lambda: pytomlpp.loads(test_data), col_width, compare_to=baseline)  # noqa: E501
     benchmark("tomli", run_count, lambda: tomli.loads(test_data), col_width, compare_to=baseline)  # noqa: E501
     benchmark("toml", run_count, lambda: toml.loads(test_data), col_width, compare_to=baseline)  # noqa: E501
     benchmark("qtoml", run_count, lambda: qtoml.loads(test_data), col_width, compare_to=baseline)  # noqa: E501
