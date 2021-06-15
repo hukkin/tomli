@@ -5,3 +5,4 @@ pos = 3E+2
 zero = 3e0
 pointlower = 3.1e2
 pointupper = 3.1E2
+minustenth = -1E-1

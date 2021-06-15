@@ -1,0 +1,36 @@
+{
+  "l1": {
+    "l2": {
+      "l3": {
+        "l4": {
+          "l5": {
+            "l6": {
+              "type": "integer",
+              "value": "42"
+            }
+          }
+        }
+      }
+    }
+  },
+  "name": {
+    "first": {
+      "type": "string",
+      "value": "Tom"
+    },
+    "last": {
+      "type": "string",
+      "value": "Preston-Werner"
+    }
+  },
+  "point": {
+    "x": {
+      "type": "integer",
+      "value": "1"
+    },
+    "y": {
+      "type": "integer",
+      "value": "2"
+    }
+  }
+}

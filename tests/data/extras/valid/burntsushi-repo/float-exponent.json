@@ -1,5 +1,6 @@
 {
     "lower": {"type": "float", "value": "300.0"},
+    "minustenth": {"type": "float", "value": "-0.1"},
     "upper": {"type": "float", "value": "300.0"},
     "neg": {"type": "float", "value": "0.03"},
     "pos": {"type": "float", "value": "300.0"},
