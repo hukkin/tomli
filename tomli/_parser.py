@@ -90,7 +90,7 @@ def loads(s: str, *, parse_float: ParseFloat = float) -> Dict[str, Any]:  # noqa
         #    - end of file
         #    - end of line
         #    - comment
-        #    - key->value
+        #    - key/value pair
         #    - append dict to list (and move to its namespace)
         #    - create dict (and move to its namespace)
         try:
@@ -100,19 +100,23 @@ def loads(s: str, *, parse_float: ParseFloat = float) -> Dict[str, Any]:  # noqa
         if char == "\n":
             pos += 1
             continue
-        elif char == "#":
-            pos = expect_comment(src, pos)
-        elif char in KEY_INITIAL_CHARS:
+        if char in KEY_INITIAL_CHARS:
             pos = key_value_rule(src, pos, state, parse_float)
-        elif src[pos : pos + 2] == "[[":
-            pos = create_list_rule(src, pos, state)
+            pos = skip_chars(src, pos, TOML_WS)
         elif char == "[":
-            pos = create_dict_rule(src, pos, state)
-        else:
+            try:
+                second_char: Optional[str] = src[pos + 1]
+            except IndexError:
+                second_char = None
+            if second_char == "[":
+                pos = create_list_rule(src, pos, state)
+            else:
+                pos = create_dict_rule(src, pos, state)
+            pos = skip_chars(src, pos, TOML_WS)
+        elif char != "#":
             raise suffixed_err(src, pos, "Invalid statement")
 
-        # 3. Skip trailing whitespace and line comment
-        pos = skip_chars(src, pos, TOML_WS)
+        # 3. Skip comment
         pos = skip_comment(src, pos)
 
         # 4. Expect end of line or end of file
@@ -273,7 +277,9 @@ def skip_comment(src: str, pos: Pos) -> Pos:
     except IndexError:
         char = None
     if char == "#":
-        return expect_comment(src, pos)
+        return skip_until(
+            src, pos + 1, "\n", error_on=ILLEGAL_COMMENT_CHARS, error_on_eof=False
+        )
     return pos
 
 
@@ -285,13 +291,6 @@ def skip_comments_and_array_ws(src: str, pos: Pos) -> Pos:
         if pos == pos_before_skip:
             break
     return pos
-
-
-def expect_comment(src: str, pos: Pos) -> Pos:
-    pos += 1
-    return skip_until(
-        src, pos, "\n", error_on=ILLEGAL_COMMENT_CHARS, error_on_eof=False
-    )
 
 
 def create_dict_rule(src: str, pos: Pos, state: State) -> Pos:
