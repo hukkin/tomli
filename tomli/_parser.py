@@ -93,6 +93,7 @@ def loads(s: str, *, parse_float: ParseFloat = float) -> Dict[str, Any]:  # noqa
         #    - key/value pair
         #    - append dict to list (and move to its namespace)
         #    - create dict (and move to its namespace)
+        # Skip trailing whitespace when applicable.
         try:
             char = src[pos]
         except IndexError:
