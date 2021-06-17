@@ -6,6 +6,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    FrozenSet,
     Iterable,
     Optional,
     TextIO,
@@ -244,21 +245,26 @@ def skip_chars(src: str, pos: Pos, chars: Iterable[str]) -> Pos:
 
 
 def skip_until(
-    src: str, pos: Pos, expect_char: str, *, error_on: Iterable[str], error_on_eof: bool
+    src: str,
+    pos: Pos,
+    expect_char: str,
+    *,
+    error_on: FrozenSet[str],
+    error_on_eof: bool,
 ) -> Pos:
-    while True:
-        try:
-            char = src[pos]
-        except IndexError:
-            if error_on_eof:
-                raise suffixed_err(src, pos, f'Expected "{expect_char!r}"')
-            break
-        if char == expect_char:
-            break
-        if char in error_on:
-            raise suffixed_err(src, pos, f'Found invalid character "{char!r}"')
-        pos += 1
-    return pos
+    try:
+        new_pos = src.index(expect_char, pos)
+    except ValueError:
+        new_pos = len(src)
+        if error_on_eof:
+            raise suffixed_err(src, new_pos, f'Expected "{expect_char!r}"')
+
+    bad_chars = error_on.intersection(src[pos:new_pos])
+    if bad_chars:
+        bad_char = next(iter(bad_chars))
+        bad_pos = src.index(bad_char, pos)
+        raise suffixed_err(src, bad_pos, f'Found invalid character "{bad_char!r}"')
+    return new_pos
 
 
 def skip_comment(src: str, pos: Pos) -> Pos:
