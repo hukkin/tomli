@@ -77,4 +77,4 @@ def test_own_pyproject():
     pyproject_path = Path(__file__).parent.parent / "pyproject.toml"
     with open(pyproject_path, encoding="utf-8") as f:
         pyproject = tomli.load(f)
-    assert pyproject["tool"]["poetry"]["version"] == tomli.__version__
+    assert pyproject["project"]["version"] == tomli.__version__

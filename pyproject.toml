@@ -1,42 +1,44 @@
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["flit_core>=3.2.0,<4"]
+build-backend = "flit_core.buildapi"
 
-
-[tool.poetry]
+[project]
 name = "tomli"
 version = "1.0.1"  # DO NOT EDIT THIS LINE MANUALLY. LET bump2version UTILITY DO IT
-authors = ["Taneli Hukkinen <hukkin@users.noreply.github.com>"]
 description = "A lil' TOML parser"
-repository = "https://github.com/hukkin/tomli"
+authors = [
+    { name = "Taneli Hukkinen", email = "hukkin@users.noreply.github.com" },
+]
+license = { file = "LICENSE" }
+requires-python = ">=3.6"
 readme = "README.md"
-license = "MIT"
 classifiers = [
+    "License :: OSI Approved :: MIT License",
     "Operating System :: MacOS",
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Typing :: Typed",
 ]
 keywords = ["toml"]
 
-packages = [
-    {include = "tomli"},
+[project.optional-dependencies]
+test = [
+	"pytest",
+	"pytest-randomly",
+	"pytest-cov>=2.12.1",
+	"python-dateutil",
 ]
-include = ["tomli/py.typed"]
 
-[tool.poetry.urls]
-"Changelog" = "https://github.com/hukkin/tomli/blob/master/CHANGELOG.md"
-
-[tool.poetry.dependencies]
-python = "^3.6"
-
-[tool.poetry.dev-dependencies]
-# Tests
-pytest = "*"
-pytest-randomly = "*"
-pytest-cov = ">=2.12.1"
-python-dateutil = "*"
+[project.urls]
+homepage = "https://github.com/hukkin/tomli"
+changelog = "https://github.com/hukkin/tomli/blob/master/CHANGELOG.md"
 
 
 [tool.isort]
@@ -63,17 +65,10 @@ legacy_tox_ini = """
 # Only run pytest envs when no args given to tox
 envlist = py{36,37,38,39}
 isolated_build = True
-requires =
-    poetry >= 1.1.4
-
-[testenv]
-allowlist_externals = poetry
 
 [testenv:py{36,37,38,39}]
 description = run tests
-commands_pre =
-    # TODO: Use --dev-only flag when poetry 1.2 is released
-    poetry install --no-root
+extras = test
 commands =
     pytest {posargs}
 
@@ -81,10 +76,8 @@ commands =
 description = run profiler (use e.g. `firefox .tox/prof/combined.svg` to open)
 setenv =
     PROFILER_ITERATIONS=1000
-commands_pre =
-    # TODO: Use --dev-only flag when poetry 1.2 is released
-    poetry install --no-root
-    pip install pytest-profiling
+extras = test
+deps = pytest-profiling
 commands =
     pytest tests/test_for_profiler.py --profile-svg --pstats-dir "{toxworkdir}/prof"
     python -c 'import pathlib; print("profiler svg output under file://\\{0\\}".format(pathlib.Path(r"{toxworkdir}") / "prof" / "combined.svg"))'
