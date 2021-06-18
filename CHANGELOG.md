@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.2
+
+- Added
+  - Minor performance boost (~4%)
+
 ## 1.0.1
 
 - Added
