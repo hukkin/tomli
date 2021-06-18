@@ -43,6 +43,7 @@ test = [
 
 [tool.flit.sdist]
 exclude = [
+    "tests/",
     "benchmark/",
     ".*",
     "CHANGELOG.md",
