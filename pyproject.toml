@@ -37,8 +37,8 @@ test = [
 ]
 
 [project.urls]
-homepage = "https://github.com/hukkin/tomli"
-changelog = "https://github.com/hukkin/tomli/blob/master/CHANGELOG.md"
+"Homepage" = "https://github.com/hukkin/tomli"
+"Changelog" = "https://github.com/hukkin/tomli/blob/master/CHANGELOG.md"
 
 
 [tool.isort]
