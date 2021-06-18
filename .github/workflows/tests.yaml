@@ -19,7 +19,7 @@ jobs:
       with:
         python-version: 3.8
 
-    - name: Installation (deps and package)
+    - name: Install pre-commit
       run: |
         pip install pre-commit
 
@@ -47,9 +47,7 @@ jobs:
 
     - name: Installation (deps and package)
       run: |
-        pip install "poetry==1.1.6"
-        poetry config virtualenvs.create false
-        poetry install --no-interaction --no-ansi
+        pip install .[test]
 
     - name: Test with pytest
       run: |
@@ -71,14 +69,12 @@ jobs:
     - uses: actions/setup-python@v2
       with:
         python-version: 3.7
-    - name: Install Poetry
+    - name: Install Flit
       run: |
-        pip install "poetry==1.1.6"
+        pip install "flit==3.2.0"
     - name: Build and publish
       run: |
-        # TODO: Remove the first command as soon as this Poetry bug is fixed: https://github.com/python-poetry/poetry/issues/2210
-        poetry config http-basic.pypi "__token__" "${POETRY_PYPI_TOKEN_PYPI}"
-        poetry build
-        poetry publish
+        flit publish
       env:
-        POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
+        FLIT_USERNAME: __token__
+        FLIT_PASSWORD: ${{ secrets.PYPI_TOKEN }}
