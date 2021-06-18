@@ -99,7 +99,7 @@ The `decimal.Decimal` type is, however, the most typical replacement when float 
 - pure Python with zero dependencies
 - the fastest pure Python parser [\*](#performance):
   13x as fast as [tomlkit](https://pypi.org/project/tomlkit/),
-  2x as fast as [toml](https://pypi.org/project/toml/)
+  2.1x as fast as [toml](https://pypi.org/project/toml/)
 - outputs [basic data types](#how-do-toml-types-map-into-python-types) only
 - 100% spec compliant: passes all tests in
   [a test set](https://github.com/toml-lang/compliance/pull/8)
@@ -150,10 +150,10 @@ Running the benchmark on my personal computer output the following:
 
 ```console
 foo@bar:~/dev/tomli$ tox -e benchmark-pypi
-benchmark-pypi installed: attrs==19.3.0,click==7.1.2,pytomlpp==1.0.2,qtoml==0.3.0,rtoml==0.7.0,toml==0.10.2,tomli==1.0.1,tomlkit==0.7.2
-benchmark-pypi run-test-pre: PYTHONHASHSEED='1621207351'
+benchmark-pypi installed: attrs==19.3.0,click==7.1.2,pytomlpp==1.0.2,qtoml==0.3.0,rtoml==0.7.0,toml==0.10.2,tomli==1.0.2,tomlkit==0.7.2
+benchmark-pypi run-test-pre: PYTHONHASHSEED='2448251895'
 benchmark-pypi run-test: commands[0] | python -c 'import datetime; print(datetime.date.today())'
-2021-06-15
+2021-06-18
 benchmark-pypi run-test: commands[1] | python --version
 Python 3.8.5
 benchmark-pypi run-test: commands[2] | python benchmark/run.py
@@ -161,12 +161,12 @@ Parsing data.toml 5000 times:
 ------------------------------------------------------
     parser |  exec time | performance (more is better)
 -----------+------------+-----------------------------
-     rtoml |    0.903 s | baseline (100%)
-  pytomlpp |      1.1 s | 82.26%
-     tomli |     4.35 s | 20.78%
-      toml |      8.9 s | 10.15%
-     qtoml |       11 s | 8.23%
-   tomlkit |     58.8 s | 1.54%
+     rtoml |    0.905 s | baseline (100%)
+  pytomlpp |     1.09 s | 82.69%
+     tomli |     4.16 s | 21.75%
+      toml |     8.91 s | 10.16%
+     qtoml |     11.2 s | 8.11%
+   tomlkit |     53.9 s | 1.68%
 ```
 
 The parsers are ordered from fastest to slowest, using the fastest parser as baseline.
