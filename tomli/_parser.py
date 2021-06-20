@@ -347,7 +347,6 @@ def key_value_rule(src: str, pos: Pos, state: State, parse_float: ParseFloat) ->
     pos, key, value = parse_key_value_pair(src, pos, parse_float)
     key_parent, key_stem = key[:-1], key[-1]
     abs_key_parent = state.header_namespace + key_parent
-    abs_key = state.header_namespace + key
 
     if state.flags.is_(abs_key_parent, Flags.FROZEN):
         raise suffixed_err(
@@ -360,9 +359,10 @@ def key_value_rule(src: str, pos: Pos, state: State, parse_float: ParseFloat) ->
     except KeyError:
         raise suffixed_err(src, pos, "Can not overwrite a value")
     if key_stem in nest:
-        raise suffixed_err(src, pos, f"Can not define {abs_key} twice")
+        raise suffixed_err(src, pos, "Can not overwrite a value")
     # Mark inline table and array namespaces recursively immutable
     if isinstance(value, (dict, list)):
+        abs_key = state.header_namespace + key
         state.flags.set(abs_key, Flags.FROZEN, recursive=True)
     nest[key_stem] = value
     return pos
