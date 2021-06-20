@@ -26,13 +26,12 @@ RE_DATETIME = re.compile(
     + r"(?:"
     + r"[T ]"
     + _TIME_RE_STR
-    + r"(?:Z|[+-]([01][0-9]|2[0-3]):([0-5][0-9]))?"  # time offset
+    + r"(?:(Z)|([+-])([01][0-9]|2[0-3]):([0-5][0-9]))?"  # time offset
     + r")?"
 )
 
 
 def match_to_datetime(match: "Match") -> Union[datetime, date]:
-    match_str = match.group()
     (
         year_str,
         month_str,
@@ -41,6 +40,8 @@ def match_to_datetime(match: "Match") -> Union[datetime, date]:
         minute_str,
         sec_str,
         micros_str,
+        zulu_time,
+        offset_dir_str,
         offset_hour_str,
         offset_minute_str,
     ) = match.groups()
@@ -49,15 +50,15 @@ def match_to_datetime(match: "Match") -> Union[datetime, date]:
         return date(year, month, day)
     hour, minute, sec = int(hour_str), int(minute_str), int(sec_str)
     micros = int(micros_str[1:].ljust(6, "0")[:6]) if micros_str else 0
-    if offset_hour_str is not None:
-        offset_dir = 1 if "+" in match_str else -1
+    if offset_dir_str:
+        offset_dir = 1 if offset_dir_str == "+" else -1
         tz: Optional[tzinfo] = timezone(
             timedelta(
                 hours=offset_dir * int(offset_hour_str),
                 minutes=offset_dir * int(offset_minute_str),
             )
         )
-    elif "Z" in match_str:
+    elif zulu_time:
         tz = timezone.utc
     else:  # local date-time
         tz = None

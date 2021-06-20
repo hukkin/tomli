@@ -347,7 +347,6 @@ def key_value_rule(src: str, pos: Pos, state: State, parse_float: ParseFloat) ->
     pos, key, value = parse_key_value_pair(src, pos, parse_float)
     key_parent, key_stem = key[:-1], key[-1]
     abs_key_parent = state.header_namespace + key_parent
-    abs_key = state.header_namespace + key
 
     if state.flags.is_(abs_key_parent, Flags.FROZEN):
         raise suffixed_err(
@@ -360,9 +359,10 @@ def key_value_rule(src: str, pos: Pos, state: State, parse_float: ParseFloat) ->
     except KeyError:
         raise suffixed_err(src, pos, "Can not overwrite a value")
     if key_stem in nest:
-        raise suffixed_err(src, pos, f"Can not define {abs_key} twice")
+        raise suffixed_err(src, pos, "Can not overwrite a value")
     # Mark inline table and array namespaces recursively immutable
     if isinstance(value, (dict, list)):
+        abs_key = state.header_namespace + key
         state.flags.set(abs_key, Flags.FROZEN, recursive=True)
     nest[key_stem] = value
     return pos
@@ -505,15 +505,16 @@ def parse_basic_str_escape(
             pos += 1
         pos = skip_chars(src, pos, TOML_WS_AND_NEWLINE)
         return pos, ""
-    if escape_id in BASIC_STR_ESCAPE_REPLACEMENTS:
-        return pos, BASIC_STR_ESCAPE_REPLACEMENTS[escape_id]
     if escape_id == "\\u":
         return parse_hex_char(src, pos, 4)
     if escape_id == "\\U":
         return parse_hex_char(src, pos, 8)
-    if len(escape_id) != 2:
-        raise suffixed_err(src, pos, "Unterminated string")
-    raise suffixed_err(src, pos, 'Unescaped "\\" in a string')
+    try:
+        return pos, BASIC_STR_ESCAPE_REPLACEMENTS[escape_id]
+    except KeyError:
+        if len(escape_id) != 2:
+            raise suffixed_err(src, pos, "Unterminated string")
+        raise suffixed_err(src, pos, 'Unescaped "\\" in a string')
 
 
 def parse_basic_str_escape_multiline(src: str, pos: Pos) -> Tuple[Pos, str]:
@@ -653,16 +654,13 @@ def parse_value(  # noqa: C901
     if char == "0":
         second_char = src[pos + 1 : pos + 2]
         if second_char == "x":
-            pos += 2
-            pos, hex_str = parse_regex(src, pos, RE_HEX)
+            pos, hex_str = parse_regex(src, pos + 2, RE_HEX)
             return pos, int(hex_str, 16)
         if second_char == "o":
-            pos += 2
-            pos, oct_str = parse_regex(src, pos, RE_OCT)
+            pos, oct_str = parse_regex(src, pos + 2, RE_OCT)
             return pos, int(oct_str, 8)
         if second_char == "b":
-            pos += 2
-            pos, bin_str = parse_regex(src, pos, RE_BIN)
+            pos, bin_str = parse_regex(src, pos + 2, RE_BIN)
             return pos, int(bin_str, 2)
 
     # Decimal integers and "normal" floats.
