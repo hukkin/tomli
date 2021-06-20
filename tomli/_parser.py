@@ -505,15 +505,16 @@ def parse_basic_str_escape(
             pos += 1
         pos = skip_chars(src, pos, TOML_WS_AND_NEWLINE)
         return pos, ""
-    if escape_id in BASIC_STR_ESCAPE_REPLACEMENTS:
-        return pos, BASIC_STR_ESCAPE_REPLACEMENTS[escape_id]
     if escape_id == "\\u":
         return parse_hex_char(src, pos, 4)
     if escape_id == "\\U":
         return parse_hex_char(src, pos, 8)
-    if len(escape_id) != 2:
-        raise suffixed_err(src, pos, "Unterminated string")
-    raise suffixed_err(src, pos, 'Unescaped "\\" in a string')
+    try:
+        return pos, BASIC_STR_ESCAPE_REPLACEMENTS[escape_id]
+    except KeyError:
+        if len(escape_id) != 2:
+            raise suffixed_err(src, pos, "Unterminated string")
+        raise suffixed_err(src, pos, 'Unescaped "\\" in a string')
 
 
 def parse_basic_str_escape_multiline(src: str, pos: Pos) -> Tuple[Pos, str]:
