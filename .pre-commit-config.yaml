@@ -1,12 +1,20 @@
 repos:
 - repo: https://github.com/executablebooks/mdformat
-  rev: 767a107bac7c4503d9960bfd73f999c9950b69bf  # frozen: 0.7.6
+  rev: b9b885e183ca16670b6d4a5ef8058664395dec58  # frozen: 0.7.7
   hooks:
   - id: mdformat
     additional_dependencies:
     - mdformat-toc
     - mdformat-gfm
     - mdformat-black
+- repo: https://github.com/asottile/yesqa
+  rev: 644ede78511c02fc6f8e03e014cc1ddcfbf1e1f5  # frozen: v1.2.3
+  hooks:
+  - id: yesqa
+    additional_dependencies:
+    - flake8-bugbear
+    - flake8-builtins
+    - flake8-comprehensions
 - repo: https://github.com/PyCQA/isort
   rev: a6222a8a125ec719724e628a5d3d0d5c60923281  # frozen: 5.8.0
   hooks:
