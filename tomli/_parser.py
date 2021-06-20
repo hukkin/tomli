@@ -1,4 +1,3 @@
-from datetime import date, datetime, time, timedelta, timezone, tzinfo
 import string
 from types import MappingProxyType
 from typing import (
@@ -11,7 +10,6 @@ from typing import (
     Optional,
     TextIO,
     Tuple,
-    Union,
 )
 
 from tomli._re import (
@@ -21,10 +19,13 @@ from tomli._re import (
     RE_HEX,
     RE_LOCAL_TIME,
     RE_OCT,
+    match_to_datetime,
+    match_to_localtime,
+    match_to_number,
 )
 
 if TYPE_CHECKING:
-    from re import Match, Pattern
+    from re import Pattern
 
 
 ASCII_CTRL = frozenset(chr(i) for i in range(32)) | frozenset(chr(127))
@@ -56,6 +57,7 @@ BASIC_STR_ESCAPE_REPLACEMENTS = MappingProxyType(
     }
 )
 
+# Type annotations
 ParseFloat = Callable[[str], Any]
 Key = Tuple[str, ...]
 Pos = int
@@ -453,13 +455,8 @@ def parse_array(src: str, pos: Pos, parse_float: ParseFloat) -> Tuple[Pos, list]
             return pos + 1, array
 
 
-def parse_inline_table(
-    src: str, pos: Pos, parse_float: ParseFloat
-) -> Tuple[Pos, dict]:  # noqa: C901
+def parse_inline_table(src: str, pos: Pos, parse_float: ParseFloat) -> Tuple[Pos, dict]:
     pos += 1
-    # We use a subset of the functionality NestedDict provides. We use it for
-    # the convenient getter, and recursive freeze for inner arrays and tables.
-    # Cutting a new lighter NestedDict base class could work here?
     nested_dict = NestedDict()
     flags = Flags()
 
@@ -618,54 +615,6 @@ def parse_regex(src: str, pos: Pos, regex: "Pattern") -> Tuple[Pos, str]:
     return pos, match_str
 
 
-def parse_datetime(
-    src: str, pos: Pos, match: "Match"
-) -> Tuple[Pos, Union[datetime, date]]:
-    match_str = match.group()
-    pos = match.end()
-    groups: Any = match.groups()
-    year, month, day = int(groups[0]), int(groups[1]), int(groups[2])
-    hour_str = groups[3]
-    if hour_str is None:
-        # Returning local date
-        return pos, date(year, month, day)
-    hour, minute, sec = int(hour_str), int(groups[4]), int(groups[5])
-    micros_str, offset_hour_str = groups[6], groups[7]
-    micros = int(micros_str[1:].ljust(6, "0")[:6]) if micros_str else 0
-    if offset_hour_str is not None:
-        offset_dir = 1 if "+" in match_str else -1
-        tz: Optional[tzinfo] = timezone(
-            timedelta(
-                hours=offset_dir * int(offset_hour_str),
-                minutes=offset_dir * int(groups[8]),
-            )
-        )
-    elif "Z" in match_str:
-        tz = timezone.utc
-    else:  # local date-time
-        tz = None
-    return pos, datetime(year, month, day, hour, minute, sec, micros, tzinfo=tz)
-
-
-def parse_localtime(src: str, pos: Pos, match: "Match") -> Tuple[Pos, time]:
-    pos = match.end()
-    groups = match.groups()
-    hour, minute, sec = int(groups[0]), int(groups[1]), int(groups[2])
-    micros_str = groups[3]
-    micros = int(micros_str[1:].ljust(6, "0")[:6]) if micros_str else 0
-    return pos, time(hour, minute, sec, micros)
-
-
-def parse_dec_or_float(
-    src: str, pos: Pos, match: "Match", parse_float: ParseFloat
-) -> Tuple[Pos, Any]:
-    match_str = match.group()
-    pos = match.end()
-    if "." in match_str or "e" in match_str or "E" in match_str:
-        return pos, parse_float(match_str)
-    return pos, int(match_str)
-
-
 def parse_value(  # noqa: C901
     src: str, pos: Pos, parse_float: ParseFloat
 ) -> Tuple[Pos, Any]:
@@ -697,10 +646,10 @@ def parse_value(  # noqa: C901
     # Dates and times
     date_match = RE_DATETIME.match(src, pos)
     if date_match:
-        return parse_datetime(src, pos, date_match)
+        return date_match.end(), match_to_datetime(date_match)
     localtime_match = RE_LOCAL_TIME.match(src, pos)
     if localtime_match:
-        return parse_localtime(src, pos, localtime_match)
+        return localtime_match.end(), match_to_localtime(localtime_match)
 
     # Non-decimal integers
     if char == "0":
@@ -724,7 +673,7 @@ def parse_value(  # noqa: C901
     # and dates and times.
     dec_match = RE_DEC_OR_FLOAT.match(src, pos)
     if dec_match:
-        return parse_dec_or_float(src, pos, dec_match, parse_float)
+        return dec_match.end(), match_to_number(dec_match, parse_float)
 
     # Arrays
     if char == "[":

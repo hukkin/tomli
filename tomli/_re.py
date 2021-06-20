@@ -1,4 +1,11 @@
+from datetime import date, datetime, time, timedelta, timezone, tzinfo
 import re
+from typing import TYPE_CHECKING, Any, Optional, Union
+
+if TYPE_CHECKING:
+    from re import Match
+
+    from tomli._parser import ParseFloat
 
 # E.g.
 # - 00:32:00.999999
@@ -22,3 +29,49 @@ RE_DATETIME = re.compile(
     + r"(?:Z|[+-]([01][0-9]|2[0-3]):([0-5][0-9]))?"  # time offset
     + r")?"
 )
+
+
+def match_to_datetime(match: "Match") -> Union[datetime, date]:
+    match_str = match.group()
+    (
+        year_str,
+        month_str,
+        day_str,
+        hour_str,
+        minute_str,
+        sec_str,
+        micros_str,
+        offset_hour_str,
+        offset_minute_str,
+    ) = match.groups()
+    year, month, day = int(year_str), int(month_str), int(day_str)
+    if hour_str is None:
+        return date(year, month, day)
+    hour, minute, sec = int(hour_str), int(minute_str), int(sec_str)
+    micros = int(micros_str[1:].ljust(6, "0")[:6]) if micros_str else 0
+    if offset_hour_str is not None:
+        offset_dir = 1 if "+" in match_str else -1
+        tz: Optional[tzinfo] = timezone(
+            timedelta(
+                hours=offset_dir * int(offset_hour_str),
+                minutes=offset_dir * int(offset_minute_str),
+            )
+        )
+    elif "Z" in match_str:
+        tz = timezone.utc
+    else:  # local date-time
+        tz = None
+    return datetime(year, month, day, hour, minute, sec, micros, tzinfo=tz)
+
+
+def match_to_localtime(match: "Match") -> time:
+    hour_str, minute_str, sec_str, micros_str = match.groups()
+    micros = int(micros_str[1:].ljust(6, "0")[:6]) if micros_str else 0
+    return time(int(hour_str), int(minute_str), int(sec_str), micros)
+
+
+def match_to_number(match: "Match", parse_float: "ParseFloat") -> Any:
+    match_str = match.group()
+    if "." in match_str or "e" in match_str or "E" in match_str:
+        return parse_float(match_str)
+    return int(match_str)
