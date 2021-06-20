@@ -653,16 +653,13 @@ def parse_value(  # noqa: C901
     if char == "0":
         second_char = src[pos + 1 : pos + 2]
         if second_char == "x":
-            pos += 2
-            pos, hex_str = parse_regex(src, pos, RE_HEX)
+            pos, hex_str = parse_regex(src, pos + 2, RE_HEX)
             return pos, int(hex_str, 16)
         if second_char == "o":
-            pos += 2
-            pos, oct_str = parse_regex(src, pos, RE_OCT)
+            pos, oct_str = parse_regex(src, pos + 2, RE_OCT)
             return pos, int(oct_str, 8)
         if second_char == "b":
-            pos += 2
-            pos, bin_str = parse_regex(src, pos, RE_BIN)
+            pos, bin_str = parse_regex(src, pos + 2, RE_BIN)
             return pos, int(bin_str, 2)
 
     # Decimal integers and "normal" floats.
