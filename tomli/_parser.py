@@ -15,9 +15,9 @@ from typing import (
 from tomli._re import (
     RE_BIN,
     RE_DATETIME,
-    RE_DEC_OR_FLOAT,
     RE_HEX,
-    RE_LOCAL_TIME,
+    RE_LOCALTIME,
+    RE_NUMBER,
     RE_OCT,
     match_to_datetime,
     match_to_localtime,
@@ -610,9 +610,7 @@ def parse_regex(src: str, pos: Pos, regex: "Pattern") -> Tuple[Pos, str]:
     match = regex.match(src, pos)
     if not match:
         raise suffixed_err(src, pos, "Unexpected sequence")
-    match_str = match.group()
-    pos = match.end()
-    return pos, match_str
+    return match.end(), match.group()
 
 
 def parse_value(  # noqa: C901
@@ -644,10 +642,10 @@ def parse_value(  # noqa: C901
             return pos + 5, False
 
     # Dates and times
-    date_match = RE_DATETIME.match(src, pos)
-    if date_match:
-        return date_match.end(), match_to_datetime(date_match)
-    localtime_match = RE_LOCAL_TIME.match(src, pos)
+    datetime_match = RE_DATETIME.match(src, pos)
+    if datetime_match:
+        return datetime_match.end(), match_to_datetime(datetime_match)
+    localtime_match = RE_LOCALTIME.match(src, pos)
     if localtime_match:
         return localtime_match.end(), match_to_localtime(localtime_match)
 
@@ -671,9 +669,9 @@ def parse_value(  # noqa: C901
     # The regex will greedily match any type starting with a decimal
     # char, so needs to be located after handling of non-decimal ints,
     # and dates and times.
-    dec_match = RE_DEC_OR_FLOAT.match(src, pos)
-    if dec_match:
-        return dec_match.end(), match_to_number(dec_match, parse_float)
+    number_match = RE_NUMBER.match(src, pos)
+    if number_match:
+        return number_match.end(), match_to_number(number_match, parse_float)
 
     # Arrays
     if char == "[":
