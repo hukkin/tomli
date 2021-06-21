@@ -254,17 +254,17 @@ def skip_chars(src: str, pos: Pos, chars: Iterable[str]) -> Pos:
 def skip_until(
     src: str,
     pos: Pos,
-    expect_char: str,
+    expect: str,
     *,
     error_on: FrozenSet[str],
     error_on_eof: bool,
 ) -> Pos:
     try:
-        new_pos = src.index(expect_char, pos)
+        new_pos = src.index(expect, pos)
     except ValueError:
         new_pos = len(src)
         if error_on_eof:
-            raise suffixed_err(src, new_pos, f'Expected "{expect_char!r}"')
+            raise suffixed_err(src, new_pos, f'Expected "{expect!r}"')
 
     bad_chars = error_on.intersection(src[pos:new_pos])
     if bad_chars:
@@ -415,20 +415,13 @@ def parse_key_part(src: str, pos: Pos) -> Tuple[Pos, str]:
     if char == "'":
         return parse_literal_str(src, pos)
     if char == '"':
-        return parse_basic_str(src, pos)
+        return parse_one_line_basic_str(src, pos)
     raise suffixed_err(src, pos, "Invalid initial character for a key part")
 
 
-def parse_basic_str(src: str, pos: Pos) -> Tuple[Pos, str]:
+def parse_one_line_basic_str(src: str, pos: Pos) -> Tuple[Pos, str]:
     pos += 1
-    return parse_string(
-        src,
-        pos,
-        delim='"',
-        delim_len=1,
-        error_on=ILLEGAL_BASIC_STR_CHARS,
-        parse_escapes=parse_basic_str_escape,
-    )
+    return parse_basic_str(src, pos, multiline=False)
 
 
 def parse_array(src: str, pos: Pos, parse_float: ParseFloat) -> Tuple[Pos, list]:
@@ -548,20 +541,18 @@ def parse_multiline_str(src: str, pos: Pos, *, literal: bool) -> Tuple[Pos, str]
 
     if literal:
         delim = "'"
-        illegal_chars = ILLEGAL_MULTILINE_LITERAL_STR_CHARS
-        escape_parser = None
+        end_pos = skip_until(
+            src,
+            pos,
+            "'''",
+            error_on=ILLEGAL_MULTILINE_LITERAL_STR_CHARS,
+            error_on_eof=True,
+        )
+        result = src[pos:end_pos]
+        pos = end_pos + 3
     else:
         delim = '"'
-        illegal_chars = ILLEGAL_MULTILINE_BASIC_STR_CHARS
-        escape_parser = parse_basic_str_escape_multiline
-    pos, result = parse_string(
-        src,
-        pos,
-        delim=delim,
-        delim_len=3,
-        error_on=illegal_chars,
-        parse_escapes=escape_parser,
-    )
+        pos, result = parse_basic_str(src, pos, multiline=True)
 
     # Add at maximum two extra apostrophes/quotes if the end sequence
     # is 4 or 5 chars long instead of just 3.
@@ -574,16 +565,13 @@ def parse_multiline_str(src: str, pos: Pos, *, literal: bool) -> Tuple[Pos, str]
     return pos, result + (delim * 2)
 
 
-def parse_string(
-    src: str,
-    pos: Pos,
-    *,
-    delim: str,
-    delim_len: int,
-    error_on: Iterable[str],
-    parse_escapes: Optional[Callable[[str, Pos], Tuple[Pos, str]]] = None,
-) -> Tuple[Pos, str]:
-    expect_after = delim * (delim_len - 1)
+def parse_basic_str(src: str, pos: Pos, *, multiline: bool) -> Tuple[Pos, str]:
+    if multiline:
+        error_on = ILLEGAL_MULTILINE_BASIC_STR_CHARS
+        parse_escapes = parse_basic_str_escape_multiline
+    else:
+        error_on = ILLEGAL_BASIC_STR_CHARS
+        parse_escapes = parse_basic_str_escape
     result = ""
     start_pos = pos
     while True:
@@ -591,12 +579,14 @@ def parse_string(
             char = src[pos]
         except IndexError:
             raise suffixed_err(src, pos, "Unterminated string")
-        if char == delim:
-            if src[pos + 1 : pos + delim_len] == expect_after:
-                return pos + delim_len, result + src[start_pos:pos]
+        if char == '"':
+            if not multiline:
+                return pos + 1, result + src[start_pos:pos]
+            if src[pos + 1 : pos + 3] == '""':
+                return pos + 3, result + src[start_pos:pos]
             pos += 1
             continue
-        if parse_escapes and char == "\\":
+        if char == "\\":
             result += src[start_pos:pos]
             pos, parsed_escape = parse_escapes(src, pos)
             result += parsed_escape
@@ -626,7 +616,7 @@ def parse_value(  # noqa: C901
     if char == '"':
         if src[pos + 1 : pos + 3] == '""':
             return parse_multiline_str(src, pos, literal=False)
-        return parse_basic_str(src, pos)
+        return parse_one_line_basic_str(src, pos)
 
     # Literal strings
     if char == "'":

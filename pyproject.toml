@@ -69,7 +69,7 @@ xfail_strict = true
 
 
 [tool.tox]
-legacy_tox_ini = """
+legacy_tox_ini = '''
 [tox]
 # Only run pytest envs when no args given to tox
 envlist = py{36,37,38,39}
@@ -89,7 +89,7 @@ extras = test
 deps = pytest-profiling
 commands =
     pytest tests/test_for_profiler.py --profile-svg --pstats-dir "{toxworkdir}/prof"
-    python -c 'import pathlib; print("profiler svg output under file://\\{0\\}".format(pathlib.Path(r"{toxworkdir}") / "prof" / "combined.svg"))'
+    python -c 'import pathlib; print("profiler svg output under file://\{0\}".format(pathlib.Path(r"{toxworkdir}") / "prof" / "combined.svg"))'
 
 [testenv:pre-commit]
 description = run linters
@@ -116,7 +116,7 @@ commands =
     python -c 'import datetime; print(datetime.date.today())'
     python --version
     python benchmark/run.py
-"""
+'''
 
 
 [tool.coverage.run]
