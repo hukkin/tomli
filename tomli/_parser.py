@@ -292,12 +292,11 @@ def skip_comments_and_array_ws(src: str, pos: Pos) -> Pos:
         pos = skip_chars(src, pos, TOML_WS_AND_NEWLINE)
         pos = skip_comment(src, pos)
         if pos == pos_before_skip:
-            break
-    return pos
+            return pos
 
 
 def create_dict_rule(src: str, pos: Pos, state: State) -> Pos:
-    pos += 1
+    pos += 1  # Skip "["
     pos = skip_chars(src, pos, TOML_WS)
     pos, key = parse_key(src, pos)
 
@@ -316,7 +315,7 @@ def create_dict_rule(src: str, pos: Pos, state: State) -> Pos:
 
 
 def create_list_rule(src: str, pos: Pos, state: State) -> Pos:
-    pos += 2
+    pos += 2  # Skip "[["
     pos = skip_chars(src, pos, TOML_WS)
     pos, key = parse_key(src, pos)
 
@@ -394,13 +393,12 @@ def parse_key(src: str, pos: Pos) -> Tuple[Pos, Key]:
         except IndexError:
             char = None
         if char != ".":
-            break
+            return pos, tuple(key)
         pos += 1
         pos = skip_chars(src, pos, TOML_WS)
         pos, key_part = parse_key_part(src, pos)
         key.append(key_part)
         pos = skip_chars(src, pos, TOML_WS)
-    return pos, tuple(key)
 
 
 def parse_key_part(src: str, pos: Pos) -> Tuple[Pos, str]:
