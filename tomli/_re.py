@@ -32,6 +32,11 @@ RE_DATETIME = re.compile(
 
 
 def match_to_datetime(match: "Match") -> Union[datetime, date]:
+    """Convert a `RE_DATETIME` match to `datetime.datetime` or `datetime.date`.
+
+    Raises ValueError if the match does not correspond to a valid date
+    or datetime.
+    """
     (
         year_str,
         month_str,

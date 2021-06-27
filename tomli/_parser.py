@@ -633,7 +633,11 @@ def parse_value(  # noqa: C901
     # Dates and times
     datetime_match = RE_DATETIME.match(src, pos)
     if datetime_match:
-        return datetime_match.end(), match_to_datetime(datetime_match)
+        try:
+            datetime_obj = match_to_datetime(datetime_match)
+        except ValueError:
+            raise suffixed_err(src, pos, "Invalid date or datetime")
+        return datetime_match.end(), datetime_obj
     localtime_match = RE_LOCALTIME.match(src, pos)
     if localtime_match:
         return localtime_match.end(), match_to_localtime(localtime_match)

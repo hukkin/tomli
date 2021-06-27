@@ -1,7 +1,9 @@
 # Changelog
 
-## **unreleased**
+## 1.0.3
 
+- Fixed
+  - Raise `TOMLDecodeError` instead of `ValueError` when parsing dates and datetimes that pass the regex check but don't correspond to a valid date or datetime.
 - Added
   - Improved multiline literal string parsing performance
 
