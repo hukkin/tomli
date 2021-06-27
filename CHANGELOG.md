@@ -1,5 +1,10 @@
 # Changelog
 
+## **unreleased**
+
+- Added
+  - Improved multiline literal string parsing performance
+
 ## 1.0.2
 
 - Added
