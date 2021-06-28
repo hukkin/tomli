@@ -309,7 +309,7 @@ def create_dict_rule(src: str, pos: Pos, state: State) -> Pos:
         raise suffixed_err(src, pos, "Can not overwrite a value")
     state.header_namespace = key
 
-    if src[pos : pos + 1] != "]":
+    if not src.startswith("]", pos):
         raise suffixed_err(src, pos, 'Expected "]" at the end of a table declaration')
     return pos + 1
 
@@ -331,14 +331,8 @@ def create_list_rule(src: str, pos: Pos, state: State) -> Pos:
         raise suffixed_err(src, pos, "Can not overwrite a value")
     state.header_namespace = key
 
-    end_marker = src[pos : pos + 2]
-    if end_marker != "]]":
-        raise suffixed_err(
-            src,
-            pos,
-            f'Found "{end_marker!r}" at the end of an array declaration.'
-            ' Expected "]]"',
-        )
+    if not src.startswith("]]", pos):
+        raise suffixed_err(src, pos, 'Expected "]]" at the end of an array declaration')
     return pos + 2
 
 
@@ -427,7 +421,7 @@ def parse_array(src: str, pos: Pos, parse_float: ParseFloat) -> Tuple[Pos, list]
     array: list = []
 
     pos = skip_comments_and_array_ws(src, pos)
-    if src[pos : pos + 1] == "]":
+    if src.startswith("]", pos):
         return pos + 1, array
     while True:
         pos, val = parse_value(src, pos, parse_float)
@@ -442,7 +436,7 @@ def parse_array(src: str, pos: Pos, parse_float: ParseFloat) -> Tuple[Pos, list]
         pos += 1
 
         pos = skip_comments_and_array_ws(src, pos)
-        if src[pos : pos + 1] == "]":
+        if src.startswith("]", pos):
             return pos + 1, array
 
 
@@ -452,7 +446,7 @@ def parse_inline_table(src: str, pos: Pos, parse_float: ParseFloat) -> Tuple[Pos
     flags = Flags()
 
     pos = skip_chars(src, pos, TOML_WS)
-    if src[pos : pos + 1] == "}":
+    if src.startswith("}", pos):
         return pos + 1, nested_dict.dict
     while True:
         pos, key, value = parse_key_value_pair(src, pos, parse_float)
@@ -478,7 +472,7 @@ def parse_inline_table(src: str, pos: Pos, parse_float: ParseFloat) -> Tuple[Pos
         pos = skip_chars(src, pos, TOML_WS)
 
 
-def parse_basic_str_escape(
+def parse_basic_str_escape(  # noqa: C901
     src: str, pos: Pos, *, multiline: bool = False
 ) -> Tuple[Pos, str]:
     escape_id = src[pos : pos + 2]
@@ -488,8 +482,9 @@ def parse_basic_str_escape(
         # the doc. Error if non-whitespace is found before newline.
         if escape_id != "\\\n":
             pos = skip_chars(src, pos, TOML_WS)
-            char = src[pos : pos + 1]
-            if not char:
+            try:
+                char = src[pos]
+            except IndexError:
                 return pos, ""
             if char != "\n":
                 raise suffixed_err(src, pos, 'Unescaped "\\" in a string')
@@ -534,7 +529,7 @@ def parse_literal_str(src: str, pos: Pos) -> Tuple[Pos, str]:
 
 def parse_multiline_str(src: str, pos: Pos, *, literal: bool) -> Tuple[Pos, str]:
     pos += 3
-    if src[pos : pos + 1] == "\n":
+    if src.startswith("\n", pos):
         pos += 1
 
     if literal:
@@ -554,10 +549,10 @@ def parse_multiline_str(src: str, pos: Pos, *, literal: bool) -> Tuple[Pos, str]
 
     # Add at maximum two extra apostrophes/quotes if the end sequence
     # is 4 or 5 chars long instead of just 3.
-    if src[pos : pos + 1] != delim:
+    if not src.startswith(delim, pos):
         return pos, result
     pos += 1
-    if src[pos : pos + 1] != delim:
+    if not src.startswith(delim, pos):
         return pos, result + delim
     pos += 1
     return pos, result + (delim * 2)
@@ -580,7 +575,7 @@ def parse_basic_str(src: str, pos: Pos, *, multiline: bool) -> Tuple[Pos, str]:
         if char == '"':
             if not multiline:
                 return pos + 1, result + src[start_pos:pos]
-            if src[pos + 1 : pos + 3] == '""':
+            if src.startswith('"""', pos):
                 return pos + 3, result + src[start_pos:pos]
             pos += 1
             continue
@@ -612,22 +607,22 @@ def parse_value(  # noqa: C901
 
     # Basic strings
     if char == '"':
-        if src[pos + 1 : pos + 3] == '""':
+        if src.startswith('"""', pos):
             return parse_multiline_str(src, pos, literal=False)
         return parse_one_line_basic_str(src, pos)
 
     # Literal strings
     if char == "'":
-        if src[pos + 1 : pos + 3] == "''":
+        if src.startswith("'''", pos):
             return parse_multiline_str(src, pos, literal=True)
         return parse_literal_str(src, pos)
 
     # Booleans
     if char == "t":
-        if src[pos + 1 : pos + 4] == "rue":
+        if src.startswith("true", pos):
             return pos + 4, True
     if char == "f":
-        if src[pos + 1 : pos + 5] == "alse":
+        if src.startswith("false", pos):
             return pos + 5, False
 
     # Dates and times
