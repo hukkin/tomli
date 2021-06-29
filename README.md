@@ -114,15 +114,15 @@ No.
 
 The `tomli.loads` function returns a plain `dict` that is populated with builtin types and types from the standard library only.
 Preserving comments requires a custom type to be returned so will not be supported,
-at least not by the `tomli.loads` function.
+at least not by the `tomli.loads` and `tomli.load` functions.
+
+Look into [TOML Kit](https://github.com/sdispater/tomlkit) for round-trip parsing.
 
 ### Is there a `dumps`, `write` or `encode` function?<a name="is-there-a-dumps-write-or-encode-function"></a>
 
-Not yet, and it's possible there never will be.
+[Tomli dumps](https://github.com/hukkin/tomli-dumps) is the write-only counterpart of Tomli, providing a `dumps` function.
 
-This library is deliberately minimal, and most TOML use cases are read-only.
-Also, most use cases where writes are relevant could also benefit from comment and whitespace preserving reads,
-which this library does not currently support.
+The core library does not include write capability, as most TOML use cases are read-only, and Tomli intends to be minimal.
 
 ### How do TOML types map into Python types?<a name="how-do-toml-types-map-into-python-types"></a>
 
