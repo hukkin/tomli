@@ -3,8 +3,6 @@ import re
 from typing import TYPE_CHECKING, Any, Optional, Union
 
 if TYPE_CHECKING:
-    from re import Match
-
     from tomli._parser import ParseFloat
 
 # E.g.
@@ -31,7 +29,7 @@ RE_DATETIME = re.compile(
 )
 
 
-def match_to_datetime(match: "Match") -> Union[datetime, date]:
+def match_to_datetime(match: "re.Match") -> Union[datetime, date]:
     """Convert a `RE_DATETIME` match to `datetime.datetime` or `datetime.date`.
 
     Raises ValueError if the match does not correspond to a valid date
@@ -70,13 +68,13 @@ def match_to_datetime(match: "Match") -> Union[datetime, date]:
     return datetime(year, month, day, hour, minute, sec, micros, tzinfo=tz)
 
 
-def match_to_localtime(match: "Match") -> time:
+def match_to_localtime(match: "re.Match") -> time:
     hour_str, minute_str, sec_str, micros_str = match.groups()
     micros = int(micros_str[1:].ljust(6, "0")[:6]) if micros_str else 0
     return time(int(hour_str), int(minute_str), int(sec_str), micros)
 
 
-def match_to_number(match: "Match", parse_float: "ParseFloat") -> Any:
+def match_to_number(match: "re.Match", parse_float: "ParseFloat") -> Any:
     match_str = match.group()
     if "." in match_str or "e" in match_str or "E" in match_str:
         return parse_float(match_str)
