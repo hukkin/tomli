@@ -116,7 +116,7 @@ The `tomli.loads` function returns a plain `dict` that is populated with builtin
 Preserving comments requires a custom type to be returned so will not be supported,
 at least not by the `tomli.loads` and `tomli.load` functions.
 
-Look into [TOML Kit](https://github.com/sdispater/tomlkit) for round-trip parsing.
+Look into [TOML Kit](https://github.com/sdispater/tomlkit) if preservation of style is what you need.
 
 ### Is there a `dumps`, `write` or `encode` function?<a name="is-there-a-dumps-write-or-encode-function"></a>
 
