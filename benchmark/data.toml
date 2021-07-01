@@ -124,5 +124,5 @@ basic-str = """\
        Escape whitespace. \
 
 
-       Liirum laarum liirum laarum.
+       Liirum laarum liirum laarum.\ueeee\U000eeeee\u1234
 """
