@@ -27,6 +27,7 @@ TOML_WS = frozenset(" \t")
 TOML_WS_AND_NEWLINE = TOML_WS | frozenset("\n")
 BARE_KEY_CHARS = frozenset(string.ascii_letters + string.digits + "-_")
 KEY_INITIAL_CHARS = BARE_KEY_CHARS | frozenset("\"'")
+HEXDIGIT_CHARS = frozenset(string.hexdigits)
 
 BASIC_STR_ESCAPE_REPLACEMENTS = MappingProxyType(
     {
@@ -492,7 +493,7 @@ def parse_basic_str_escape_multiline(src: str, pos: Pos) -> Tuple[Pos, str]:
 
 def parse_hex_char(src: str, pos: Pos, hex_len: int) -> Tuple[Pos, str]:
     hex_str = src[pos : pos + hex_len]
-    if len(hex_str) != hex_len or any(c not in string.hexdigits for c in hex_str):
+    if len(hex_str) != hex_len or not HEXDIGIT_CHARS.issuperset(hex_str):
         raise suffixed_err(src, pos, "Invalid hex value")
     pos += hex_len
     hex_int = int(hex_str, 16)
