@@ -1,32 +1,15 @@
 import string
 from types import MappingProxyType
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    FrozenSet,
-    Iterable,
-    Optional,
-    TextIO,
-    Tuple,
-)
+from typing import Any, Callable, Dict, FrozenSet, Iterable, Optional, TextIO, Tuple
 
 from tomli._re import (
-    RE_BIN,
     RE_DATETIME,
-    RE_HEX,
     RE_LOCALTIME,
     RE_NUMBER,
-    RE_OCT,
     match_to_datetime,
     match_to_localtime,
     match_to_number,
 )
-
-if TYPE_CHECKING:
-    from re import Pattern
-
 
 ASCII_CTRL = frozenset(chr(i) for i in range(32)) | frozenset(chr(127))
 
@@ -590,13 +573,6 @@ def parse_basic_str(src: str, pos: Pos, *, multiline: bool) -> Tuple[Pos, str]:
         pos += 1
 
 
-def parse_regex(src: str, pos: Pos, regex: "Pattern") -> Tuple[Pos, str]:
-    match = regex.match(src, pos)
-    if not match:
-        raise suffixed_err(src, pos, "Unexpected sequence")
-    return match.end(), match.group()
-
-
 def parse_value(  # noqa: C901
     src: str, pos: Pos, parse_float: ParseFloat
 ) -> Tuple[Pos, Any]:
@@ -637,23 +613,9 @@ def parse_value(  # noqa: C901
     if localtime_match:
         return localtime_match.end(), match_to_localtime(localtime_match)
 
-    # Non-decimal integers
-    if char == "0":
-        second_char = src[pos + 1 : pos + 2]
-        if second_char == "x":
-            pos, hex_str = parse_regex(src, pos + 2, RE_HEX)
-            return pos, int(hex_str, 16)
-        if second_char == "o":
-            pos, oct_str = parse_regex(src, pos + 2, RE_OCT)
-            return pos, int(oct_str, 8)
-        if second_char == "b":
-            pos, bin_str = parse_regex(src, pos + 2, RE_BIN)
-            return pos, int(bin_str, 2)
-
-    # Decimal integers and "normal" floats.
+    # Integers and "normal" floats.
     # The regex will greedily match any type starting with a decimal
-    # char, so needs to be located after handling of non-decimal ints,
-    # and dates and times.
+    # char, so needs to be located after handling of dates and times.
     number_match = RE_NUMBER.match(src, pos)
     if number_match:
         return number_match.end(), match_to_number(number_match, parse_float)

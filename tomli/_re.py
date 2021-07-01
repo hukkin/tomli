@@ -3,8 +3,6 @@ import re
 from typing import TYPE_CHECKING, Any, Optional, Union
 
 if TYPE_CHECKING:
-    from re import Match
-
     from tomli._parser import ParseFloat
 
 # E.g.
@@ -12,26 +10,42 @@ if TYPE_CHECKING:
 # - 00:32:00
 _TIME_RE_STR = r"([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])(\.[0-9]+)?"
 
-RE_HEX = re.compile(r"[0-9A-Fa-f](?:_?[0-9A-Fa-f])*")
-RE_BIN = re.compile(r"[01](?:_?[01])*")
-RE_OCT = re.compile(r"[0-7](?:_?[0-7])*")
 RE_NUMBER = re.compile(
-    r"[+-]?(?:0|[1-9](?:_?[0-9])*)"  # integer
-    + r"(?:\.[0-9](?:_?[0-9])*)?"  # optional fractional part
-    + r"(?:[eE][+-]?[0-9](?:_?[0-9])*)?"  # optional exponent part
+    r"""
+(?:
+    0
+    (?:
+        x[0-9A-Fa-f](?:_?[0-9A-Fa-f])*  # hex
+        |
+        b[01](?:_?[01])*  # bin
+        |
+        o[0-7](?:_?[0-7])*  # oct
+    )
+    |
+    [+-]?(?:0|[1-9](?:_?[0-9])*)  # dec, integer part
+    (?P<floatpart>
+        (?:\.[0-9](?:_?[0-9])*)?  # optional fractional part
+        (?:[eE][+-]?[0-9](?:_?[0-9])*)?  # # optional exponent part
+    )
+)
+""",
+    flags=re.VERBOSE,
 )
 RE_LOCALTIME = re.compile(_TIME_RE_STR)
 RE_DATETIME = re.compile(
-    r"([0-9]{4})-(0[1-9]|1[0-2])-(0[1-9]|1[0-9]|2[0-9]|3[01])"  # date, e.g. 1988-10-27
-    + r"(?:"
-    + r"[T ]"
-    + _TIME_RE_STR
-    + r"(?:(Z)|([+-])([01][0-9]|2[0-3]):([0-5][0-9]))?"  # time offset
-    + r")?"
+    fr"""
+([0-9]{{4}})-(0[1-9]|1[0-2])-(0[1-9]|1[0-9]|2[0-9]|3[01])  # date, e.g. 1988-10-27
+(?:
+    [T ]
+    {_TIME_RE_STR}
+    (?:(Z)|([+-])([01][0-9]|2[0-3]):([0-5][0-9]))?  # optional time offset
+)?
+""",
+    flags=re.VERBOSE,
 )
 
 
-def match_to_datetime(match: "Match") -> Union[datetime, date]:
+def match_to_datetime(match: "re.Match") -> Union[datetime, date]:
     """Convert a `RE_DATETIME` match to `datetime.datetime` or `datetime.date`.
 
     Raises ValueError if the match does not correspond to a valid date
@@ -70,14 +84,13 @@ def match_to_datetime(match: "Match") -> Union[datetime, date]:
     return datetime(year, month, day, hour, minute, sec, micros, tzinfo=tz)
 
 
-def match_to_localtime(match: "Match") -> time:
+def match_to_localtime(match: "re.Match") -> time:
     hour_str, minute_str, sec_str, micros_str = match.groups()
     micros = int(micros_str[1:].ljust(6, "0")[:6]) if micros_str else 0
     return time(int(hour_str), int(minute_str), int(sec_str), micros)
 
 
-def match_to_number(match: "Match", parse_float: "ParseFloat") -> Any:
-    match_str = match.group()
-    if "." in match_str or "e" in match_str or "E" in match_str:
-        return parse_float(match_str)
-    return int(match_str)
+def match_to_number(match: "re.Match", parse_float: "ParseFloat") -> Any:
+    if match.group("floatpart"):
+        return parse_float(match.group())
+    return int(match.group(), 0)
