@@ -1,6 +1,16 @@
 import string
 from types import MappingProxyType
-from typing import Any, Callable, Dict, FrozenSet, Iterable, Optional, TextIO, Tuple
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    FrozenSet,
+    Iterable,
+    NamedTuple,
+    Optional,
+    TextIO,
+    Tuple,
+)
 
 from tomli._re import (
     RE_DATETIME,
@@ -64,7 +74,8 @@ def loads(s: str, *, parse_float: ParseFloat = float) -> Dict[str, Any]:  # noqa
     # literals. Let's do so to simplify parsing.
     src = s.replace("\r\n", "\n")
     pos = 0
-    state = State()
+    out = Output(NestedDict(), Flags())
+    header: Key = ()
 
     # Parse one statement at a time
     # (typically means one line in TOML source)
@@ -88,7 +99,7 @@ def loads(s: str, *, parse_float: ParseFloat = float) -> Dict[str, Any]:  # noqa
             pos += 1
             continue
         if char in KEY_INITIAL_CHARS:
-            pos = key_value_rule(src, pos, state, parse_float)
+            pos = key_value_rule(src, pos, out, header, parse_float)
             pos = skip_chars(src, pos, TOML_WS)
         elif char == "[":
             try:
@@ -96,9 +107,9 @@ def loads(s: str, *, parse_float: ParseFloat = float) -> Dict[str, Any]:  # noqa
             except IndexError:
                 second_char = None
             if second_char == "[":
-                pos = create_list_rule(src, pos, state)
+                pos, header = create_list_rule(src, pos, out)
             else:
-                pos = create_dict_rule(src, pos, state)
+                pos, header = create_dict_rule(src, pos, out)
             pos = skip_chars(src, pos, TOML_WS)
         elif char != "#":
             raise suffixed_err(src, pos, "Invalid statement")
@@ -117,17 +128,7 @@ def loads(s: str, *, parse_float: ParseFloat = float) -> Dict[str, Any]:  # noqa
             )
         pos += 1
 
-    return state.out.dict
-
-
-class State:
-    def __init__(self) -> None:
-        # Mutable, read-only
-        self.out = NestedDict()
-        self.flags = Flags()
-
-        # Immutable, read and write
-        self.header_namespace: Key = ()
+    return out.data.dict
 
 
 class Flags:
@@ -226,6 +227,11 @@ class NestedDict:
             cont[last_key] = [{}]
 
 
+class Output(NamedTuple):
+    data: NestedDict
+    flags: Flags
+
+
 def skip_chars(src: str, pos: Pos, chars: Iterable[str]) -> Pos:
     try:
         while src[pos] in chars:
@@ -279,68 +285,67 @@ def skip_comments_and_array_ws(src: str, pos: Pos) -> Pos:
             return pos
 
 
-def create_dict_rule(src: str, pos: Pos, state: State) -> Pos:
+def create_dict_rule(src: str, pos: Pos, out: Output) -> Tuple[Pos, Key]:
     pos += 1  # Skip "["
     pos = skip_chars(src, pos, TOML_WS)
     pos, key = parse_key(src, pos)
 
-    if state.flags.is_(key, Flags.EXPLICIT_NEST) or state.flags.is_(key, Flags.FROZEN):
+    if out.flags.is_(key, Flags.EXPLICIT_NEST) or out.flags.is_(key, Flags.FROZEN):
         raise suffixed_err(src, pos, f"Can not declare {key} twice")
-    state.flags.set(key, Flags.EXPLICIT_NEST, recursive=False)
+    out.flags.set(key, Flags.EXPLICIT_NEST, recursive=False)
     try:
-        state.out.get_or_create_nest(key)
+        out.data.get_or_create_nest(key)
     except KeyError:
         raise suffixed_err(src, pos, "Can not overwrite a value")
-    state.header_namespace = key
 
     if not src.startswith("]", pos):
         raise suffixed_err(src, pos, 'Expected "]" at the end of a table declaration')
-    return pos + 1
+    return pos + 1, key
 
 
-def create_list_rule(src: str, pos: Pos, state: State) -> Pos:
+def create_list_rule(src: str, pos: Pos, out: Output) -> Tuple[Pos, Key]:
     pos += 2  # Skip "[["
     pos = skip_chars(src, pos, TOML_WS)
     pos, key = parse_key(src, pos)
 
-    if state.flags.is_(key, Flags.FROZEN):
+    if out.flags.is_(key, Flags.FROZEN):
         raise suffixed_err(src, pos, f"Can not mutate immutable namespace {key}")
     # Free the namespace now that it points to another empty list item...
-    state.flags.unset_all(key)
+    out.flags.unset_all(key)
     # ...but this key precisely is still prohibited from table declaration
-    state.flags.set(key, Flags.EXPLICIT_NEST, recursive=False)
+    out.flags.set(key, Flags.EXPLICIT_NEST, recursive=False)
     try:
-        state.out.append_nest_to_list(key)
+        out.data.append_nest_to_list(key)
     except KeyError:
         raise suffixed_err(src, pos, "Can not overwrite a value")
-    state.header_namespace = key
 
     if not src.startswith("]]", pos):
         raise suffixed_err(src, pos, 'Expected "]]" at the end of an array declaration')
-    return pos + 2
+    return pos + 2, key
 
 
-def key_value_rule(src: str, pos: Pos, state: State, parse_float: ParseFloat) -> Pos:
+def key_value_rule(
+    src: str, pos: Pos, out: Output, header: Key, parse_float: ParseFloat
+) -> Pos:
     pos, key, value = parse_key_value_pair(src, pos, parse_float)
     key_parent, key_stem = key[:-1], key[-1]
-    abs_key_parent = state.header_namespace + key_parent
+    abs_key_parent = header + key_parent
 
-    if state.flags.is_(abs_key_parent, Flags.FROZEN):
+    if out.flags.is_(abs_key_parent, Flags.FROZEN):
         raise suffixed_err(
             src, pos, f"Can not mutate immutable namespace {abs_key_parent}"
         )
     # Containers in the relative path can't be opened with the table syntax after this
-    state.flags.set_for_relative_key(state.header_namespace, key, Flags.EXPLICIT_NEST)
+    out.flags.set_for_relative_key(header, key, Flags.EXPLICIT_NEST)
     try:
-        nest = state.out.get_or_create_nest(abs_key_parent)
+        nest = out.data.get_or_create_nest(abs_key_parent)
     except KeyError:
         raise suffixed_err(src, pos, "Can not overwrite a value")
     if key_stem in nest:
         raise suffixed_err(src, pos, "Can not overwrite a value")
     # Mark inline table and array namespaces recursively immutable
     if isinstance(value, (dict, list)):
-        abs_key = state.header_namespace + key
-        state.flags.set(abs_key, Flags.FROZEN, recursive=True)
+        out.flags.set(header + key, Flags.FROZEN, recursive=True)
     nest[key_stem] = value
     return pos
 
