@@ -1,4 +1,5 @@
 from datetime import date, datetime, time, timedelta, timezone, tzinfo
+from functools import lru_cache
 import re
 from typing import TYPE_CHECKING, Any, Optional, Union
 
@@ -60,7 +61,7 @@ def match_to_datetime(match: "re.Match") -> Union[datetime, date]:
         sec_str,
         micros_str,
         zulu_time,
-        offset_dir_str,
+        offset_sign_str,
         offset_hour_str,
         offset_minute_str,
     ) = match.groups()
@@ -69,19 +70,26 @@ def match_to_datetime(match: "re.Match") -> Union[datetime, date]:
         return date(year, month, day)
     hour, minute, sec = int(hour_str), int(minute_str), int(sec_str)
     micros = int(micros_str[1:].ljust(6, "0")[:6]) if micros_str else 0
-    if offset_dir_str:
-        offset_dir = 1 if offset_dir_str == "+" else -1
-        tz: Optional[tzinfo] = timezone(
-            timedelta(
-                hours=offset_dir * int(offset_hour_str),
-                minutes=offset_dir * int(offset_minute_str),
-            )
+    if offset_sign_str:
+        tz: Optional[tzinfo] = cached_tz(
+            offset_hour_str, offset_minute_str, offset_sign_str
         )
     elif zulu_time:
         tz = timezone.utc
     else:  # local date-time
         tz = None
     return datetime(year, month, day, hour, minute, sec, micros, tzinfo=tz)
+
+
+@lru_cache(maxsize=None)
+def cached_tz(hour_str: str, minute_str: str, sign_str: str) -> timezone:
+    sign = 1 if sign_str == "+" else -1
+    return timezone(
+        timedelta(
+            hours=sign * int(hour_str),
+            minutes=sign * int(minute_str),
+        )
+    )
 
 
 def match_to_localtime(match: "re.Match") -> time:
