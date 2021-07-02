@@ -1,21 +1,26 @@
 # Changelog
 
+## **unreleased**
+
+- Performance
+  - Minor boost (~3%)
+
 ## 1.0.3
 
 - Fixed
   - Raise `TOMLDecodeError` instead of `ValueError` when parsing dates and datetimes that pass the regex check but don't correspond to a valid date or datetime.
-- Added
+- Performance
   - Improved multiline literal string parsing performance
 
 ## 1.0.2
 
-- Added
-  - Minor performance boost (~4%)
+- Performance
+  - Minor boost (~4%)
 
 ## 1.0.1
 
-- Added
-  - Performance boost
+- Performance
+  - A significant boost
 
 ## 1.0.0
 
@@ -27,7 +32,7 @@
 - Fixed
   - Raise `TOMLDecodeError` if overwriting nested inline tables from the parent inline
   - Raise `TOMLDecodeError` if escaped Unicode character is not a Unicode scalar value
-- Added
+- Performance
   - Increased parsing speed of single line basic strings, and multi-line literal and basic strings
 
 ## 0.2.9
@@ -39,7 +44,7 @@
 
 ## 0.2.8
 
-- Added
+- Performance
   - Significant boost to comment parsing speed
 
 ## 0.2.7
@@ -50,8 +55,8 @@
 
 ## 0.2.6
 
-- Added
-  - Over 5% performance boost
+- Performance
+  - Over 5% boost
 
 ## 0.2.5
 
@@ -85,7 +90,7 @@
 
 - Changed
   - Project name to Tomli
-- Added
+- Performance
   - A performance boost
 
 ## 0.1.0
