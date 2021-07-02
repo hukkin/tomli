@@ -154,15 +154,21 @@ class Flags:
     def set_for_relative_key(self, head_key: Key, rel_key: Key, flag: int) -> None:
         cont = self._flags
         for k in head_key:
-            if k not in cont:
-                cont[k] = {"flags": set(), "recursive_flags": set(), "nested": {}}
-            cont = cont[k]["nested"]
+            if k in cont:
+                cont = cont[k]["nested"]
+            else:
+                nested: dict = {}
+                cont[k] = {"flags": set(), "recursive_flags": set(), "nested": nested}
+                cont = nested
         for k in rel_key:
             if k in cont:
-                cont[k]["flags"].add(flag)
+                cont_k = cont[k]
+                cont_k["flags"].add(flag)
+                cont = cont_k["nested"]
             else:
-                cont[k] = {"flags": {flag}, "recursive_flags": set(), "nested": {}}
-            cont = cont[k]["nested"]
+                nested = {}
+                cont[k] = {"flags": {flag}, "recursive_flags": set(), "nested": nested}
+                cont = nested
 
     def set(self, key: Key, flag: int, *, recursive: bool) -> None:  # noqa: A003
         cont = self._flags
@@ -368,7 +374,7 @@ def parse_key_value_pair(
 
 def parse_key(src: str, pos: Pos) -> Tuple[Pos, Key]:
     pos, key_part = parse_key_part(src, pos)
-    key = [key_part]
+    key: Key = (key_part,)
     pos = skip_chars(src, pos, TOML_WS)
     while True:
         try:
@@ -376,11 +382,11 @@ def parse_key(src: str, pos: Pos) -> Tuple[Pos, Key]:
         except IndexError:
             char = None
         if char != ".":
-            return pos, tuple(key)
+            return pos, key
         pos += 1
         pos = skip_chars(src, pos, TOML_WS)
         pos, key_part = parse_key_part(src, pos)
-        key.append(key_part)
+        key += (key_part,)
         pos = skip_chars(src, pos, TOML_WS)
 
 
