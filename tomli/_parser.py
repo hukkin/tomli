@@ -368,7 +368,7 @@ def parse_key_value_pair(
 
 def parse_key(src: str, pos: Pos) -> Tuple[Pos, Key]:
     pos, key_part = parse_key_part(src, pos)
-    key = [key_part]
+    key: Key = (key_part,)
     pos = skip_chars(src, pos, TOML_WS)
     while True:
         try:
@@ -376,11 +376,11 @@ def parse_key(src: str, pos: Pos) -> Tuple[Pos, Key]:
         except IndexError:
             char = None
         if char != ".":
-            return pos, tuple(key)
+            return pos, key
         pos += 1
         pos = skip_chars(src, pos, TOML_WS)
         pos, key_part = parse_key_part(src, pos)
-        key.append(key_part)
+        key += (key_part,)
         pos = skip_chars(src, pos, TOML_WS)
 
 
