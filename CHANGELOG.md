@@ -1,9 +1,9 @@
 # Changelog
 
-## **unreleased**
+## 1.0.4
 
 - Performance
-  - Minor boost (~3%)
+  - Minor boost (~4%)
 
 ## 1.0.3
 

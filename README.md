@@ -120,7 +120,7 @@ Look into [TOML Kit](https://github.com/sdispater/tomlkit) if preservation of st
 
 ### Is there a `dumps`, `write` or `encode` function?<a name="is-there-a-dumps-write-or-encode-function"></a>
 
-[Tomli-W](https://github.com/hukkin/tomli-w) is the write-only counterpart of Tomli, providing a `dumps` function.
+[Tomli-W](https://github.com/hukkin/tomli-w) is the write-only counterpart of Tomli, providing `dump` and `dumps` functions.
 
 The core library does not include write capability, as most TOML use cases are read-only, and Tomli intends to be minimal.
 
