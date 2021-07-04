@@ -154,21 +154,15 @@ class Flags:
     def set_for_relative_key(self, head_key: Key, rel_key: Key, flag: int) -> None:
         cont = self._flags
         for k in head_key:
-            if k in cont:
-                cont = cont[k]["nested"]
-            else:
-                nested: dict = {}
-                cont[k] = {"flags": set(), "recursive_flags": set(), "nested": nested}
-                cont = nested
+            if k not in cont:
+                cont[k] = {"flags": set(), "recursive_flags": set(), "nested": {}}
+            cont = cont[k]["nested"]
         for k in rel_key:
             if k in cont:
-                cont_k = cont[k]
-                cont_k["flags"].add(flag)
-                cont = cont_k["nested"]
+                cont[k]["flags"].add(flag)
             else:
-                nested = {}
-                cont[k] = {"flags": {flag}, "recursive_flags": set(), "nested": nested}
-                cont = nested
+                cont[k] = {"flags": {flag}, "recursive_flags": set(), "nested": {}}
+            cont = cont[k]["nested"]
 
     def set(self, key: Key, flag: int, *, recursive: bool) -> None:  # noqa: A003
         cont = self._flags
