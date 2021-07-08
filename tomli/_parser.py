@@ -256,11 +256,10 @@ def skip_until(
         if error_on_eof:
             raise suffixed_err(src, new_pos, f'Expected "{expect!r}"')
 
-    bad_chars = error_on.intersection(src[pos:new_pos])
-    if bad_chars:
-        bad_char = next(iter(bad_chars))
-        bad_pos = src.index(bad_char, pos)
-        raise suffixed_err(src, bad_pos, f'Found invalid character "{bad_char!r}"')
+    if not error_on.isdisjoint(src[pos:new_pos]):
+        while src[pos] not in error_on:
+            pos += 1
+        raise suffixed_err(src, pos, f'Found invalid character "{src[pos]!r}"')
     return new_pos
 
 
