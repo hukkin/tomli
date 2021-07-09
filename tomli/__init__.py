@@ -3,5 +3,6 @@
 __all__ = ("loads", "load", "TOMLDecodeError")
 __version__ = "1.0.4"  # DO NOT EDIT THIS LINE MANUALLY. LET bump2version UTILITY DO IT
 
-from tomli._parser import TOMLDecodeError, load, loads
+from tomli._parser import TOMLDecodeError
 from tomli._parser import TOMLDecodeError as TomlDecodeError
+from tomli._parser import load, loads
