@@ -88,8 +88,11 @@ toml_dict = tomli.loads("precision-matters = 0.982492", parse_float=Decimal)
 assert isinstance(toml_dict["precision-matters"], Decimal)
 ```
 
-Note that you may replace `decimal.Decimal` with any callable that converts a TOML float from string to any Python type (except `list` or `dict`).
+Note that `decimal.Decimal` can be replaced with another callable that converts a TOML float from string to a Python type.
 The `decimal.Decimal` type is, however, the most typical replacement when float inaccuracies can not be tolerated.
+
+Types such as `list`, `dict`, or anything else implementing key lookups or the `append` attribute are illegal,
+and will result in undefined behavior.
 
 ## FAQ<a name="faq"></a>
 
