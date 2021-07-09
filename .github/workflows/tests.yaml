@@ -57,11 +57,15 @@ jobs:
       if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.6'
       uses: codecov/codecov-action@v1
 
+  allgood:
+    needs:
+    - tests
+    - linters
+
   pypi-publish:
     # Only publish if all other jobs succeed
     needs:
-    - linters
-    - tests
+    - allgood
     if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
     runs-on: ubuntu-latest
     steps:
