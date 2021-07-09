@@ -62,6 +62,8 @@ jobs:
     needs:
     - tests
     - linters
+    steps:
+    - run: echo "Great success!"
 
   pypi-publish:
     # Only publish if all other jobs succeed
