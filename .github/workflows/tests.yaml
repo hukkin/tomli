@@ -58,6 +58,7 @@ jobs:
       uses: codecov/codecov-action@v1
 
   allgood:
+    runs-on: ubuntu-latest
     needs:
     - tests
     - linters
