@@ -1,6 +1,7 @@
 # TODO: move all imports except `atheris` under this contextmanager in atheris>1.0.11
 # with atheris.instrument_imports():
 from math import isnan
+import re
 import sys
 import warnings
 
@@ -57,7 +58,7 @@ def normalize_toml_obj(toml_obj):
     if isinstance(toml_obj, float) and isnan(toml_obj):
         return "nan"
     if isinstance(toml_obj, str):
-        return toml_obj.replace("\r\n", "\n")
+        return re.sub(r"\r+\n", r"\n", toml_obj)
     return toml_obj
 
 
