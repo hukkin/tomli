@@ -20,7 +20,7 @@ def test_one_input(input_bytes: bytes) -> None:
 
     try:
         toml_obj = tomli.loads(data)
-    except tomli.TOMLDecodeError:
+    except (tomli.TOMLDecodeError, RecursionError):
         return
     except BaseException:
         print_err(data)
