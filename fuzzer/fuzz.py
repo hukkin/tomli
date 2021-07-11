@@ -35,6 +35,8 @@ def test_one_input(input_bytes: bytes) -> None:
             )
             sys.stderr.flush()
             raise Exception("Dicts not equal after roundtrip")
+    except RecursionError:
+        return
     except BaseException:
         print_err(data)
         raise
