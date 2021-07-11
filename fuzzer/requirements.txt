@@ -1,0 +1,4 @@
+# sudo apt-get install clang
+wheel
+atheris==1.0.11
+tomli_w

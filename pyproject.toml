@@ -111,6 +111,13 @@ commands =
     python -c 'import datetime; print(datetime.date.today())'
     python --version
     python benchmark/run.py
+
+[testenv:fuzz]
+description = run the fuzzer against a local Tomli version (needs "apt install clang")
+deps =
+    -r fuzzer/requirements.txt
+commands =
+    python fuzzer/fuzz.py {posargs}
 '''
 
 
@@ -152,4 +159,9 @@ disallow_untyped_defs = false
 # This matches `benchmark/run.py`. Since benchmark/ is
 # not a package, we use the module name here.
 module = "run"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+# This matches `fuzzer/fuzz.py`.
+module = "fuzz"
 ignore_errors = true
