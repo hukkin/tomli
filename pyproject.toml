@@ -78,6 +78,12 @@ deps = -r tests/requirements.txt
 commands =
     pytest {posargs}
 
+[testenv:py{36,37,38,39}-package]
+description = run tests against a built package (can fail, in theory, if test dependencies need a tomli version incompatible with local state)
+deps = -r tests/requirements.txt
+commands =
+    pytest --import-mode=append {posargs}
+
 [testenv:profile]
 description = run profiler (use e.g. `firefox .tox/prof/combined.svg` to open)
 # `src` layout is not in use, so no need to install the package
