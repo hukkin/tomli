@@ -39,6 +39,7 @@ keywords = ["toml"]
 exclude = [
     "tests/",
     "benchmark/",
+    "fuzzer/",
     ".*",
     "CHANGELOG.md",
 ]
