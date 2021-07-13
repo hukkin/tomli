@@ -1,7 +1,6 @@
 # TODO: move all imports except `atheris` under this contextmanager in atheris>1.0.11
 # with atheris.instrument_imports():
 from math import isnan
-import re
 import sys
 import warnings
 
@@ -49,18 +48,13 @@ def print_err(data):
 
 
 def normalize_toml_obj(toml_obj):
-    """Make NaNs equal when compared.
-
-    Normalize line breaks.
-    """
+    """Make NaNs equal when compared."""
     if isinstance(toml_obj, dict):
         return {k: normalize_toml_obj(v) for k, v in toml_obj.items()}
     if isinstance(toml_obj, list):
         return [normalize_toml_obj(v) for v in toml_obj]
     if isinstance(toml_obj, float) and isnan(toml_obj):
         return "nan"
-    if isinstance(toml_obj, str):
-        return re.sub(r"\r+\n", r"\n", toml_obj)
     return toml_obj
 
 

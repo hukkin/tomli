@@ -71,8 +71,7 @@ envlist = py{36,37,38,39}
 isolated_build = True
 
 [testenv:py{36,37,38,39}]
-description = run tests
-# `src` layout is not in use, so no need to install the package
+description = run tests against unpackaged source
 skip_install = True
 deps = -r tests/requirements.txt
 commands =
@@ -86,7 +85,6 @@ commands =
 
 [testenv:profile]
 description = run profiler (use e.g. `firefox .tox/prof/combined.svg` to open)
-# `src` layout is not in use, so no need to install the package
 skip_install = True
 setenv =
     PROFILER_ITERATIONS=1000
