@@ -27,18 +27,23 @@ def test_one_input(input_bytes: bytes) -> None:
         raise
 
     try:
-        roundtripped_obj = tomli.loads(tomli_w.dumps(toml_obj))
-        if normalize_toml_obj(roundtripped_obj) != normalize_toml_obj(toml_obj):
-            sys.stderr.write(
-                f"Original dict:\n{toml_obj}\nRoundtripped dict:\n{roundtripped_obj}\n"
-            )
-            sys.stderr.flush()
-            raise Exception("Dicts not equal after roundtrip")
+        recovered_data = tomli_w.dumps(toml_obj)
     except RecursionError:
         return
     except BaseException:
         print_err(data)
         raise
+
+    roundtripped_obj = tomli.loads(recovered_data)
+    normalize_toml_obj(roundtripped_obj)
+    normalize_toml_obj(toml_obj)
+    if roundtripped_obj != toml_obj:
+        sys.stderr.write(
+            f"Original dict:\n{toml_obj}\nRoundtripped dict:\n{roundtripped_obj}\n"
+        )
+        sys.stderr.flush()
+        print_err(data)
+        raise Exception("Dicts not equal after roundtrip")
 
 
 def print_err(data):
@@ -47,15 +52,16 @@ def print_err(data):
     sys.stderr.flush()
 
 
-def normalize_toml_obj(toml_obj):
-    """Make NaNs equal when compared."""
-    if isinstance(toml_obj, dict):
-        return {k: normalize_toml_obj(v) for k, v in toml_obj.items()}
-    if isinstance(toml_obj, list):
-        return [normalize_toml_obj(v) for v in toml_obj]
-    if isinstance(toml_obj, float) and isnan(toml_obj):
-        return "nan"
-    return toml_obj
+def normalize_toml_obj(toml_obj: dict) -> None:
+    """Make NaNs equal when compared (without using recursion)."""
+    to_process = [toml_obj]
+    while to_process:
+        cont = to_process.pop()
+        for k, v in cont.items() if isinstance(cont, dict) else enumerate(cont):
+            if isinstance(v, float) and isnan(v):
+                cont[k] = "nan"
+            elif isinstance(v, (dict, list)):
+                to_process.append(v)
 
 
 def main():
