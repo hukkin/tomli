@@ -13,21 +13,19 @@ _TIME_RE_STR = r"([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])(?:\.([0-9]{1,6})[0
 
 RE_NUMBER = re.compile(
     r"""
+0
 (?:
-    0
-    (?:
-        x[0-9A-Fa-f](?:_?[0-9A-Fa-f])*  # hex
-        |
-        b[01](?:_?[01])*  # bin
-        |
-        o[0-7](?:_?[0-7])*  # oct
-    )
+    x[0-9A-Fa-f](?:_?[0-9A-Fa-f])*   # hex
     |
-    [+-]?(?:0|[1-9](?:_?[0-9])*)  # dec, integer part
-    (?P<floatpart>
-        (?:\.[0-9](?:_?[0-9])*)?  # optional fractional part
-        (?:[eE][+-]?[0-9](?:_?[0-9])*)?  # # optional exponent part
-    )
+    b[01](?:_?[01])*                 # bin
+    |
+    o[0-7](?:_?[0-7])*               # oct
+)
+|
+[+-]?(?:0|[1-9](?:_?[0-9])*)         # dec, integer part
+(?P<floatpart>
+    (?:\.[0-9](?:_?[0-9])*)?         # optional fractional part
+    (?:[eE][+-]?[0-9](?:_?[0-9])*)?  # optional exponent part
 )
 """,
     flags=re.VERBOSE,
@@ -35,11 +33,11 @@ RE_NUMBER = re.compile(
 RE_LOCALTIME = re.compile(_TIME_RE_STR)
 RE_DATETIME = re.compile(
     fr"""
-([0-9]{{4}})-(0[1-9]|1[0-2])-(0[1-9]|1[0-9]|2[0-9]|3[01])  # date, e.g. 1988-10-27
+([0-9]{{4}})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])  # date, e.g. 1988-10-27
 (?:
     [T ]
     {_TIME_RE_STR}
-    (?:(Z)|([+-])([01][0-9]|2[0-3]):([0-5][0-9]))?  # optional time offset
+    (?:(Z)|([+-])([01][0-9]|2[0-3]):([0-5][0-9]))?     # optional time offset
 )?
 """,
     flags=re.VERBOSE,
