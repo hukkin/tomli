@@ -9,6 +9,10 @@ import tomli_w
 
 import tomli
 
+# Disable any caching used so that the same lines of code run
+# on a given input consistently.
+tomli._re.cached_tz = tomli._re.cached_tz.__wrapped__
+
 # Suppress all warnings.
 warnings.simplefilter("ignore")
 
