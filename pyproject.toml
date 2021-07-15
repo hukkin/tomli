@@ -131,7 +131,7 @@ allowlist_externals =
 commands =
     # Create a folder for persistent corpus and use benchmark data as initial seed
     mkdir -p {toxworkdir}/fuzzer-corpus
-    cp benchmark/data.toml {toxworkdir}/fuzzer-corpus/data.toml
+    cp -n benchmark/data.toml {toxworkdir}/fuzzer-corpus/data.toml
     # Run fuzzer
     python fuzzer/fuzz.py {toxworkdir}/fuzzer-corpus {posargs:-len_control=10000}
 '''
