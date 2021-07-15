@@ -125,8 +125,15 @@ commands =
 description = run the fuzzer against a local Tomli version (needs "apt install clang")
 deps =
     -r fuzzer/requirements.txt
+allowlist_externals =
+    mkdir
+    cp
 commands =
-    python fuzzer/fuzz.py {posargs}
+    # Create a folder for persistent corpus and use benchmark data as initial seed
+    mkdir -p {toxworkdir}/fuzzer-corpus
+    cp -n benchmark/data.toml {toxworkdir}/fuzzer-corpus/data.toml
+    # Run fuzzer
+    python fuzzer/fuzz.py {toxworkdir}/fuzzer-corpus {posargs:-len_control=10000}
 '''
 
 
