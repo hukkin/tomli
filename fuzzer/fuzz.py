@@ -1,13 +1,13 @@
-# TODO: move all imports except `atheris` under this contextmanager in atheris>1.0.11
-# with atheris.instrument_imports():
-from math import isnan
-import sys
-import warnings
-
 import atheris
-import tomli_w
 
-import tomli
+with atheris.instrument_imports():
+    from math import isnan
+    import sys
+    import warnings
+
+    import tomli_w
+
+    import tomli
 
 # Disable any caching used so that the same lines of code run
 # on a given input consistently.
