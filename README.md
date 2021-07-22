@@ -60,7 +60,7 @@ assert toml_dict == {"gretzky": 99, "kurri": {"jari": 17}}
 ```python
 import tomli
 
-with open("path_to_file/conf.toml", encoding="utf-8") as f:
+with open("path_to_file/conf.toml", "rb") as f:
     toml_dict = tomli.load(f)
 ```
 

@@ -1,6 +1,7 @@
 import string
 from types import MappingProxyType
 from typing import (
+    IO,
     Any,
     Callable,
     Dict,
@@ -8,7 +9,6 @@ from typing import (
     Iterable,
     NamedTuple,
     Optional,
-    TextIO,
     Tuple,
 )
 
@@ -61,9 +61,11 @@ class TOMLDecodeError(ValueError):
     """An error raised if a document is not valid TOML."""
 
 
-def load(fp: TextIO, *, parse_float: ParseFloat = float) -> Dict[str, Any]:
+def load(fp: IO, *, parse_float: ParseFloat = float) -> Dict[str, Any]:
     """Parse TOML from a file object."""
     s = fp.read()
+    if isinstance(s, bytes):
+        s = s.decode()
     return loads(s, parse_float=parse_float)
 
 
