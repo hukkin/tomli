@@ -16,13 +16,13 @@ DATA_DIR = Path(__file__).parent / "data" / "toml-lang-compliance"
 
 VALID_FILES = tuple((DATA_DIR / "valid").glob("**/*.toml"))
 # VALID_FILES_EXPECTED = tuple(
-#     json.loads(p.with_suffix(".json").read_text("utf-8")) for p in VALID_FILES
+#     json.loads(p.with_suffix(".json").read_bytes().decode()) for p in VALID_FILES
 # )
 _expected_files = []
 for p in VALID_FILES:
     json_path = p.with_suffix(".json")
     try:
-        text = json.loads(json_path.read_text("utf-8"))
+        text = json.loads(json_path.read_bytes().decode())
     except FileNotFoundError:
         text = MissingFile(json_path)
     _expected_files.append(text)
@@ -37,7 +37,7 @@ INVALID_FILES = tuple((DATA_DIR / "invalid").glob("**/*.toml"))
     ids=[p.stem for p in INVALID_FILES],
 )
 def test_invalid(invalid):
-    toml_str = invalid.read_text(encoding="utf-8")
+    toml_str = invalid.read_bytes().decode()
     with pytest.raises(tomli.TOMLDecodeError):
         tomli.loads(toml_str)
 
@@ -50,7 +50,7 @@ def test_invalid(invalid):
 def test_valid(valid, expected):
     if isinstance(expected, MissingFile):
         pytest.xfail(f"Missing a .json file corresponding the .toml: {expected.path}")
-    toml_str = valid.read_text(encoding="utf-8")
+    toml_str = valid.read_bytes().decode()
     actual = tomli.loads(toml_str)
     actual = burntsushi.convert(actual)
     expected = burntsushi.normalize(expected)

@@ -14,7 +14,7 @@ import tomli
 
 def test_for_profiler():
     path = Path(__file__).parent.parent / "benchmark" / "data.toml"
-    benchmark_toml = path.read_text("utf-8")
+    benchmark_toml = path.read_bytes().decode()
     # increase the count here to reduce the impact of
     # setting up pytest execution environment. Let's keep
     # the count low by default because this is part of the

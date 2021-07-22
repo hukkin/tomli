@@ -10,7 +10,7 @@ DATA_DIR = Path(__file__).parent / "data" / "extras"
 
 VALID_FILES = tuple((DATA_DIR / "valid").glob("**/*.toml"))
 VALID_FILES_EXPECTED = tuple(
-    json.loads(p.with_suffix(".json").read_text("utf-8")) for p in VALID_FILES
+    json.loads(p.with_suffix(".json").read_bytes().decode()) for p in VALID_FILES
 )
 
 INVALID_FILES = tuple((DATA_DIR / "invalid").glob("**/*.toml"))
@@ -22,7 +22,7 @@ INVALID_FILES = tuple((DATA_DIR / "invalid").glob("**/*.toml"))
     ids=[p.stem for p in INVALID_FILES],
 )
 def test_invalid(invalid):
-    toml_str = invalid.read_text(encoding="utf-8")
+    toml_str = invalid.read_bytes().decode()
     with pytest.raises(tomli.TOMLDecodeError):
         tomli.loads(toml_str)
 
@@ -33,7 +33,7 @@ def test_invalid(invalid):
     ids=[p.stem for p in VALID_FILES],
 )
 def test_valid(valid, expected):
-    toml_str = valid.read_text(encoding="utf-8")
+    toml_str = valid.read_bytes().decode()
     actual = tomli.loads(toml_str)
     actual = burntsushi.convert(actual)
     expected = burntsushi.normalize(expected)
