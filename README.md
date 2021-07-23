@@ -60,9 +60,14 @@ assert toml_dict == {"gretzky": 99, "kurri": {"jari": 17}}
 ```python
 import tomli
 
-with open("path_to_file/conf.toml", encoding="utf-8") as f:
+with open("path_to_file/conf.toml", "rb") as f:
     toml_dict = tomli.load(f)
 ```
+
+Opening the file in binary mode (with the `"rb"` flag) is highly encouraged.
+Binary mode will enforce decoding the file as UTF-8 with universal newlines disabled,
+both of which are required to correctly parse TOML.
+Support for text file objects may be deprecated for removal in a future release.
 
 ### Handle invalid TOML<a name="handle-invalid-toml"></a>
 

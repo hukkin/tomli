@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.0
+
+- Added
+  - `load` can now take a binary file object
+
 ## 1.0.4
 
 - Performance

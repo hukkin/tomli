@@ -37,7 +37,7 @@ def benchmark(
 
 def run(run_count: int) -> None:
     data_path = Path(__file__).parent / "data.toml"
-    test_data = data_path.read_text(encoding="utf-8")
+    test_data = data_path.read_bytes().decode()
     col_width = (10, 10, 28)
     col_head = ("parser", "exec time", "performance (more is better)")
     print(f"Parsing data.toml {run_count} times:")

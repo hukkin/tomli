@@ -8,11 +8,19 @@ import tomli
 
 def test_load(tmp_path):
     content = "one=1 \n two='two' \n arr=[]"
+    expected = {"one": 1, "two": "two", "arr": []}
     file_path = tmp_path / "test.toml"
     file_path.write_text(content)
-    with open(file_path, encoding="utf-8") as f:
+
+    # Test text mode
+    with open(file_path, encoding="utf-8", newline="") as f:
         actual = tomli.load(f)
-    assert actual == {"one": 1, "two": "two", "arr": []}
+    assert actual == expected
+
+    # Test binary mode
+    with open(file_path, "rb") as bin_f:
+        actual = tomli.load(bin_f)
+    assert actual == expected
 
 
 def test_parse_float():
@@ -75,6 +83,6 @@ def test_deepcopy():
 
 def test_own_pyproject():
     pyproject_path = Path(__file__).parent.parent / "pyproject.toml"
-    with open(pyproject_path, encoding="utf-8") as f:
+    with open(pyproject_path, "rb") as f:
         pyproject = tomli.load(f)
     assert pyproject["project"]["version"] == tomli.__version__
