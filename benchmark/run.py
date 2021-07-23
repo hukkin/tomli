@@ -38,6 +38,10 @@ def benchmark(
 def run(run_count: int) -> None:
     data_path = Path(__file__).parent / "data.toml"
     test_data = data_path.read_bytes().decode()
+
+    # qtoml has a bug making it crash without this newline normalization
+    test_data = test_data.replace("\r\n", "\n")
+
     col_width = (10, 10, 28)
     col_head = ("parser", "exec time", "performance (more is better)")
     print(f"Parsing data.toml {run_count} times:")

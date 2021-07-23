@@ -106,7 +106,7 @@ Parsing floats into an illegal type results in undefined behavior.
 - it's lil'
 - pure Python with zero dependencies
 - the fastest pure Python parser [\*](#performance):
-  14x as fast as [tomlkit](https://pypi.org/project/tomlkit/),
+  15x as fast as [tomlkit](https://pypi.org/project/tomlkit/),
   2.4x as fast as [toml](https://pypi.org/project/toml/)
 - outputs [basic data types](#how-do-toml-types-map-into-python-types) only
 - 100% spec compliant: passes all tests in
@@ -158,23 +158,23 @@ Running the benchmark on my personal computer output the following:
 
 ```console
 foo@bar:~/dev/tomli$ tox -e benchmark-pypi
-benchmark-pypi installed: attrs==19.3.0,click==7.1.2,pytomlpp==1.0.2,qtoml==0.3.0,rtoml==0.7.0,toml==0.10.2,tomli==1.0.4,tomlkit==0.7.2
-benchmark-pypi run-test-pre: PYTHONHASHSEED='2995948371'
+benchmark-pypi installed: attrs==19.3.0,click==7.1.2,pytomlpp==1.0.2,qtoml==0.3.0,rtoml==0.7.0,toml==0.10.2,tomli==1.1.0,tomlkit==0.7.2
+benchmark-pypi run-test-pre: PYTHONHASHSEED='2658546909'
 benchmark-pypi run-test: commands[0] | python -c 'import datetime; print(datetime.date.today())'
-2021-07-05
+2021-07-23
 benchmark-pypi run-test: commands[1] | python --version
-Python 3.8.5
+Python 3.8.10
 benchmark-pypi run-test: commands[2] | python benchmark/run.py
 Parsing data.toml 5000 times:
 ------------------------------------------------------
     parser |  exec time | performance (more is better)
 -----------+------------+-----------------------------
-     rtoml |    0.902 s | baseline (100%)
-  pytomlpp |     1.09 s | 83.00%
-     tomli |     3.82 s | 23.60%
-      toml |     9.27 s | 9.73%
-     qtoml |     11.5 s | 7.84%
-   tomlkit |     55.1 s | 1.64%
+     rtoml |    0.901 s | baseline (100%)
+  pytomlpp |     1.08 s | 83.15%
+     tomli |     3.89 s | 23.15%
+      toml |     9.36 s | 9.63%
+     qtoml |     11.5 s | 7.82%
+   tomlkit |     56.8 s | 1.59%
 ```
 
 The parsers are ordered from fastest to slowest, using the fastest parser as baseline.
