@@ -1,4 +1,4 @@
 # sudo apt-get install clang
 wheel
-atheris==2.0.0
+atheris==2.0.3
 tomli_w>=0.2.2
