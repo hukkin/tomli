@@ -1,9 +1,10 @@
 # Changelog
 
-## **unreleased**
+## 1.2.0
 
 - Deprecated
-  - Text file objects as input to `load`. Binary file objects should be used instead.
+  - Text file objects as input to `load`.
+    Binary file objects should be used instead to avoid opening the file with universal newlines or with an encoding other than UTF-8.
 
 ## 1.1.0
 
