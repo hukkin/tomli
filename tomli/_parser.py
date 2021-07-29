@@ -11,6 +11,7 @@ from typing import (
     Optional,
     Tuple,
 )
+import warnings
 
 from tomli._re import (
     RE_DATETIME,
@@ -66,6 +67,12 @@ def load(fp: IO, *, parse_float: ParseFloat = float) -> Dict[str, Any]:
     s = fp.read()
     if isinstance(s, bytes):
         s = s.decode()
+    else:
+        warnings.warn(
+            "Text file object support is deprecated in favor of binary file objects."
+            ' Use `open("foo.toml", "rb")` to open the file in binary mode.',
+            DeprecationWarning,
+        )
     return loads(s, parse_float=parse_float)
 
 

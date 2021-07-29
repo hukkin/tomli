@@ -1,5 +1,10 @@
 # Changelog
 
+## **unreleased**
+
+- Deprecated
+  - Text file objects as input to `load`. Binary file objects should be used instead.
+
 ## 1.1.0
 
 - Added
