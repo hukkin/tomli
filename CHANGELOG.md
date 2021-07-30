@@ -1,5 +1,10 @@
 # Changelog
 
+## **unreleased**
+
+- Fixed
+  - Raise an error if a carriage return (without a following line feed) is found in a multi-line basic string
+
 ## 1.2.0
 
 - Deprecated

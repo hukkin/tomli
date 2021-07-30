@@ -27,10 +27,10 @@ ASCII_CTRL = frozenset(chr(i) for i in range(32)) | frozenset(chr(127))
 # Neither of these sets include quotation mark or backslash. They are
 # currently handled as separate cases in the parser functions.
 ILLEGAL_BASIC_STR_CHARS = ASCII_CTRL - frozenset("\t")
-ILLEGAL_MULTILINE_BASIC_STR_CHARS = ASCII_CTRL - frozenset("\t\n\r")
+ILLEGAL_MULTILINE_BASIC_STR_CHARS = ASCII_CTRL - frozenset("\t\n")
 
 ILLEGAL_LITERAL_STR_CHARS = ILLEGAL_BASIC_STR_CHARS
-ILLEGAL_MULTILINE_LITERAL_STR_CHARS = ASCII_CTRL - frozenset("\t\n")
+ILLEGAL_MULTILINE_LITERAL_STR_CHARS = ILLEGAL_MULTILINE_BASIC_STR_CHARS
 
 ILLEGAL_COMMENT_CHARS = ILLEGAL_BASIC_STR_CHARS
 
