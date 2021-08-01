@@ -63,11 +63,11 @@ class TOMLDecodeError(ValueError):
 
 
 def load(fp: IO, *, parse_float: ParseFloat = float) -> Dict[str, Any]:
-    """Parse TOML from a file object."""
+    """Parse TOML from a binary file object."""
     s = fp.read()
-    if isinstance(s, bytes):
+    try:
         s = s.decode()
-    else:
+    except AttributeError:
         warnings.warn(
             "Text file object support is deprecated in favor of binary file objects."
             ' Use `open("foo.toml", "rb")` to open the file in binary mode.',
