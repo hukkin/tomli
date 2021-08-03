@@ -1,8 +1,8 @@
 import string
 from types import MappingProxyType
 from typing import (
-    IO,
     Any,
+    BinaryIO,
     Callable,
     Dict,
     FrozenSet,
@@ -62,18 +62,18 @@ class TOMLDecodeError(ValueError):
     """An error raised if a document is not valid TOML."""
 
 
-def load(fp: IO, *, parse_float: ParseFloat = float) -> Dict[str, Any]:
+def load(fp: BinaryIO, *, parse_float: ParseFloat = float) -> Dict[str, Any]:
     """Parse TOML from a binary file object."""
     s = fp.read()
     try:
-        s = s.decode()
+        s = s.decode()  # type: ignore[assignment]
     except AttributeError:
         warnings.warn(
             "Text file object support is deprecated in favor of binary file objects."
             ' Use `open("foo.toml", "rb")` to open the file in binary mode.',
             DeprecationWarning,
         )
-    return loads(s, parse_float=parse_float)
+    return loads(s, parse_float=parse_float)  # type: ignore[arg-type]
 
 
 def loads(s: str, *, parse_float: ParseFloat = float) -> Dict[str, Any]:  # noqa: C901
