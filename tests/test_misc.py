@@ -14,7 +14,7 @@ def test_load(tmp_path):
 
     # Test text mode
     with open(file_path, encoding="utf-8", newline="") as f:
-        actual = tomli.load(f)
+        actual = tomli.load(f)  # type: ignore[arg-type]
     assert actual == expected
 
     # Test binary mode
