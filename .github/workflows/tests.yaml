@@ -101,7 +101,7 @@ jobs:
         pip install "flit==3.3.0"
     - name: Build and publish
       run: |
-        flit publish
+        flit publish --no-setup-py
       env:
         FLIT_USERNAME: __token__
         FLIT_PASSWORD: ${{ secrets.PYPI_TOKEN }}
