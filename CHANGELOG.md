@@ -1,9 +1,11 @@
 # Changelog
 
-## **unreleased**
+## 1.2.1
 
 - Fixed
   - Raise an error if a carriage return (without a following line feed) is found in a multi-line basic string
+- Type annotations
+  - Type annotate `load` input as `typing.BinaryIO` only to discourage use of deprecated text file objects.
 - Packaging
   - Remove legacy `setup.py` from PyPI source distribution.
     If you're a packager and absolutely need this file, please create an issue.
