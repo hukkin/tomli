@@ -72,6 +72,7 @@ def load(fp: BinaryIO, *, parse_float: ParseFloat = float) -> Dict[str, Any]:
             "Text file object support is deprecated in favor of binary file objects."
             ' Use `open("foo.toml", "rb")` to open the file in binary mode.',
             DeprecationWarning,
+            stacklevel=2,
         )
         s = s_bytes  # type: ignore[assignment]
     return loads(s, parse_float=parse_float)
