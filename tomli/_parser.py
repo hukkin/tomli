@@ -81,9 +81,9 @@ def load(fp: BinaryIO, *, parse_float: ParseFloat = float) -> Dict[str, Any]:
 def loads(s: str, *, parse_float: ParseFloat = float) -> Dict[str, Any]:  # noqa: C901
     """Parse TOML from a string."""
 
-    # The spec allows converting "\r\n" to "\n", even in string
+    # The spec allows converting "\r\n" and "\r" to "\n", even in string
     # literals. Let's do so to simplify parsing.
-    src = s.replace("\r\n", "\n")
+    src = s.replace("\r\n", "\n").replace("\r", "\n")
     pos = 0
     out = Output(NestedDict(), Flags())
     header: Key = ()
