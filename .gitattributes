@@ -1,0 +1,2 @@
+# Don't do text manipulations (line ending changes) to test data.
+tests/data/** -text
