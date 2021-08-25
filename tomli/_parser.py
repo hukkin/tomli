@@ -266,7 +266,7 @@ def skip_until(
     except ValueError:
         new_pos = len(src)
         if error_on_eof:
-            raise suffixed_err(src, new_pos, f'Expected "{expect!r}"')
+            raise suffixed_err(src, new_pos, f'Expected "{expect!r}"') from None
 
     if not error_on.isdisjoint(src[pos:new_pos]):
         while src[pos] not in error_on:
@@ -307,7 +307,7 @@ def create_dict_rule(src: str, pos: Pos, out: Output) -> Tuple[Pos, Key]:
     try:
         out.data.get_or_create_nest(key)
     except KeyError:
-        raise suffixed_err(src, pos, "Can not overwrite a value")
+        raise suffixed_err(src, pos, "Can not overwrite a value") from None
 
     if not src.startswith("]", pos):
         raise suffixed_err(src, pos, 'Expected "]" at the end of a table declaration')
@@ -328,7 +328,7 @@ def create_list_rule(src: str, pos: Pos, out: Output) -> Tuple[Pos, Key]:
     try:
         out.data.append_nest_to_list(key)
     except KeyError:
-        raise suffixed_err(src, pos, "Can not overwrite a value")
+        raise suffixed_err(src, pos, "Can not overwrite a value") from None
 
     if not src.startswith("]]", pos):
         raise suffixed_err(src, pos, 'Expected "]]" at the end of an array declaration')
@@ -351,7 +351,7 @@ def key_value_rule(
     try:
         nest = out.data.get_or_create_nest(abs_key_parent)
     except KeyError:
-        raise suffixed_err(src, pos, "Can not overwrite a value")
+        raise suffixed_err(src, pos, "Can not overwrite a value") from None
     if key_stem in nest:
         raise suffixed_err(src, pos, "Can not overwrite a value")
     # Mark inline table and array namespaces recursively immutable
@@ -456,7 +456,7 @@ def parse_inline_table(src: str, pos: Pos, parse_float: ParseFloat) -> Tuple[Pos
         try:
             nest = nested_dict.get_or_create_nest(key_parent, access_lists=False)
         except KeyError:
-            raise suffixed_err(src, pos, "Can not overwrite a value")
+            raise suffixed_err(src, pos, "Can not overwrite a value") from None
         if key_stem in nest:
             raise suffixed_err(src, pos, f'Duplicate inline table key "{key_stem}"')
         nest[key_stem] = value
@@ -499,8 +499,8 @@ def parse_basic_str_escape(  # noqa: C901
         return pos, BASIC_STR_ESCAPE_REPLACEMENTS[escape_id]
     except KeyError:
         if len(escape_id) != 2:
-            raise suffixed_err(src, pos, "Unterminated string")
-        raise suffixed_err(src, pos, 'Unescaped "\\" in a string')
+            raise suffixed_err(src, pos, "Unterminated string") from None
+        raise suffixed_err(src, pos, 'Unescaped "\\" in a string') from None
 
 
 def parse_basic_str_escape_multiline(src: str, pos: Pos) -> Tuple[Pos, str]:
@@ -571,7 +571,7 @@ def parse_basic_str(src: str, pos: Pos, *, multiline: bool) -> Tuple[Pos, str]:
         try:
             char = src[pos]
         except IndexError:
-            raise suffixed_err(src, pos, "Unterminated string")
+            raise suffixed_err(src, pos, "Unterminated string") from None
         if char == '"':
             if not multiline:
                 return pos + 1, result + src[start_pos:pos]
@@ -623,8 +623,8 @@ def parse_value(  # noqa: C901
     if datetime_match:
         try:
             datetime_obj = match_to_datetime(datetime_match)
-        except ValueError:
-            raise suffixed_err(src, pos, "Invalid date or datetime")
+        except ValueError as e:
+            raise suffixed_err(src, pos, "Invalid date or datetime") from e
         return datetime_match.end(), datetime_obj
     localtime_match = RE_LOCALTIME.match(src, pos)
     if localtime_match:
