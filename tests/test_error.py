@@ -25,3 +25,9 @@ def test_missing_value():
     with pytest.raises(tomli.TOMLDecodeError) as exc_info:
         tomli.loads("\n\nfwfw=")
     assert str(exc_info.value) == "Invalid value (at end of document)"
+
+
+def test_invalid_char_quotes():
+    with pytest.raises(tomli.TOMLDecodeError) as exc_info:
+        tomli.loads("v = '\n'")
+    assert " '\\n' " in str(exc_info.value)
