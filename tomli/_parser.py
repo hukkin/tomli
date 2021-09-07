@@ -161,8 +161,8 @@ class Flags:
         self._pending_flags.add((key, flag))
 
     def finalize_pending(self) -> None:
-        for pending in self._pending_flags:
-            self.set(pending[0], pending[1], recursive=False)
+        for key, flag in self._pending_flags:
+            self.set(key, flag, recursive=False)
         self._pending_flags.clear()
 
     def unset_all(self, key: Key) -> None:
@@ -340,21 +340,19 @@ def key_value_rule(
     key_parent, key_stem = key[:-1], key[-1]
     abs_key_parent = header + key_parent
 
-    # Check that dotted key syntax does not redefine an existing table
-    relative_path_keys = tuple(header + key[: i + 1] for i in range(len(key)))
-    for k in relative_path_keys:
-        if out.flags.is_(k, Flags.EXPLICIT_NEST):
-            raise suffixed_err(src, pos, f"Cannot redefine namespace {k}")
+    relative_path_cont_keys = (header + key[:i] for i in range(1, len(key)))
+    for cont_key in relative_path_cont_keys:
+        # Check that dotted key syntax does not redefine an existing table
+        if out.flags.is_(cont_key, Flags.EXPLICIT_NEST):
+            raise suffixed_err(src, pos, f"Cannot redefine namespace {cont_key}")
+        # Containers in the relative path can't be opened with the table syntax or
+        # dotted key/value syntax in following table sections.
+        out.flags.add_pending(cont_key, Flags.EXPLICIT_NEST)
 
     if out.flags.is_(abs_key_parent, Flags.FROZEN):
         raise suffixed_err(
             src, pos, f"Cannot mutate immutable namespace {abs_key_parent}"
         )
-
-    # Containers in the relative path can't be opened with the table syntax or
-    # dotted key/value syntax in following table sections.
-    for k in relative_path_keys:
-        out.flags.add_pending(k, Flags.EXPLICIT_NEST)
 
     try:
         nest = out.data.get_or_create_nest(abs_key_parent)
