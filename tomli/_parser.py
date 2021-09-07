@@ -117,6 +117,9 @@ def loads(s: str, *, parse_float: ParseFloat = float) -> Dict[str, Any]:  # noqa
                 second_char: Optional[str] = src[pos + 1]
             except IndexError:
                 second_char = None
+            # TODO:
+            #  finalize_current_table():
+            #  make pending_explicit_nests of current table explicit_nests
             if second_char == "[":
                 pos, header = create_list_rule(src, pos, out)
             else:
@@ -342,10 +345,15 @@ def key_value_rule(
     key_parent, key_stem = key[:-1], key[-1]
     abs_key_parent = header + key_parent
 
+    # TODO:
+    #   Check if any of the keys in the relative path is explicit_nest.
+    #   Fail if yes
     if out.flags.is_(abs_key_parent, Flags.FROZEN):
         raise suffixed_err(
             src, pos, f"Can not mutate immutable namespace {abs_key_parent}"
         )
+    # TODO:
+    #  set pending_explicit_nest instead of explicit_nest here
     # Containers in the relative path can't be opened with the table syntax after this
     out.flags.set_for_relative_key(header, key, Flags.EXPLICIT_NEST)
     try:
