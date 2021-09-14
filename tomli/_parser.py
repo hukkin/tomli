@@ -458,7 +458,7 @@ def parse_inline_table(src: str, pos: Pos, parse_float: ParseFloat) -> Tuple[Pos
         except KeyError:
             raise suffixed_err(src, pos, "Can not overwrite a value") from None
         if key_stem in nest:
-            raise suffixed_err(src, pos, f'Duplicate inline table key "{key_stem}"')
+            raise suffixed_err(src, pos, f"Duplicate inline table key {key_stem!r}")
         nest[key_stem] = value
         pos = skip_chars(src, pos, TOML_WS)
         c = src[pos : pos + 1]
