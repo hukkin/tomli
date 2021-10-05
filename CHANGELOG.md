@@ -1,5 +1,10 @@
 # Changelog
 
+## **unreleased**
+
+- Fixed
+  - Illegal characters in error messages were surrounded by two pairs of quotation marks
+
 ## 1.2.1
 
 - Fixed
