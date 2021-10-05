@@ -75,7 +75,8 @@ description = run tests against unpackaged source
 skip_install = True
 deps = -r tests/requirements.txt
 commands =
-    pytest {posargs}
+    # Use 'python -m pytest' to add CWD to sys.path
+    python -m pytest {posargs}
 
 [testenv:py{36,37,38,39,310}-package]
 description = run tests against a built package (can fail, in theory, if test dependencies need a tomli version incompatible with local state)

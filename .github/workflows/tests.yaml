@@ -51,7 +51,8 @@ jobs:
 
     - name: Test with pytest
       run: |
-        pytest --cov --cov-fail-under=100
+        # Use 'python -m pytest' to add CWD to sys.path
+        python -m pytest --cov --cov-fail-under=100
 
     - name: Report coverage
       if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.6'
