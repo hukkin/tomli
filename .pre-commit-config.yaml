@@ -1,6 +1,6 @@
 repos:
 - repo: https://github.com/executablebooks/mdformat
-  rev: b9b885e183ca16670b6d4a5ef8058664395dec58  # frozen: 0.7.7
+  rev: 427df9181bd4d8e65c1108b912ad47a81628f03b  # frozen: 0.7.10
   hooks:
   - id: mdformat
     additional_dependencies:
@@ -16,11 +16,11 @@ repos:
     - flake8-builtins
     - flake8-comprehensions
 - repo: https://github.com/PyCQA/isort
-  rev: 6e4281f018ff848226d8993596765b2285e1624f  # frozen: 5.9.2
+  rev: fd5ba70665a37ec301a1f714ed09336048b3be63  # frozen: 5.9.3
   hooks:
   - id: isort
 - repo: https://github.com/psf/black
-  rev: e3000ace2fd1fcb1c181bb7a8285f1f976bcbdc7  # frozen: 21.7b0
+  rev: 911470a610e47d9da5ea938b0887c3df62819b85  # frozen: 21.9b0
   hooks:
   - id: black
 - repo: https://github.com/myint/docformatter
@@ -38,7 +38,7 @@ repos:
   - id: python-check-blanket-noqa
   - id: python-check-blanket-type-ignore
 - repo: https://github.com/PyCQA/flake8
-  rev: dcd740bc0ebaf2b3d43e59a0060d157c97de13f3  # frozen: 3.9.2
+  rev: cbeb4c9c4137cff1568659fcc48e8b85cddd0c8d  # frozen: 4.0.1
   hooks:
   - id: flake8
     additional_dependencies:
@@ -46,7 +46,7 @@ repos:
     - flake8-builtins
     - flake8-comprehensions
 - repo: https://github.com/pre-commit/mirrors-mypy
-  rev: 44afb68a9695d04030edc5cdc5a4fc4f17e4f9e2  # frozen: v0.910
+  rev: 5cf22ccb774a8be8f47dfe4c1e8c4f177c608cbf  # frozen: v0.910-1
   hooks:
   - id: mypy
     args: ["--scripts-are-modules"]
