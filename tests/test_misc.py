@@ -3,8 +3,6 @@ import datetime
 from decimal import Decimal as D
 from pathlib import Path
 
-import pytest
-
 import tomli
 
 
@@ -14,13 +12,6 @@ def test_load(tmp_path):
     file_path = tmp_path / "test.toml"
     file_path.write_text(content)
 
-    # Test text mode
-    with open(file_path, encoding="utf-8", newline="") as f:
-        with pytest.warns(DeprecationWarning):
-            actual = tomli.load(f)  # type: ignore[arg-type]
-    assert actual == expected
-
-    # Test binary mode
     with open(file_path, "rb") as bin_f:
         actual = tomli.load(bin_f)
     assert actual == expected
