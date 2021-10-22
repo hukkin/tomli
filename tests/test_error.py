@@ -34,4 +34,4 @@ def test_invalid_char_quotes():
 
 
 def test_module_name():
-    assert tomli.TOMLDecodeError().__module__ == 'tomli'
+    assert tomli.TOMLDecodeError().__module__ == "tomli"

@@ -6,4 +6,4 @@ __version__ = "1.2.1"  # DO NOT EDIT THIS LINE MANUALLY. LET bump2version UTILIT
 from tomli._parser import TOMLDecodeError, load, loads
 
 # Pretend this exception was created here.
-TOMLDecodeError.__module__ = 'tomli'
+TOMLDecodeError.__module__ = "tomli"
