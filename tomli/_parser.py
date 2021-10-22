@@ -60,7 +60,8 @@ Pos = int
 
 class TOMLDecodeError(ValueError):
     """An error raised if a document is not valid TOML."""
-    __module__ = 'tomli'
+
+    __module__ = "tomli"
 
 
 def load(fp: BinaryIO, *, parse_float: ParseFloat = float) -> Dict[str, Any]:
