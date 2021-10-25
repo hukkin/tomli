@@ -49,8 +49,7 @@ class TOMLDecodeError(ValueError):
 
 def load(fp: BinaryIO, *, parse_float: ParseFloat = float) -> Dict[str, Any]:
     """Parse TOML from a binary file object."""
-    s_bytes = fp.read()
-    s = s_bytes.decode()
+    s = fp.read().decode()
     return loads(s, parse_float=parse_float)
 
 
