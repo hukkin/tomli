@@ -2,8 +2,16 @@
 
 ## **unreleased**
 
+- no changes yet
+
+## 1.2.2
+
 - Fixed
   - Illegal characters in error messages were surrounded by two pairs of quotation marks
+- Improved
+  - `TOMLDecodeError.__module__` is now the public import path (`tomli`) instead of private import path (`tomli._parser`)
+  - Eliminated an import cycle when `typing.TYPE_CHECKING` is `True`.
+    This allows `sphinx-autodoc-typehints` to resolve type annotations.
 
 ## 1.2.1
 

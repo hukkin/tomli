@@ -1,16 +1,6 @@
 import string
 from types import MappingProxyType
-from typing import (
-    Any,
-    BinaryIO,
-    Callable,
-    Dict,
-    FrozenSet,
-    Iterable,
-    NamedTuple,
-    Optional,
-    Tuple,
-)
+from typing import Any, BinaryIO, Dict, FrozenSet, Iterable, NamedTuple, Optional, Tuple
 
 from tomli._re import (
     RE_DATETIME,
@@ -20,6 +10,7 @@ from tomli._re import (
     match_to_localtime,
     match_to_number,
 )
+from tomli._types import Key, ParseFloat, Pos
 
 ASCII_CTRL = frozenset(chr(i) for i in range(32)) | frozenset(chr(127))
 
@@ -50,11 +41,6 @@ BASIC_STR_ESCAPE_REPLACEMENTS = MappingProxyType(
         "\\\\": "\u005C",  # backslash
     }
 )
-
-# Type annotations
-ParseFloat = Callable[[str], Any]
-Key = Tuple[str, ...]
-Pos = int
 
 
 class TOMLDecodeError(ValueError):
