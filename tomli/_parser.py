@@ -3,14 +3,7 @@ from types import MappingProxyType
 from typing import Any, BinaryIO, Dict, FrozenSet, Iterable, NamedTuple, Optional, Tuple
 import warnings
 
-from tomli._re import (
-    RE_DATETIME,
-    RE_LOCALTIME,
-    RE_NUMBER,
-    match_to_datetime,
-    match_to_localtime,
-    match_to_number,
-)
+from tomli._re import Patterns, match_to_datetime, match_to_localtime, match_to_number
 from tomli._types import Key, ParseFloat, Pos
 
 ASCII_CTRL = frozenset(chr(i) for i in range(32)) | frozenset(chr(127))
@@ -605,21 +598,21 @@ def parse_value(  # noqa: C901
             return pos + 5, False
 
     # Dates and times
-    datetime_match = RE_DATETIME.match(src, pos)
+    datetime_match = Patterns.datetime.match(src, pos)
     if datetime_match:
         try:
             datetime_obj = match_to_datetime(datetime_match)
         except ValueError as e:
             raise suffixed_err(src, pos, "Invalid date or datetime") from e
         return datetime_match.end(), datetime_obj
-    localtime_match = RE_LOCALTIME.match(src, pos)
+    localtime_match = Patterns.localtime.match(src, pos)
     if localtime_match:
         return localtime_match.end(), match_to_localtime(localtime_match)
 
     # Integers and "normal" floats.
     # The regex will greedily match any type starting with a decimal
     # char, so needs to be located after handling of dates and times.
-    number_match = RE_NUMBER.match(src, pos)
+    number_match = Patterns.number.match(src, pos)
     if number_match:
         return number_match.end(), match_to_number(number_match, parse_float)
 

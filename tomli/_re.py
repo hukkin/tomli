@@ -10,8 +10,26 @@ from tomli._types import ParseFloat
 # - 00:32:00
 _TIME_RE_STR = r"([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])(?:\.([0-9]{1,6})[0-9]*)?"
 
-RE_NUMBER = re.compile(
-    r"""
+
+class _LazyPatternCompiler:
+    def __getattr__(self, name: str) -> "re.Pattern":
+        if name == "datetime":
+            pattern = re.compile(
+                fr"""
+([0-9]{{4}})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])  # date, e.g. 1988-10-27
+(?:
+    [T ]
+    {_TIME_RE_STR}
+    (?:(Z)|([+-])([01][0-9]|2[0-3]):([0-5][0-9]))?     # optional time offset
+)?
+""",
+                flags=re.VERBOSE,
+            )
+        elif name == "localtime":
+            pattern = re.compile(_TIME_RE_STR)
+        elif name == "number":
+            pattern = re.compile(
+                r"""
 0
 (?:
     x[0-9A-Fa-f](?:_?[0-9A-Fa-f])*   # hex
@@ -27,20 +45,15 @@ RE_NUMBER = re.compile(
     (?:[eE][+-]?[0-9](?:_?[0-9])*)?  # optional exponent part
 )
 """,
-    flags=re.VERBOSE,
-)
-RE_LOCALTIME = re.compile(_TIME_RE_STR)
-RE_DATETIME = re.compile(
-    fr"""
-([0-9]{{4}})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])  # date, e.g. 1988-10-27
-(?:
-    [T ]
-    {_TIME_RE_STR}
-    (?:(Z)|([+-])([01][0-9]|2[0-3]):([0-5][0-9]))?     # optional time offset
-)?
-""",
-    flags=re.VERBOSE,
-)
+                flags=re.VERBOSE,
+            )
+        else:  # pragma: no cover
+            raise AttributeError(f"Unknown pattern: {name}")
+
+        setattr(self, name, pattern)
+        return pattern
+
+Patterns = _LazyPatternCompiler()
 
 
 def match_to_datetime(match: "re.Match") -> Union[datetime, date]:
