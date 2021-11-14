@@ -53,6 +53,7 @@ class _LazyPatternCompiler:
         setattr(self, name, pattern)
         return pattern
 
+
 Patterns = _LazyPatternCompiler()
 
 
