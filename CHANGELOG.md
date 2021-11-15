@@ -4,6 +4,7 @@
 
 - Removed
   - Python 3.6 support
+  - Support for text file objects as `load` input. Use binary file objects instead.
 
 ## 1.2.2
 
