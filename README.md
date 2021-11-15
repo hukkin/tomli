@@ -67,7 +67,6 @@ with open("path_to_file/conf.toml", "rb") as f:
 The file must be opened in binary mode (with the `"rb"` flag).
 Binary mode will enforce decoding the file as UTF-8 with universal newlines disabled,
 both of which are required to correctly parse TOML.
-Support for text file objects is deprecated for removal in the next major release.
 
 ### Handle invalid TOML<a name="handle-invalid-toml"></a>
 

@@ -2,7 +2,4 @@ pytest
 pytest-randomly
 pytest-cov >=2.12.1
 python-dateutil
-
-# Coverage versions >=6 give less than 100% coverage. It is probably
-# related that coverage>=6 depdends on Tomli.
-coverage <6
+coverage !=6.0

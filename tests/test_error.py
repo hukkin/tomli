@@ -31,3 +31,7 @@ def test_invalid_char_quotes():
     with pytest.raises(tomli.TOMLDecodeError) as exc_info:
         tomli.loads("v = '\n'")
     assert " '\\n' " in str(exc_info.value)
+
+
+def test_module_name():
+    assert tomli.TOMLDecodeError().__module__ == "tomli"
