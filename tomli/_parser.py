@@ -606,7 +606,6 @@ def parse_value(  # noqa: C901
         if src.startswith("false", pos):
             return pos + 5, False
 
-
     # Arrays
     if char == "[":
         return parse_array(src, pos, parse_float)
