@@ -584,6 +584,8 @@ def parse_value(  # noqa: C901
     except IndexError:
         char = None
 
+    # IMPORTANT: order conditions based on speed of checking and likelihood
+
     # Basic strings
     if char == '"':
         if src.startswith('"""', pos):
@@ -604,6 +606,14 @@ def parse_value(  # noqa: C901
         if src.startswith("false", pos):
             return pos + 5, False
 
+    # Arrays
+    if char == "[":
+        return parse_array(src, pos, parse_float)
+
+    # Inline tables
+    if char == "{":
+        return parse_inline_table(src, pos, parse_float)
+
     # Dates and times
     datetime_match = RE_DATETIME.match(src, pos)
     if datetime_match:
@@ -622,14 +632,6 @@ def parse_value(  # noqa: C901
     number_match = RE_NUMBER.match(src, pos)
     if number_match:
         return number_match.end(), match_to_number(number_match, parse_float)
-
-    # Arrays
-    if char == "[":
-        return parse_array(src, pos, parse_float)
-
-    # Inline tables
-    if char == "{":
-        return parse_inline_table(src, pos, parse_float)
 
     # Special floats
     first_three = src[pos : pos + 3]
