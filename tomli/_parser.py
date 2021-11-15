@@ -95,6 +95,7 @@ def loads(s: str, *, parse_float: ParseFloat = float) -> dict[str, Any]:  # noqa
                 second_char: str | None = src[pos + 1]
             except IndexError:
                 second_char = None
+            out.flags.finalize_pending()
             if second_char == "[":
                 pos, header = create_list_rule(src, pos, out)
             else:
@@ -131,6 +132,15 @@ class Flags:
 
     def __init__(self) -> None:
         self._flags: dict[str, dict] = {}
+        self._pending_flags: set[tuple[Key, int]] = set()
+
+    def add_pending(self, key: Key, flag: int) -> None:
+        self._pending_flags.add((key, flag))
+
+    def finalize_pending(self) -> None:
+        for key, flag in self._pending_flags:
+            self.set(key, flag, recursive=False)
+        self._pending_flags.clear()
 
     def unset_all(self, key: Key) -> None:
         cont = self._flags
@@ -139,19 +149,6 @@ class Flags:
                 return
             cont = cont[k]["nested"]
         cont.pop(key[-1], None)
-
-    def set_for_relative_key(self, head_key: Key, rel_key: Key, flag: int) -> None:
-        cont = self._flags
-        for k in head_key:
-            if k not in cont:
-                cont[k] = {"flags": set(), "recursive_flags": set(), "nested": {}}
-            cont = cont[k]["nested"]
-        for k in rel_key:
-            if k in cont:
-                cont[k]["flags"].add(flag)
-            else:
-                cont[k] = {"flags": {flag}, "recursive_flags": set(), "nested": {}}
-            cont = cont[k]["nested"]
 
     def set(self, key: Key, flag: int, *, recursive: bool) -> None:  # noqa: A003
         cont = self._flags
@@ -320,12 +317,20 @@ def key_value_rule(
     key_parent, key_stem = key[:-1], key[-1]
     abs_key_parent = header + key_parent
 
+    relative_path_cont_keys = (header + key[:i] for i in range(1, len(key)))
+    for cont_key in relative_path_cont_keys:
+        # Check that dotted key syntax does not redefine an existing table
+        if out.flags.is_(cont_key, Flags.EXPLICIT_NEST):
+            raise suffixed_err(src, pos, f"Cannot redefine namespace {cont_key}")
+        # Containers in the relative path can't be opened with the table syntax or
+        # dotted key/value syntax in following table sections.
+        out.flags.add_pending(cont_key, Flags.EXPLICIT_NEST)
+
     if out.flags.is_(abs_key_parent, Flags.FROZEN):
         raise suffixed_err(
-            src, pos, f"Can not mutate immutable namespace {abs_key_parent}"
+            src, pos, f"Cannot mutate immutable namespace {abs_key_parent}"
         )
-    # Containers in the relative path can't be opened with the table syntax after this
-    out.flags.set_for_relative_key(header, key, Flags.EXPLICIT_NEST)
+
     try:
         nest = out.data.get_or_create_nest(abs_key_parent)
     except KeyError:

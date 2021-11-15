@@ -5,6 +5,11 @@
 - Removed
   - Python 3.6 support
   - Support for text file objects as `load` input. Use binary file objects instead.
+- Improved
+  - Raise an error when dotted keys define values outside the "current table".
+    Technically speaking TOML v1.0.0 does allow such assignments
+    but that isn't intended by specification writers,
+    and will change in a future specification version (see the [pull request](https://github.com/toml-lang/toml/pull/848)).
 
 ## 1.2.2
 
