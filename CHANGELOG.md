@@ -1,8 +1,9 @@
 # Changelog
 
-## **unreleased**
+## 2.0.0 (unreleased)
 
-- no changes yet
+- Removed
+  - Python 3.6 support
 
 ## 1.2.2
 
