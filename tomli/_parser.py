@@ -50,18 +50,18 @@ class TOMLDecodeError(ValueError):
     """An error raised if a document is not valid TOML."""
 
 
-def load(fp: BinaryIO, *, parse_float: ParseFloat = float) -> dict[str, Any]:
+def load(__fp: BinaryIO, *, parse_float: ParseFloat = float) -> dict[str, Any]:
     """Parse TOML from a binary file object."""
-    s = fp.read().decode()
+    s = __fp.read().decode()
     return loads(s, parse_float=parse_float)
 
 
-def loads(s: str, *, parse_float: ParseFloat = float) -> dict[str, Any]:  # noqa: C901
+def loads(__s: str, *, parse_float: ParseFloat = float) -> dict[str, Any]:  # noqa: C901
     """Parse TOML from a string."""
 
     # The spec allows converting "\r\n" to "\n", even in string
     # literals. Let's do so to simplify parsing.
-    src = s.replace("\r\n", "\n")
+    src = __s.replace("\r\n", "\n")
     pos = 0
     out = Output(NestedDict(), Flags())
     header: Key = ()
