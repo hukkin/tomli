@@ -34,16 +34,6 @@ keywords = ["toml"]
 "Changelog" = "https://github.com/hukkin/tomli/blob/master/CHANGELOG.md"
 
 
-[tool.flit.sdist]
-exclude = [
-    "tests/",
-    "benchmark/",
-    "fuzzer/",
-    ".*",
-    "CHANGELOG.md",
-]
-
-
 [tool.isort]
 # Force imports to be sorted by module, independent of import type
 force_sort_within_sections = true
@@ -139,15 +129,15 @@ commands =
 
 [tool.coverage.run]
 branch = true
-omit = ["tests/*", "*/site-packages/*"]
+source = ['tomli']
 
 [tool.coverage.report]
 # Regexes for lines to exclude from consideration
 exclude_lines = [
-    # Have to re-enable the standard pragma
-    "pragma: no cover",
+    # Re-enable the standard pragma (with extra strictness)
+    '# pragma: no cover\b',
     # Code for static type checkers
-    "if TYPE_CHECKING:",
+    'if TYPE_CHECKING:',
     # Scripts
     'if __name__ == .__main__.:',
 ]
