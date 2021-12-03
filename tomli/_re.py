@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime, time, timedelta, timezone, tzinfo
 from functools import lru_cache
 import re
-from typing import Any
+from typing import Any, Literal
 
 from tomli._types import ParseFloat
 
@@ -12,8 +12,26 @@ from tomli._types import ParseFloat
 # - 00:32:00
 _TIME_RE_STR = r"([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])(?:\.([0-9]{1,6})[0-9]*)?"
 
-RE_NUMBER = re.compile(
-    r"""
+
+@lru_cache(maxsize=None)
+def regex(name: Literal["datetime", "localtime", "number"]) -> re.Pattern:
+    if name == "datetime":
+        return re.compile(
+            fr"""
+([0-9]{{4}})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])  # date, e.g. 1988-10-27
+(?:
+    [T ]
+    {_TIME_RE_STR}
+    (?:(Z)|([+-])([01][0-9]|2[0-3]):([0-5][0-9]))?     # optional time offset
+)?
+""",
+            flags=re.VERBOSE,
+        )
+    if name == "localtime":
+        return re.compile(_TIME_RE_STR)
+    # if name == "number":
+    return re.compile(
+        r"""
 0
 (?:
     x[0-9A-Fa-f](?:_?[0-9A-Fa-f])*   # hex
@@ -29,20 +47,8 @@ RE_NUMBER = re.compile(
     (?:[eE][+-]?[0-9](?:_?[0-9])*)?  # optional exponent part
 )
 """,
-    flags=re.VERBOSE,
-)
-RE_LOCALTIME = re.compile(_TIME_RE_STR)
-RE_DATETIME = re.compile(
-    fr"""
-([0-9]{{4}})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])  # date, e.g. 1988-10-27
-(?:
-    [T ]
-    {_TIME_RE_STR}
-    (?:(Z)|([+-])([01][0-9]|2[0-3]):([0-5][0-9]))?     # optional time offset
-)?
-""",
-    flags=re.VERBOSE,
-)
+        flags=re.VERBOSE,
+    )
 
 
 def match_to_datetime(match: re.Match) -> datetime | date:

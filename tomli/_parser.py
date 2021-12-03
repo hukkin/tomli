@@ -5,14 +5,7 @@ import string
 from types import MappingProxyType
 from typing import Any, BinaryIO, NamedTuple
 
-from tomli._re import (
-    RE_DATETIME,
-    RE_LOCALTIME,
-    RE_NUMBER,
-    match_to_datetime,
-    match_to_localtime,
-    match_to_number,
-)
+from tomli._re import match_to_datetime, match_to_localtime, match_to_number, regex
 from tomli._types import Key, ParseFloat, Pos
 
 ASCII_CTRL = frozenset(chr(i) for i in range(32)) | frozenset(chr(127))
@@ -612,21 +605,31 @@ def parse_value(  # noqa: C901
         return parse_inline_table(src, pos, parse_float)
 
     # Dates and times
-    datetime_match = RE_DATETIME.match(src, pos)
-    if datetime_match:
-        try:
-            datetime_obj = match_to_datetime(datetime_match)
-        except ValueError as e:
-            raise suffixed_err(src, pos, "Invalid date or datetime") from e
-        return datetime_match.end(), datetime_obj
-    localtime_match = RE_LOCALTIME.match(src, pos)
-    if localtime_match:
-        return localtime_match.end(), match_to_localtime(localtime_match)
+    try:
+        fourth_char: str | None = src[pos + 4]
+    except IndexError:
+        fourth_char = None
+    if fourth_char == "-":
+        datetime_match = regex("datetime").match(src, pos)
+        if datetime_match:
+            try:
+                datetime_obj = match_to_datetime(datetime_match)
+            except ValueError as e:
+                raise suffixed_err(src, pos, "Invalid date or datetime") from e
+            return datetime_match.end(), datetime_obj
+    try:
+        second_char: str | None = src[pos + 2]
+    except IndexError:
+        second_char = None
+    if second_char == ":":
+        localtime_match = regex("localtime").match(src, pos)
+        if localtime_match:
+            return localtime_match.end(), match_to_localtime(localtime_match)
 
     # Integers and "normal" floats.
     # The regex will greedily match any type starting with a decimal
     # char, so needs to be located after handling of dates and times.
-    number_match = RE_NUMBER.match(src, pos)
+    number_match = regex("number").match(src, pos)
     if number_match:
         return number_match.end(), match_to_number(number_match, parse_float)
 
