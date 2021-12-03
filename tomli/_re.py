@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime, time, timedelta, timezone, tzinfo
 from functools import lru_cache
 import re
-from typing import Any, Literal
+from typing import Any
 
 from tomli._types import ParseFloat
 
@@ -14,7 +14,7 @@ _TIME_RE_STR = r"([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])(?:\.([0-9]{1,6})[0
 
 
 @lru_cache(maxsize=None)
-def regex(name: Literal["datetime", "localtime", "number"]) -> re.Pattern:
+def regex(name: str) -> re.Pattern:
     if name == "datetime":
         return re.compile(
             fr"""
