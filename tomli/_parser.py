@@ -606,10 +606,10 @@ def parse_value(  # noqa: C901
 
     # Dates and times
     try:
-        fourth_char: str | None = src[pos + 4]
+        fifth_char: str | None = src[pos + 4]
     except IndexError:
-        fourth_char = None
-    if fourth_char == "-":
+        fifth_char = None
+    if fifth_char == "-":
         datetime_match = regex("datetime").match(src, pos)
         if datetime_match:
             try:
@@ -618,10 +618,10 @@ def parse_value(  # noqa: C901
                 raise suffixed_err(src, pos, "Invalid date or datetime") from e
             return datetime_match.end(), datetime_obj
     try:
-        second_char: str | None = src[pos + 2]
+        third_char: str | None = src[pos + 2]
     except IndexError:
-        second_char = None
-    if second_char == ":":
+        third_char = None
+    if third_char == ":":
         localtime_match = regex("localtime").match(src, pos)
         if localtime_match:
             return localtime_match.end(), match_to_localtime(localtime_match)
