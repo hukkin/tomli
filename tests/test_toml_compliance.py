@@ -48,10 +48,11 @@ def test_invalid(invalid):
     ids=[p.stem for p in VALID_FILES],
 )
 def test_valid(valid, expected):
-    if isinstance(expected, MissingFile):
-        pytest.xfail(f"Missing a .json file corresponding the .toml: {expected.path}")
     toml_str = valid.read_bytes().decode()
     actual = tomli.loads(toml_str)
+    if isinstance(expected, MissingFile):
+        assert isinstance(actual, dict)
+        pytest.xfail(f"Missing a .json file corresponding the .toml: {expected.path}")
     actual = burntsushi.convert(actual)
     expected = burntsushi.normalize(expected)
     assert actual == expected
