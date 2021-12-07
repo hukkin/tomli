@@ -231,7 +231,7 @@ class Stack:
 
 @dataclass
 class Table:
-    """Table object"""
+    """Table object."""
 
     nested_dict: NestedDict
     flags: Flags
