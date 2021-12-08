@@ -36,9 +36,9 @@ RE_DATETIME = re.compile(
     fr"""
 ([0-9]{{4}})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])  # date, e.g. 1988-10-27
 (?:
-    [T ]
+    [Tt ]
     {_TIME_RE_STR}
-    (?:(Z)|([+-])([01][0-9]|2[0-3]):([0-5][0-9]))?     # optional time offset
+    (?:([Zz])|([+-])([01][0-9]|2[0-3]):([0-5][0-9]))?  # optional time offset
 )?
 """,
     flags=re.VERBOSE,
