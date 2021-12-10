@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+
+import datetime
 import string
 from types import MappingProxyType
 from typing import Any, BinaryIO, NamedTuple
@@ -13,7 +15,16 @@ from tomli._re import (
     match_to_localtime,
     match_to_number,
 )
-from tomli._types import Key, ParseFloat, Pos
+from tomli._types import (
+    Key,
+    ParseDate,
+    ParseDateTime,
+    ParseFloat,
+    ParseInt,
+    ParseTime,
+    Parsers,
+    Pos,
+)
 
 ASCII_CTRL = frozenset(chr(i) for i in range(32)) | frozenset(chr(127))
 
@@ -50,13 +61,36 @@ class TOMLDecodeError(ValueError):
     """An error raised if a document is not valid TOML."""
 
 
-def load(__fp: BinaryIO, *, parse_float: ParseFloat = float) -> dict[str, Any]:
+def load(
+    __fp: BinaryIO,
+    *,
+    parse_date: ParseDate | None = None,
+    parse_datetime: ParseDateTime | None = None,
+    parse_float: ParseFloat | None = None,
+    parse_int: ParseInt | None = None,
+    parse_time: ParseTime | None = None,
+) -> dict[str, Any]:
     """Parse TOML from a binary file object."""
     s = __fp.read().decode()
-    return loads(s, parse_float=parse_float)
+    return loads(
+        s,
+        parse_date=parse_date,
+        parse_datetime=parse_datetime,
+        parse_float=parse_float,
+        parse_int=parse_int,
+        parse_time=parse_time,
+    )
 
 
-def loads(__s: str, *, parse_float: ParseFloat = float) -> dict[str, Any]:  # noqa: C901
+def loads(  # noqa: C901
+    __s: str,
+    *,
+    parse_date: ParseDate | None = None,
+    parse_datetime: ParseDateTime | None = None,
+    parse_float: ParseFloat | None = None,
+    parse_int: ParseInt | None = None,
+    parse_time: ParseTime | None = None,
+) -> dict[str, Any]:
     """Parse TOML from a string."""
 
     # The spec allows converting "\r\n" to "\n", even in string
@@ -65,6 +99,13 @@ def loads(__s: str, *, parse_float: ParseFloat = float) -> dict[str, Any]:  # no
     pos = 0
     out = Output(NestedDict(), Flags())
     header: Key = ()
+    parsers = Parsers(
+        parse_date or datetime.date.fromisoformat,
+        parse_datetime or datetime.datetime.fromisoformat,
+        parse_float or float,
+        parse_int or int,
+        parse_time or datetime.time.fromisoformat,
+    )
 
     # Parse one statement at a time
     # (typically means one line in TOML source)
@@ -88,7 +129,7 @@ def loads(__s: str, *, parse_float: ParseFloat = float) -> dict[str, Any]:  # no
             pos += 1
             continue
         if char in KEY_INITIAL_CHARS:
-            pos = key_value_rule(src, pos, out, header, parse_float)
+            pos = key_value_rule(src, pos, out, header, parsers)
             pos = skip_chars(src, pos, TOML_WS)
         elif char == "[":
             try:
@@ -150,7 +191,7 @@ class Flags:
             cont = cont[k]["nested"]
         cont.pop(key[-1], None)
 
-    def set(self, key: Key, flag: int, *, recursive: bool) -> None:  # noqa: A003
+    def set(self, key: Key, flag: int, *, recursive: bool) -> None:
         cont = self._flags
         key_parent, key_stem = key[:-1], key[-1]
         for k in key_parent:
@@ -311,9 +352,9 @@ def create_list_rule(src: str, pos: Pos, out: Output) -> tuple[Pos, Key]:
 
 
 def key_value_rule(
-    src: str, pos: Pos, out: Output, header: Key, parse_float: ParseFloat
+    src: str, pos: Pos, out: Output, header: Key, parsers: Parsers
 ) -> Pos:
-    pos, key, value = parse_key_value_pair(src, pos, parse_float)
+    pos, key, value = parse_key_value_pair(src, pos, parsers)
     key_parent, key_stem = key[:-1], key[-1]
     abs_key_parent = header + key_parent
 
@@ -344,9 +385,7 @@ def key_value_rule(
     return pos
 
 
-def parse_key_value_pair(
-    src: str, pos: Pos, parse_float: ParseFloat
-) -> tuple[Pos, Key, Any]:
+def parse_key_value_pair(src: str, pos: Pos, parsers: Parsers) -> tuple[Pos, Key, Any]:
     pos, key = parse_key(src, pos)
     try:
         char: str | None = src[pos]
@@ -356,7 +395,7 @@ def parse_key_value_pair(
         raise suffixed_err(src, pos, 'Expected "=" after a key in a key/value pair')
     pos += 1
     pos = skip_chars(src, pos, TOML_WS)
-    pos, value = parse_value(src, pos, parse_float)
+    pos, value = parse_value(src, pos, parsers)
     return pos, key, value
 
 
@@ -399,7 +438,7 @@ def parse_one_line_basic_str(src: str, pos: Pos) -> tuple[Pos, str]:
     return parse_basic_str(src, pos, multiline=False)
 
 
-def parse_array(src: str, pos: Pos, parse_float: ParseFloat) -> tuple[Pos, list]:
+def parse_array(src: str, pos: Pos, parsers: Parsers) -> tuple[Pos, list]:
     pos += 1
     array: list = []
 
@@ -407,7 +446,7 @@ def parse_array(src: str, pos: Pos, parse_float: ParseFloat) -> tuple[Pos, list]
     if src.startswith("]", pos):
         return pos + 1, array
     while True:
-        pos, val = parse_value(src, pos, parse_float)
+        pos, val = parse_value(src, pos, parsers)
         array.append(val)
         pos = skip_comments_and_array_ws(src, pos)
 
@@ -423,7 +462,7 @@ def parse_array(src: str, pos: Pos, parse_float: ParseFloat) -> tuple[Pos, list]
             return pos + 1, array
 
 
-def parse_inline_table(src: str, pos: Pos, parse_float: ParseFloat) -> tuple[Pos, dict]:
+def parse_inline_table(src: str, pos: Pos, parsers: Parsers) -> tuple[Pos, dict]:
     pos += 1
     nested_dict = NestedDict()
     flags = Flags()
@@ -432,7 +471,7 @@ def parse_inline_table(src: str, pos: Pos, parse_float: ParseFloat) -> tuple[Pos
     if src.startswith("}", pos):
         return pos + 1, nested_dict.dict
     while True:
-        pos, key, value = parse_key_value_pair(src, pos, parse_float)
+        pos, key, value = parse_key_value_pair(src, pos, parsers)
         key_parent, key_stem = key[:-1], key[-1]
         if flags.is_(key, Flags.FROZEN):
             raise suffixed_err(src, pos, f"Can not mutate immutable namespace {key}")
@@ -573,9 +612,7 @@ def parse_basic_str(src: str, pos: Pos, *, multiline: bool) -> tuple[Pos, str]:
         pos += 1
 
 
-def parse_value(  # noqa: C901
-    src: str, pos: Pos, parse_float: ParseFloat
-) -> tuple[Pos, Any]:
+def parse_value(src: str, pos: Pos, parsers: Parsers) -> tuple[Pos, Any]:  # noqa: C901
     try:
         char: str | None = src[pos]
     except IndexError:
@@ -605,38 +642,48 @@ def parse_value(  # noqa: C901
 
     # Arrays
     if char == "[":
-        return parse_array(src, pos, parse_float)
+        return parse_array(src, pos, parsers)
 
     # Inline tables
     if char == "{":
-        return parse_inline_table(src, pos, parse_float)
+        return parse_inline_table(src, pos, parsers)
 
     # Dates and times
-    datetime_match = RE_DATETIME.match(src, pos)
-    if datetime_match:
-        try:
-            datetime_obj = match_to_datetime(datetime_match)
-        except ValueError as e:
-            raise suffixed_err(src, pos, "Invalid date or datetime") from e
-        return datetime_match.end(), datetime_obj
-    localtime_match = RE_LOCALTIME.match(src, pos)
-    if localtime_match:
-        return localtime_match.end(), match_to_localtime(localtime_match)
+    try:
+        fifth_char: str | None = src[pos + 4]
+    except IndexError:
+        fifth_char = None
+    if fifth_char == "-":
+        datetime_match = RE_DATETIME.match(src, pos)
+        if datetime_match:
+            try:
+                datetime_obj = match_to_datetime(datetime_match, parsers)
+            except ValueError as e:
+                raise suffixed_err(src, pos, "Invalid date or datetime") from e
+            return datetime_match.end(), datetime_obj
+    try:
+        third_char: str | None = src[pos + 2]
+    except IndexError:
+        third_char = None
+    if third_char == ":":
+        localtime_match = RE_LOCALTIME.match(src, pos)
+        if localtime_match:
+            return localtime_match.end(), match_to_localtime(localtime_match, parsers)
 
     # Integers and "normal" floats.
     # The regex will greedily match any type starting with a decimal
     # char, so needs to be located after handling of dates and times.
     number_match = RE_NUMBER.match(src, pos)
     if number_match:
-        return number_match.end(), match_to_number(number_match, parse_float)
+        return number_match.end(), match_to_number(number_match, parsers)
 
     # Special floats
     first_three = src[pos : pos + 3]
     if first_three in {"inf", "nan"}:
-        return pos + 3, parse_float(first_three)
+        return pos + 3, parsers.parse_float(first_three)
     first_four = src[pos : pos + 4]
     if first_four in {"-inf", "+inf", "-nan", "+nan"}:
-        return pos + 4, parse_float(first_four)
+        return pos + 4, parsers.parse_float(first_four)
 
     raise suffixed_err(src, pos, "Invalid value")
 
