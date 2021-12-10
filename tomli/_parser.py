@@ -191,7 +191,7 @@ class Flags:
             cont = cont[k]["nested"]
         cont.pop(key[-1], None)
 
-    def set(self, key: Key, flag: int, *, recursive: bool) -> None:
+    def set(self, key: Key, flag: int, *, recursive: bool) -> None:  # noqa: A003
         cont = self._flags
         key_parent, key_stem = key[:-1], key[-1]
         for k in key_parent:
