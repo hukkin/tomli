@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-
 import datetime
 import string
 from types import MappingProxyType
@@ -21,8 +20,8 @@ from tomli._types import (
     ParseDateTime,
     ParseFloat,
     ParseInt,
-    ParseTime,
     Parsers,
+    ParseTime,
     Pos,
 )
 
