@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.3
+
+- Fixed
+  - Backport: Allow lower case "t" and "z" in datetimes
+
 ## 2.0.0
 
 - Removed
