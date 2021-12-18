@@ -79,4 +79,4 @@ def test_own_pyproject():
     pyproject_path = Path(__file__).parent.parent / "pyproject.toml"
     with open(pyproject_path, "rb") as f:
         pyproject = tomli.load(f)
-    assert pyproject["project"]["version"] == tomli.__version__
+    assert pyproject["build-system"]["build-backend"] == "setuptools.build_meta"

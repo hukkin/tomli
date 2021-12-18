@@ -50,6 +50,7 @@ repos:
   hooks:
   - id: mypy
     args: ["--scripts-are-modules"]
+    exclude: setup.py
     additional_dependencies:
     - types-python-dateutil
     - pytest
