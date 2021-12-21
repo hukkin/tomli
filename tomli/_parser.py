@@ -5,7 +5,7 @@ import string
 from types import MappingProxyType
 from typing import Any, BinaryIO, NamedTuple
 
-from tomli._re import (
+from ._re import (
     RE_DATETIME,
     RE_LOCALTIME,
     RE_NUMBER,
@@ -13,7 +13,7 @@ from tomli._re import (
     match_to_localtime,
     match_to_number,
 )
-from tomli._types import Key, ParseFloat, Pos
+from ._types import Key, ParseFloat, Pos
 
 ASCII_CTRL = frozenset(chr(i) for i in range(32)) | frozenset(chr(127))
 
