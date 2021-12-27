@@ -80,3 +80,15 @@ def test_own_pyproject():
     with open(pyproject_path, "rb") as f:
         pyproject = tomli.load(f)
     assert pyproject["project"]["version"] == tomli.__version__
+
+
+def test_inline_array_recursion_limit():
+    nest_count = 470
+    recursive_array_toml = "arr = " + nest_count * "[" + nest_count * "]"
+    tomli.loads(recursive_array_toml)
+
+
+def test_inline_table_recursion_limit():
+    nest_count = 310
+    recursive_table_toml = nest_count * "key = {" + nest_count * "}"
+    tomli.loads(recursive_table_toml)
