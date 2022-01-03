@@ -50,5 +50,3 @@ repos:
   hooks:
   - id: mypy
     args: ["--scripts-are-modules"]
-    additional_dependencies:
-    - pytest

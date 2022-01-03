@@ -1,4 +1,0 @@
-pytest
-pytest-randomly
-pytest-cov >=2.12.1
-coverage !=6.0
