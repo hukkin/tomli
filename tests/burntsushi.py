@@ -3,8 +3,6 @@
 import datetime
 from typing import Any
 
-import pytest
-
 
 def convert(obj):  # noqa: C901
     if isinstance(obj, str):
@@ -60,7 +58,7 @@ def normalize(d: dict) -> dict:
             else:
                 normalized[k] = v
         else:
-            pytest.fail("Burntsushi fixtures should be dicts/lists only")
+            raise AssertionError("Burntsushi fixtures should be dicts/lists only")
     return normalized
 
 
