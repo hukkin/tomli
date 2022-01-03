@@ -51,5 +51,4 @@ repos:
   - id: mypy
     args: ["--scripts-are-modules"]
     additional_dependencies:
-    - types-python-dateutil
     - pytest

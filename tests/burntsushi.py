@@ -1,9 +1,9 @@
 """Utilities for tests that are in the "burntsushi" format."""
 
 import datetime
+import re
 from typing import Any
 
-import dateutil.parser
 import pytest
 
 
@@ -66,7 +66,26 @@ def normalize(d: dict) -> dict:
 
 
 def normalize_datetime_str(dt_str: str) -> str:
-    return dateutil.parser.isoparse(dt_str).isoformat()
+    dt_str = re.sub(r"[Zz]", "+00:00", dt_str)
+
+    date = dt_str[:10]
+    rest = dt_str[11:]
+
+    if "+" in rest:
+        sign = "+"
+    elif "-" in rest:
+        sign = "-"
+    else:
+        sign = ""
+
+    if sign:
+        time, _, offset = rest.partition(sign)
+    else:
+        time = rest
+        offset = ""
+
+    time = time.rstrip("0") if "." in time else time
+    return date + "T" + time + sign + offset
 
 
 def normalize_float_str(float_str: str) -> str:
