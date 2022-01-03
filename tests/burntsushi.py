@@ -1,7 +1,6 @@
 """Utilities for tests that are in the "burntsushi" format."""
 
 import datetime
-import re
 from typing import Any
 
 import pytest
@@ -66,7 +65,8 @@ def normalize(d: dict) -> dict:
 
 
 def normalize_datetime_str(dt_str: str) -> str:
-    dt_str = re.sub(r"[Zz]", "+00:00", dt_str)
+    if dt_str[-1].lower() == "z":
+        dt_str = dt_str[:-1] + "+00:00"
 
     date = dt_str[:10]
     rest = dt_str[11:]
