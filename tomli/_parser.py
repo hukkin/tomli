@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from dataclasses import dataclass
 import string
 from types import MappingProxyType
-from typing import Any, BinaryIO, NamedTuple
+from typing import Any, BinaryIO, Callable, NamedTuple, Union
 
 from ._re import (
     RE_DATETIME,
@@ -45,6 +46,8 @@ BASIC_STR_ESCAPE_REPLACEMENTS = MappingProxyType(
     }
 )
 
+MARKER = object()
+
 
 class TOMLDecodeError(ValueError):
     """An error raised if a document is not valid TOML."""
@@ -65,7 +68,6 @@ def loads(__s: str, *, parse_float: ParseFloat = float) -> dict[str, Any]:  # no
     pos = 0
     out = Output(NestedDict(), Flags())
     header: Key = ()
-
     # Parse one statement at a time
     # (typically means one line in TOML source)
     while True:
@@ -219,6 +221,23 @@ class Output(NamedTuple):
     flags: Flags
 
 
+@dataclass
+class Stack:
+    """Class to track arrays and tables."""
+
+    handler: Callable
+    values: Any
+
+
+@dataclass
+class Table:
+    """Table object."""
+
+    nested_dict: NestedDict
+    flags: Flags
+    key: Union[str, None]
+
+
 def skip_chars(src: str, pos: Pos, chars: Iterable[str]) -> Pos:
     try:
         while src[pos] in chars:
@@ -313,7 +332,13 @@ def create_list_rule(src: str, pos: Pos, out: Output) -> tuple[Pos, Key]:
 def key_value_rule(
     src: str, pos: Pos, out: Output, header: Key, parse_float: ParseFloat
 ) -> Pos:
-    pos, key, value = parse_key_value_pair(src, pos, parse_float)
+    stack: list[Stack] = []
+    pos, key, value = parse_key_value_pair(src, pos, parse_float, stack)
+    while stack:
+        pos, value = stack[-1].handler(
+            src=src, pos=pos, parse_float=parse_float, value=value, stack=stack
+        )
+
     key_parent, key_stem = key[:-1], key[-1]
     abs_key_parent = header + key_parent
 
@@ -345,7 +370,7 @@ def key_value_rule(
 
 
 def parse_key_value_pair(
-    src: str, pos: Pos, parse_float: ParseFloat
+    src: str, pos: Pos, parse_float: ParseFloat, stack: list[Stack]
 ) -> tuple[Pos, Key, Any]:
     pos, key = parse_key(src, pos)
     try:
@@ -356,7 +381,7 @@ def parse_key_value_pair(
         raise suffixed_err(src, pos, 'Expected "=" after a key in a key/value pair')
     pos += 1
     pos = skip_chars(src, pos, TOML_WS)
-    pos, value = parse_value(src, pos, parse_float)
+    pos, value = parse_value(src, pos, parse_float, stack)
     return pos, key, value
 
 
@@ -399,31 +424,44 @@ def parse_one_line_basic_str(src: str, pos: Pos) -> tuple[Pos, str]:
     return parse_basic_str(src, pos, multiline=False)
 
 
-def parse_array(src: str, pos: Pos, parse_float: ParseFloat) -> tuple[Pos, list]:
+def open_array(
+    src: str, pos: Pos, stack: list[Stack]
+) -> tuple[Pos, Union[list, object]]:
     pos += 1
     array: list = []
-
     pos = skip_comments_and_array_ws(src, pos)
     if src.startswith("]", pos):
         return pos + 1, array
-    while True:
-        pos, val = parse_value(src, pos, parse_float)
-        array.append(val)
-        pos = skip_comments_and_array_ws(src, pos)
-
-        c = src[pos : pos + 1]
-        if c == "]":
-            return pos + 1, array
-        if c != ",":
-            raise suffixed_err(src, pos, "Unclosed array")
-        pos += 1
-
-        pos = skip_comments_and_array_ws(src, pos)
-        if src.startswith("]", pos):
-            return pos + 1, array
+    stack.append(Stack(handler=parse_array, values=array))
+    return pos, MARKER
 
 
-def parse_inline_table(src: str, pos: Pos, parse_float: ParseFloat) -> tuple[Pos, dict]:
+def parse_array(
+    src: str, pos: Pos, parse_float: ParseFloat, value: Any, stack: list[Stack]
+) -> tuple[Pos, Union[list, object]]:
+    if value is MARKER:
+        pos, value = parse_value(src, pos, parse_float, stack)
+    if value is MARKER:
+        return pos, MARKER
+    stack[-1].values.append(value)
+    pos = skip_comments_and_array_ws(src, pos)
+
+    c = src[pos : pos + 1]
+    if c == "]":
+        return pos + 1, stack.pop().values
+    if c != ",":
+        raise suffixed_err(src, pos, "Unclosed array")
+    pos += 1
+
+    pos = skip_comments_and_array_ws(src, pos)
+    if src.startswith("]", pos):
+        return pos + 1, stack.pop().values
+    return pos, MARKER
+
+
+def open_inline_table(
+    src: str, pos: Pos, stack: list[Stack]
+) -> tuple[Pos, Union[object, dict[str, Any]]]:
     pos += 1
     nested_dict = NestedDict()
     flags = Flags()
@@ -431,28 +469,48 @@ def parse_inline_table(src: str, pos: Pos, parse_float: ParseFloat) -> tuple[Pos
     pos = skip_chars(src, pos, TOML_WS)
     if src.startswith("}", pos):
         return pos + 1, nested_dict.dict
-    while True:
-        pos, key, value = parse_key_value_pair(src, pos, parse_float)
-        key_parent, key_stem = key[:-1], key[-1]
-        if flags.is_(key, Flags.FROZEN):
-            raise suffixed_err(src, pos, f"Can not mutate immutable namespace {key}")
-        try:
-            nest = nested_dict.get_or_create_nest(key_parent, access_lists=False)
-        except KeyError:
-            raise suffixed_err(src, pos, "Can not overwrite a value") from None
-        if key_stem in nest:
-            raise suffixed_err(src, pos, f"Duplicate inline table key {key_stem!r}")
-        nest[key_stem] = value
-        pos = skip_chars(src, pos, TOML_WS)
-        c = src[pos : pos + 1]
-        if c == "}":
-            return pos + 1, nested_dict.dict
-        if c != ",":
-            raise suffixed_err(src, pos, "Unclosed inline table")
-        if isinstance(value, (dict, list)):
-            flags.set(key, Flags.FROZEN, recursive=True)
-        pos += 1
-        pos = skip_chars(src, pos, TOML_WS)
+
+    stack.append(
+        Stack(handler=parse_inline_table, values=Table(nested_dict, flags, None))
+    )
+    return pos, MARKER
+
+
+def parse_inline_table(
+    src: str, pos: Pos, parse_float: ParseFloat, value: Any, stack: list[Stack]
+) -> Union[object, dict[str, Any]]:
+    table = stack[-1].values
+    nested_dict = table.nested_dict
+    flags = table.flags
+    key = table.key
+
+    if value is MARKER:
+        pos, key, value = parse_key_value_pair(src, pos, parse_float, stack)
+        table.key = key
+    if value is MARKER:
+        return pos, MARKER
+    key_parent, key_stem = key[:-1], key[-1]
+    if flags.is_(key, Flags.FROZEN):
+        raise suffixed_err(src, pos, f"Can not mutate immutable namespace {key}")
+    try:
+        nest = nested_dict.get_or_create_nest(key_parent, access_lists=False)
+    except KeyError:
+        raise suffixed_err(src, pos, "Can not overwrite a value") from None
+    if key_stem in nest:
+        raise suffixed_err(src, pos, f"Duplicate inline table key {key_stem!r}")
+    nest[key_stem] = value
+    pos = skip_chars(src, pos, TOML_WS)
+    c = src[pos : pos + 1]
+    if c == "}":
+        stack.pop()
+        return pos + 1, nested_dict.dict
+    if c != ",":
+        raise suffixed_err(src, pos, "Unclosed inline table")
+    if isinstance(value, (dict, list)):
+        flags.set(key, Flags.FROZEN, recursive=True)
+    pos += 1
+    pos = skip_chars(src, pos, TOML_WS)
+    return pos, MARKER
 
 
 def parse_basic_str_escape(  # noqa: C901
@@ -574,7 +632,7 @@ def parse_basic_str(src: str, pos: Pos, *, multiline: bool) -> tuple[Pos, str]:
 
 
 def parse_value(  # noqa: C901
-    src: str, pos: Pos, parse_float: ParseFloat
+    src: str, pos: Pos, parse_float: ParseFloat, stack: list[Stack]
 ) -> tuple[Pos, Any]:
     try:
         char: str | None = src[pos]
@@ -605,11 +663,11 @@ def parse_value(  # noqa: C901
 
     # Arrays
     if char == "[":
-        return parse_array(src, pos, parse_float)
+        return open_array(src, pos, stack)
 
     # Inline tables
     if char == "{":
-        return parse_inline_table(src, pos, parse_float)
+        return open_inline_table(src, pos, stack)
 
     # Dates and times
     datetime_match = RE_DATETIME.match(src, pos)
