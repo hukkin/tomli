@@ -47,31 +47,17 @@ known_first_party = ["tomli", "tests"]
 profile = "black"
 
 
-[tool.pytest.ini_options]
-addopts = "--strict-markers --strict-config"
-xfail_strict = true
-
-
 [tool.tox]
 legacy_tox_ini = '''
 [tox]
-# Only run pytest envs when no args given to tox
+# Only run unittest envs when no args given to tox
 envlist = py{37,38,39,310}
 isolated_build = True
 
 [testenv:py{37,38,39,310}]
-description = run tests against unpackaged source
-skip_install = True
-deps = -r tests/requirements.txt
+description = run tests against a built package
 commands =
-    # Use 'python -m pytest' to add CWD to sys.path
-    python -m pytest {posargs}
-
-[testenv:py{37,38,39,310}-package]
-description = run tests against a built package (can fail, in theory, if test dependencies need a tomli version incompatible with local state)
-deps = -r tests/requirements.txt
-commands =
-    pytest --import-mode=append {posargs}
+    python -m unittest {posargs}
 
 [testenv:profile]
 description = run profiler (use e.g. `firefox .tox/prof/combined.svg` to open)

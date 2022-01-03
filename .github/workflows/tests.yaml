@@ -44,44 +44,18 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Install test deps
+    - name: Install package and test deps
       run: |
-        pip install -r tests/requirements.txt
-
-    - name: Test with pytest
-      run: |
-        # Use 'python -m pytest' to add CWD to sys.path
-        python -m pytest --cov --cov-fail-under=100
+        pip install . coverage
 
     - name: Test with unittest
       run: |
-        python -m unittest
+        coverage run -m unittest
+        coverage report --fail-under=100
 
     - name: Report coverage
       if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.10'
       uses: codecov/codecov-action@v2
-
-  test-built-package:
-    runs-on: ubuntu-latest
-    # Allow this to fail. A failure is possible even if the package is working,
-    # because test dependencies may rely on a Tomli version incompatible with
-    # the current state.
-    continue-on-error: true
-
-    steps:
-    - uses: actions/checkout@v2
-
-    - uses: actions/setup-python@v2
-      with:
-        python-version: '3.7'
-
-    - name: Install (deps and package)
-      run: |
-        pip install . -r tests/requirements.txt
-
-    - name: Test with pytest
-      run: |
-        pytest --import-mode=append
 
   allgood:
     runs-on: ubuntu-latest
