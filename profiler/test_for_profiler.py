@@ -12,7 +12,7 @@ from pathlib import Path
 import tomli
 
 
-def test_for_profiler():
+def test_for_profiler() -> None:
     path = Path(__file__).parent.parent / "benchmark" / "data.toml"
     benchmark_toml = path.read_bytes().decode()
     # increase the count here to reduce the impact of

@@ -75,14 +75,12 @@ commands =
 
 [testenv:profile]
 description = run profiler (use e.g. `firefox .tox/prof/combined.svg` to open)
-skip_install = True
 setenv =
     PROFILER_ITERATIONS=1000
 deps =
-    -r tests/requirements.txt
-    pytest-profiling
+    -r profiler/requirements.txt
 commands =
-    pytest tests/test_for_profiler.py --profile-svg --pstats-dir "{toxworkdir}/prof"
+    pytest profiler/test_for_profiler.py --profile-svg --pstats-dir "{toxworkdir}/prof"
     python -c 'import pathlib; print("profiler svg output under file://\{0\}".format(pathlib.Path(r"{toxworkdir}") / "prof" / "combined.svg"))'
 
 [testenv:pre-commit]
