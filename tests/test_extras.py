@@ -19,7 +19,12 @@ class TestExtraCases(unittest.TestCase):
     def test_invalid(self):
         for invalid in INVALID_FILES:
             with self.subTest(msg=invalid.stem):
-                toml_str = invalid.read_bytes().decode()
+                toml_bytes = invalid.read_bytes()
+                try:
+                    toml_str = toml_bytes.decode()
+                except UnicodeDecodeError:
+                    # Some BurntSushi tests are not valid UTF-8. Skip those.
+                    continue
                 with self.assertRaises(tomli.TOMLDecodeError):
                     tomli.loads(toml_str)
 

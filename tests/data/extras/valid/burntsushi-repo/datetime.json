@@ -1,7 +1,0 @@
-{
-    "bestdayever": {"type": "offset datetime", "value": "1987-07-05T17:45:00Z"},
-    "numoffset": {"type": "offset datetime", "value": "1977-06-28T07:32:00-05:00"},
-    "milliseconds": {"type": "offset datetime", "value": "1977-12-21T10:32:00.555+07:00"},
-    "bestdayever_with_space": {"type": "offset datetime",
-                            "value": "1987-07-05T17:45:00+00:00"}
-}
