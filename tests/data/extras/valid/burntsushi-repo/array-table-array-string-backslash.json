@@ -1,7 +1,0 @@
-{
-  "foo": {"type": "array", "value": [
-    {
-        "bar": {"type": "string", "value": "\"{{baz}}\"" }
-    }
-  ]}
-}
