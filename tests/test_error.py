@@ -34,6 +34,3 @@ class TestError(unittest.TestCase):
         with self.assertRaises(tomli.TOMLDecodeError) as exc_info:
             tomli.loads("v = '\n'")
         self.assertTrue(" '\\n' " in str(exc_info.exception))
-
-    def test_module_name(self):
-        self.assertEqual(tomli.TOMLDecodeError().__module__, "tomli")

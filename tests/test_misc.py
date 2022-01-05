@@ -80,7 +80,7 @@ class TestMiscellaneous(unittest.TestCase):
         pyproject_path = Path(__file__).parent.parent / "pyproject.toml"
         with open(pyproject_path, "rb") as f:
             pyproject = tomli.load(f)
-        self.assertEqual(pyproject["project"]["version"], tomli.__version__)
+            assert pyproject["project"]["name"] == "tomli"
 
     def test_inline_array_recursion_limit(self):
         nest_count = 470

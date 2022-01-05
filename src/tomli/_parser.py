@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 import string
 from types import MappingProxyType
-from typing import Any, BinaryIO, NamedTuple
+from typing import Any, BinaryIO, ClassVar, NamedTuple
 
 from ._re import (
     RE_DATETIME,
@@ -125,10 +125,10 @@ class Flags:
     """Flags that map to parsed keys/namespaces."""
 
     # Marks an immutable namespace (inline array or inline table).
-    FROZEN = 0
+    FROZEN: ClassVar = 0
     # Marks a nest that has been explicitly created and can no longer
     # be opened using the "[table]" syntax.
-    EXPLICIT_NEST = 1
+    EXPLICIT_NEST: ClassVar = 1
 
     def __init__(self) -> None:
         self._flags: dict[str, dict] = {}
@@ -174,8 +174,8 @@ class Flags:
             cont = inner_cont["nested"]
         key_stem = key[-1]
         if key_stem in cont:
-            cont = cont[key_stem]
-            return flag in cont["flags"] or flag in cont["recursive_flags"]
+            stem_cont = cont[key_stem]
+            return flag in stem_cont["flags"] or flag in stem_cont["recursive_flags"]
         return False
 
 
@@ -317,8 +317,8 @@ def key_value_rule(
     key_parent, key_stem = key[:-1], key[-1]
     abs_key_parent = header + key_parent
 
-    relative_path_cont_keys = (header + key[:i] for i in range(1, len(key)))
-    for cont_key in relative_path_cont_keys:
+    for i in range(1, len(key)):
+        cont_key = header + key[:i]
         # Check that dotted key syntax does not redefine an existing table
         if out.flags.is_(cont_key, Flags.EXPLICIT_NEST):
             raise suffixed_err(src, pos, f"Cannot redefine namespace {cont_key}")
