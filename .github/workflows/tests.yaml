@@ -10,6 +10,8 @@ on:
 env:
   CIBW_TEST_COMMAND: python -m unittest
   CIBW_SKIP: pp*
+  # Pass through to container
+  CIBW_ENVIRONMENT_PASS_LINUX: HATCH_BUILD_HOOKS_ENABLE
 
 jobs:
 
@@ -51,9 +53,6 @@ jobs:
     - name: Install package and test deps
       run: |
         pip install . coverage
-      env:
-        # So coverage only uses pure Python files
-        HATCH_BUILD_NO_HOOKS: 'true'
 
     - name: Test with unittest
       run: |
@@ -79,6 +78,7 @@ jobs:
       uses: pypa/cibuildwheel@v2.3.0
       env:
         CIBW_ARCHS_MACOS: x86_64
+        HATCH_BUILD_HOOKS_ENABLE: 'true'
 
     - uses: actions/upload-artifact@v2
       with:
@@ -98,8 +98,6 @@ jobs:
 
     - name: Build
       run: python -m build
-      env:
-        HATCH_BUILD_NO_HOOKS: 'true'
 
     - uses: actions/upload-artifact@v2
       with:
@@ -128,6 +126,7 @@ jobs:
       uses: pypa/cibuildwheel@v2.3.0
       env:
         CIBW_ARCHS_LINUX: aarch64
+        HATCH_BUILD_HOOKS_ENABLE: 'true'
 
     - uses: actions/upload-artifact@v2
       with:

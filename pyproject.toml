@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling~=0.5"]
+requires = ["hatchling~=0.6"]
 build-backend = "hatchling.build"
 
 [project]
@@ -44,6 +44,7 @@ packages = ["/src/tomli"]
 zip-safe = false
 
 [tool.hatch.build.targets.wheel.hooks.mypyc]
+enable-by-default = false
 dependencies = ["hatch-mypyc>=0.4"]
 # Seems to be slightly faster in benchmark
 options = { separate = true }
