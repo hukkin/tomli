@@ -1,6 +1,6 @@
 repos:
 - repo: https://github.com/executablebooks/mdformat
-  rev: 0c0af8f5055b092cc0ffb90e20ae4a03af3a0e8a  # frozen: 0.7.11
+  rev: a5f167d00d7a1990e69ee02efacc15d6136ea1aa  # frozen: 0.7.13
   hooks:
   - id: mdformat
     additional_dependencies:
@@ -46,7 +46,7 @@ repos:
     - flake8-builtins
     - flake8-comprehensions
 - repo: https://github.com/pre-commit/mirrors-mypy
-  rev: 886e1c39f0dcddeee1cd260418372cf5f3932391  # frozen: v0.930
+  rev: f6f816c65d285f8a4a15e0e9965b3dd66ecddd79  # frozen: v0.931
   hooks:
   - id: mypy
     args: ["--scripts-are-modules"]
