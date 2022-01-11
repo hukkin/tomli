@@ -2,8 +2,7 @@ import json
 from pathlib import Path
 import unittest
 
-import tomli
-from . import burntsushi
+from . import burntsushi, tomllib
 
 
 class MissingFile:
@@ -35,8 +34,8 @@ class TestTOMLCompliance(unittest.TestCase):
         for invalid in INVALID_FILES:
             with self.subTest(msg=invalid.stem):
                 toml_str = invalid.read_bytes().decode()
-                with self.assertRaises(tomli.TOMLDecodeError):
-                    tomli.loads(toml_str)
+                with self.assertRaises(tomllib.TOMLDecodeError):
+                    tomllib.loads(toml_str)
 
     def test_valid(self):
         for valid, expected in zip(VALID_FILES, VALID_FILES_EXPECTED):
@@ -46,7 +45,7 @@ class TestTOMLCompliance(unittest.TestCase):
                     # to allow that in a nice way.
                     continue
                 toml_str = valid.read_bytes().decode()
-                actual = tomli.loads(toml_str)
+                actual = tomllib.loads(toml_str)
                 actual = burntsushi.convert(actual)
                 expected = burntsushi.normalize(expected)
                 self.assertEqual(actual, expected)
