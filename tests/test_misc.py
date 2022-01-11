@@ -76,12 +76,6 @@ class TestMiscellaneous(unittest.TestCase):
         }
         self.assertEqual(obj_copy, expected_obj)
 
-    def test_own_pyproject(self):
-        pyproject_path = Path(__file__).parent.parent / "pyproject.toml"
-        with open(pyproject_path, "rb") as f:
-            pyproject = tomllib.load(f)
-        self.assertEqual(pyproject["project"]["version"], tomllib.__version__)
-
     def test_inline_array_recursion_limit(self):
         nest_count = 470
         recursive_array_toml = "arr = " + nest_count * "[" + nest_count * "]"
