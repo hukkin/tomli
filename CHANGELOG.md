@@ -1,11 +1,18 @@
 # Changelog
 
-## 2.0.0 (unreleased)
+## 1.2.3
+
+- Fixed
+  - Backport: Allow lower case "t" and "z" in datetimes
+
+## 2.0.0
 
 - Removed
   - Python 3.6 support
   - Support for text file objects as `load` input. Use binary file objects instead.
   - First argument of `load` and `loads` can no longer be passed by keyword.
+- Fixed
+  - Allow lower case "t" and "z" in datetimes
 - Improved
   - Raise an error when dotted keys define values outside the "current table".
     Technically speaking TOML v1.0.0 does allow such assignments

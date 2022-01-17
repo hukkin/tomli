@@ -1,5 +1,0 @@
-pytest
-pytest-randomly
-pytest-cov >=2.12.1
-python-dateutil
-coverage !=6.0

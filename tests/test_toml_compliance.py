@@ -1,10 +1,8 @@
 import json
 from pathlib import Path
+import unittest
 
-import pytest
-
-import tomli
-from . import burntsushi
+from . import burntsushi, tomllib
 
 
 class MissingFile:
@@ -31,27 +29,23 @@ VALID_FILES_EXPECTED = tuple(_expected_files)
 INVALID_FILES = tuple((DATA_DIR / "invalid").glob("**/*.toml"))
 
 
-@pytest.mark.parametrize(
-    "invalid",
-    INVALID_FILES,
-    ids=[p.stem for p in INVALID_FILES],
-)
-def test_invalid(invalid):
-    toml_str = invalid.read_bytes().decode()
-    with pytest.raises(tomli.TOMLDecodeError):
-        tomli.loads(toml_str)
+class TestTOMLCompliance(unittest.TestCase):
+    def test_invalid(self):
+        for invalid in INVALID_FILES:
+            with self.subTest(msg=invalid.stem):
+                toml_str = invalid.read_bytes().decode()
+                with self.assertRaises(tomllib.TOMLDecodeError):
+                    tomllib.loads(toml_str)
 
-
-@pytest.mark.parametrize(
-    "valid,expected",
-    zip(VALID_FILES, VALID_FILES_EXPECTED),
-    ids=[p.stem for p in VALID_FILES],
-)
-def test_valid(valid, expected):
-    if isinstance(expected, MissingFile):
-        pytest.xfail(f"Missing a .json file corresponding the .toml: {expected.path}")
-    toml_str = valid.read_bytes().decode()
-    actual = tomli.loads(toml_str)
-    actual = burntsushi.convert(actual)
-    expected = burntsushi.normalize(expected)
-    assert actual == expected
+    def test_valid(self):
+        for valid, expected in zip(VALID_FILES, VALID_FILES_EXPECTED):
+            with self.subTest(msg=valid.stem):
+                if isinstance(expected, MissingFile):
+                    # Would be nice to xfail here, but unittest doesn't seem
+                    # to allow that in a nice way.
+                    continue
+                toml_str = valid.read_bytes().decode()
+                actual = tomllib.loads(toml_str)
+                actual = burntsushi.convert(actual)
+                expected = burntsushi.normalize(expected)
+                self.assertEqual(actual, expected)
