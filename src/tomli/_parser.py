@@ -299,15 +299,15 @@ def create_dict_rule(src: str, pos: Pos, out: Output) -> tuple[Pos, Key]:
     pos, key = parse_key(src, pos)
 
     if out.flags.is_(key, Flags.EXPLICIT_NEST) or out.flags.is_(key, Flags.FROZEN):
-        raise suffixed_err(src, pos, f"Can not declare {key} twice")
+        raise suffixed_err(src, pos, f"Cannot declare {key} twice")
     out.flags.set(key, Flags.EXPLICIT_NEST, recursive=False)
     try:
         out.data.get_or_create_nest(key)
     except KeyError:
-        raise suffixed_err(src, pos, "Can not overwrite a value") from None
+        raise suffixed_err(src, pos, "Cannot overwrite a value") from None
 
     if not src.startswith("]", pos):
-        raise suffixed_err(src, pos, 'Expected "]" at the end of a table declaration')
+        raise suffixed_err(src, pos, "Expected ']' at the end of a table declaration")
     return pos + 1, key
 
 
@@ -317,7 +317,7 @@ def create_list_rule(src: str, pos: Pos, out: Output) -> tuple[Pos, Key]:
     pos, key = parse_key(src, pos)
 
     if out.flags.is_(key, Flags.FROZEN):
-        raise suffixed_err(src, pos, f"Can not mutate immutable namespace {key}")
+        raise suffixed_err(src, pos, f"Cannot mutate immutable namespace {key}")
     # Free the namespace now that it points to another empty list item...
     out.flags.unset_all(key)
     # ...but this key precisely is still prohibited from table declaration
@@ -325,10 +325,10 @@ def create_list_rule(src: str, pos: Pos, out: Output) -> tuple[Pos, Key]:
     try:
         out.data.append_nest_to_list(key)
     except KeyError:
-        raise suffixed_err(src, pos, "Can not overwrite a value") from None
+        raise suffixed_err(src, pos, "Cannot overwrite a value") from None
 
     if not src.startswith("]]", pos):
-        raise suffixed_err(src, pos, 'Expected "]]" at the end of an array declaration')
+        raise suffixed_err(src, pos, "Expected ']]' at the end of an array declaration")
     return pos + 2, key
 
 
@@ -356,9 +356,9 @@ def key_value_rule(
     try:
         nest = out.data.get_or_create_nest(abs_key_parent)
     except KeyError:
-        raise suffixed_err(src, pos, "Can not overwrite a value") from None
+        raise suffixed_err(src, pos, "Cannot overwrite a value") from None
     if key_stem in nest:
-        raise suffixed_err(src, pos, "Can not overwrite a value")
+        raise suffixed_err(src, pos, "Cannot overwrite a value")
     # Mark inline table and array namespaces recursively immutable
     if isinstance(value, (dict, list)):
         out.flags.set(header + key, Flags.FROZEN, recursive=True)
@@ -375,7 +375,7 @@ def parse_key_value_pair(
     except IndexError:
         char = None
     if char != "=":
-        raise suffixed_err(src, pos, 'Expected "=" after a key in a key/value pair')
+        raise suffixed_err(src, pos, "Expected '=' after a key in a key/value pair")
     pos += 1
     pos = skip_chars(src, pos, TOML_WS)
     pos, value = parse_value(src, pos, parse_float)
@@ -457,11 +457,11 @@ def parse_inline_table(src: str, pos: Pos, parse_float: ParseFloat) -> tuple[Pos
         pos, key, value = parse_key_value_pair(src, pos, parse_float)
         key_parent, key_stem = key[:-1], key[-1]
         if flags.is_(key, Flags.FROZEN):
-            raise suffixed_err(src, pos, f"Can not mutate immutable namespace {key}")
+            raise suffixed_err(src, pos, f"Cannot mutate immutable namespace {key}")
         try:
             nest = nested_dict.get_or_create_nest(key_parent, access_lists=False)
         except KeyError:
-            raise suffixed_err(src, pos, "Can not overwrite a value") from None
+            raise suffixed_err(src, pos, "Cannot overwrite a value") from None
         if key_stem in nest:
             raise suffixed_err(src, pos, f"Duplicate inline table key {key_stem!r}")
         nest[key_stem] = value
@@ -477,7 +477,7 @@ def parse_inline_table(src: str, pos: Pos, parse_float: ParseFloat) -> tuple[Pos
         pos = skip_chars(src, pos, TOML_WS)
 
 
-def parse_basic_str_escape(  # noqa: C901
+def parse_basic_str_escape(
     src: str, pos: Pos, *, multiline: bool = False
 ) -> tuple[Pos, str]:
     escape_id = src[pos : pos + 2]
@@ -492,7 +492,7 @@ def parse_basic_str_escape(  # noqa: C901
             except IndexError:
                 return pos, ""
             if char != "\n":
-                raise suffixed_err(src, pos, 'Unescaped "\\" in a string')
+                raise suffixed_err(src, pos, "Unescaped '\\' in a string")
             pos += 1
         pos = skip_chars(src, pos, TOML_WS_AND_NEWLINE)
         return pos, ""
@@ -503,9 +503,7 @@ def parse_basic_str_escape(  # noqa: C901
     try:
         return pos, BASIC_STR_ESCAPE_REPLACEMENTS[escape_id]
     except KeyError:
-        if len(escape_id) != 2:
-            raise suffixed_err(src, pos, "Unterminated string") from None
-        raise suffixed_err(src, pos, 'Unescaped "\\" in a string') from None
+        raise suffixed_err(src, pos, "Unescaped '\\' in a string") from None
 
 
 def parse_basic_str_escape_multiline(src: str, pos: Pos) -> tuple[Pos, str]:
