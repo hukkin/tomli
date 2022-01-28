@@ -23,8 +23,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from os import PathLike
-import pathlib
+from os import PathLike, fspath
 import string
 from types import MappingProxyType
 from typing import Any, NamedTuple
@@ -75,10 +74,11 @@ class TOMLDecodeError(ValueError):
 
 
 def parse(
-    __fp: str | PathLike[str], *, parse_float: ParseFloat = float
+    __p: str | PathLike[str], *, parse_float: ParseFloat = float
 ) -> dict[str, Any]:
     """Parse TOML from a binary file object."""
-    s = pathlib.Path(__fp).read_bytes().decode()
+    with open(fspath(__p), "rb") as f:
+        s = f.read().decode()
     return parse_string(s, parse_float=parse_float)
 
 
