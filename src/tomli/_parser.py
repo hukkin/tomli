@@ -74,7 +74,7 @@ class TOMLDecodeError(ValueError):
 
 
 def parse(
-    __p: str | PathLike[str], *, parse_float: ParseFloat = float
+    __p: str | bytes | PathLike, *, parse_float: ParseFloat = float
 ) -> dict[str, Any]:
     """Parse TOML from a binary file object."""
     with open(fspath(__p), "rb") as f:
