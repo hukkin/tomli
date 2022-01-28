@@ -21,4 +21,4 @@ def test_for_profiler() -> None:
     # standard test suite.
     iterations = int(os.environ.get("PROFILER_ITERATIONS", 1))
     for _ in range(iterations):
-        tomli.loads(benchmark_toml)
+        tomli.parse_string(benchmark_toml)

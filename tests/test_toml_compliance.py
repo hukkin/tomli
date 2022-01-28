@@ -35,7 +35,7 @@ class TestTOMLCompliance(unittest.TestCase):
             with self.subTest(msg=invalid.stem):
                 toml_str = invalid.read_bytes().decode()
                 with self.assertRaises(tomllib.TOMLDecodeError):
-                    tomllib.loads(toml_str)
+                    tomllib.parse_string(toml_str)
 
     def test_valid(self):
         for valid, expected in zip(VALID_FILES, VALID_FILES_EXPECTED):
@@ -45,7 +45,7 @@ class TestTOMLCompliance(unittest.TestCase):
                     # to allow that in a nice way.
                     continue
                 toml_str = valid.read_bytes().decode()
-                actual = tomllib.loads(toml_str)
+                actual = tomllib.parse_string(toml_str)
                 actual = burntsushi.convert(actual)
                 expected = burntsushi.normalize(expected)
                 self.assertEqual(actual, expected)

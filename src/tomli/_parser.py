@@ -23,9 +23,11 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from os import PathLike
+import pathlib
 import string
 from types import MappingProxyType
-from typing import Any, BinaryIO, NamedTuple
+from typing import Any, NamedTuple
 
 from ._re import (
     RE_DATETIME,
@@ -72,13 +74,17 @@ class TOMLDecodeError(ValueError):
     """An error raised if a document is not valid TOML."""
 
 
-def load(__fp: BinaryIO, *, parse_float: ParseFloat = float) -> dict[str, Any]:
+def parse(
+    __fp: str | PathLike[str], *, parse_float: ParseFloat = float
+) -> dict[str, Any]:
     """Parse TOML from a binary file object."""
-    s = __fp.read().decode()
-    return loads(s, parse_float=parse_float)
+    s = pathlib.Path(__fp).read_bytes().decode()
+    return parse_string(s, parse_float=parse_float)
 
 
-def loads(__s: str, *, parse_float: ParseFloat = float) -> dict[str, Any]:  # noqa: C901
+def parse_string(  # noqa: C901
+    __s: str, *, parse_float: ParseFloat = float
+) -> dict[str, Any]:
     """Parse TOML from a string."""
 
     # The spec allows converting "\r\n" to "\n", even in string

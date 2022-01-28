@@ -25,13 +25,13 @@ class TestExtraCases(unittest.TestCase):
                     # Some BurntSushi tests are not valid UTF-8. Skip those.
                     continue
                 with self.assertRaises(tomllib.TOMLDecodeError):
-                    tomllib.loads(toml_str)
+                    tomllib.parse_string(toml_str)
 
     def test_valid(self):
         for valid, expected in zip(VALID_FILES, VALID_FILES_EXPECTED):
             with self.subTest(msg=valid.stem):
                 toml_str = valid.read_bytes().decode()
-                actual = tomllib.loads(toml_str)
+                actual = tomllib.parse_string(toml_str)
                 actual = burntsushi.convert(actual)
                 expected = burntsushi.normalize(expected)
                 self.assertEqual(actual, expected)

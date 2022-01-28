@@ -20,10 +20,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-__all__ = ("loads", "load", "TOMLDecodeError")
+__all__ = ("parse_string", "parse", "TOMLDecodeError")
 __version__ = "2.0.0"  # DO NOT EDIT THIS LINE MANUALLY. LET bump2version UTILITY DO IT
 
-from ._parser import TOMLDecodeError, load, loads
+from ._parser import TOMLDecodeError, parse, parse_string
 
 # Pretend this exception was created here.
 TOMLDecodeError.__module__ = __name__

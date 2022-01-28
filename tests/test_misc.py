@@ -15,9 +15,7 @@ class TestMiscellaneous(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp_dir_path:
             file_path = Path(tmp_dir_path) / "test.toml"
             file_path.write_text(content)
-
-            with open(file_path, "rb") as bin_f:
-                actual = tomllib.load(bin_f)
+            actual = tomllib.parse(file_path)
         self.assertEqual(actual, expected)
 
     def test_parse_float(self):
@@ -30,7 +28,7 @@ class TestMiscellaneous(unittest.TestCase):
               notnum2=-nan
               notnum3=+nan
               """
-        obj = tomllib.loads(doc, parse_float=D)
+        obj = tomllib.parse_string(doc, parse_float=D)
         expected = {
             "val": D("0.1"),
             "biggest1": D("inf"),
@@ -53,7 +51,7 @@ class TestMiscellaneous(unittest.TestCase):
               [bliibaa.diibaa]
               offsettime=[1979-05-27T00:32:00.999999-07:00]
               """
-        obj = tomllib.loads(doc)
+        obj = tomllib.parse_string(doc)
         obj_copy = copy.deepcopy(obj)
         self.assertEqual(obj_copy, obj)
         expected_obj = {
@@ -79,9 +77,9 @@ class TestMiscellaneous(unittest.TestCase):
     def test_inline_array_recursion_limit(self):
         nest_count = 470
         recursive_array_toml = "arr = " + nest_count * "[" + nest_count * "]"
-        tomllib.loads(recursive_array_toml)
+        tomllib.parse_string(recursive_array_toml)
 
     def test_inline_table_recursion_limit(self):
         nest_count = 310
         recursive_table_toml = nest_count * "key = {" + nest_count * "}"
-        tomllib.loads(recursive_table_toml)
+        tomllib.parse_string(recursive_table_toml)
