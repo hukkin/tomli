@@ -1,6 +1,6 @@
-# # SPDX-License-Identifier: MIT
-# # SPDX-FileCopyrightText: 2021 Taneli Hukkinen
-# # Licensed to PSF under a Contributor Agreement.
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2021 Taneli Hukkinen
+# Licensed to PSF under a Contributor Agreement.
 
 import copy
 import datetime
