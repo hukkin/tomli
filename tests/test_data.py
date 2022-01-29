@@ -10,7 +10,7 @@ class MissingFile:
         self.path = path
 
 
-DATA_DIR = Path(__file__).parent / "data" / "toml-lang-compliance"
+DATA_DIR = Path(__file__).parent / "data"
 
 VALID_FILES = tuple((DATA_DIR / "valid").glob("**/*.toml"))
 # VALID_FILES_EXPECTED = tuple(
@@ -29,11 +29,16 @@ VALID_FILES_EXPECTED = tuple(_expected_files)
 INVALID_FILES = tuple((DATA_DIR / "invalid").glob("**/*.toml"))
 
 
-class TestTOMLCompliance(unittest.TestCase):
+class TestData(unittest.TestCase):
     def test_invalid(self):
         for invalid in INVALID_FILES:
             with self.subTest(msg=invalid.stem):
-                toml_str = invalid.read_bytes().decode()
+                toml_bytes = invalid.read_bytes()
+                try:
+                    toml_str = toml_bytes.decode()
+                except UnicodeDecodeError:
+                    # Some BurntSushi tests are not valid UTF-8. Skip those.
+                    continue
                 with self.assertRaises(tomllib.TOMLDecodeError):
                     tomllib.loads(toml_str)
 
