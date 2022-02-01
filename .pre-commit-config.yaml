@@ -3,8 +3,8 @@ repos:
   rev: 79b8e4f273301e412602c856ddbc0c066765c98c  # frozen: v1.1.11
   hooks:
   - id: insert-license
-    files: '^src/.+\.py$'
-    args: ['--license-filepath', 'LICENSE']
+    files: '^src/.+\.py$|^tests/.+\.py$'
+    args: ['--license-filepath', 'LICENSE-HEADER']
 - repo: https://github.com/executablebooks/mdformat
   rev: a5f167d00d7a1990e69ee02efacc15d6136ea1aa  # frozen: 0.7.13
   hooks:
