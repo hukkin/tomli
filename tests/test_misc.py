@@ -24,6 +24,16 @@ class TestMiscellaneous(unittest.TestCase):
                 actual = tomllib.load(bin_f)
         self.assertEqual(actual, expected)
 
+    def test_incorrect_load(self):
+        content = "one=1"
+        with tempfile.TemporaryDirectory() as tmp_dir_path:
+            file_path = Path(tmp_dir_path) / "test.toml"
+            file_path.write_text(content)
+
+            with open(file_path, "r") as txt_f:
+                with self.assertRaises(TypeError):
+                    tomllib.load(txt_f)  # type: ignore[arg-type]
+
     def test_parse_float(self):
         doc = """
               val=0.1

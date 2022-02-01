@@ -56,7 +56,13 @@ class TOMLDecodeError(ValueError):
 
 def load(__fp: BinaryIO, *, parse_float: ParseFloat = float) -> dict[str, Any]:
     """Parse TOML from a binary file object."""
-    s = __fp.read().decode()
+    b = __fp.read()
+    try:
+        s = b.decode()
+    except AttributeError:
+        raise TypeError(
+            "File must be opened in binary mode, e.g. use `open('foo.toml', 'rb')`"
+        ) from None
     return loads(s, parse_float=parse_float)
 
 
