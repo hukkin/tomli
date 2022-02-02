@@ -96,7 +96,7 @@ Note that `decimal.Decimal` can be replaced with another callable that converts 
 The `decimal.Decimal` is, however, a practical choice for use cases where float inaccuracies can not be tolerated.
 
 Illegal types are `dict` and `list`, and their subtypes.
-Parsing floats into an illegal type results in undefined behavior.
+A `ValueError` will be raised if `parse_float` produces illegal types.
 
 ## FAQ<a name="faq"></a>
 

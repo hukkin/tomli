@@ -54,7 +54,7 @@ class TOMLDecodeError(ValueError):
     """An error raised if a document is not valid TOML."""
 
 
-def load(__fp: BinaryIO, *, parse_float: ParseFloat = float) -> dict[str, Any]:
+def load(__fp: BinaryIO, *, parse_float: ParseFloat | None = None) -> dict[str, Any]:
     """Parse TOML from a binary file object."""
     b = __fp.read()
     try:
@@ -66,7 +66,9 @@ def load(__fp: BinaryIO, *, parse_float: ParseFloat = float) -> dict[str, Any]:
     return loads(s, parse_float=parse_float)
 
 
-def loads(__s: str, *, parse_float: ParseFloat = float) -> dict[str, Any]:  # noqa: C901
+def loads(  # noqa: C901
+    __s: str, *, parse_float: ParseFloat | None = None
+) -> dict[str, Any]:
     """Parse TOML from a string."""
 
     # The spec allows converting "\r\n" to "\n", even in string
@@ -75,6 +77,7 @@ def loads(__s: str, *, parse_float: ParseFloat = float) -> dict[str, Any]:  # no
     pos = 0
     out = Output(NestedDict(), Flags())
     header: Key = ()
+    parse_float = make_safe_parse_float(parse_float)
 
     # Parse one statement at a time
     # (typically means one line in TOML source)
@@ -667,3 +670,16 @@ def suffixed_err(src: str, pos: Pos, msg: str) -> TOMLDecodeError:
 
 def is_unicode_scalar_value(codepoint: int) -> bool:
     return (0 <= codepoint <= 55295) or (57344 <= codepoint <= 1114111)
+
+
+def make_safe_parse_float(parse_float: ParseFloat | None) -> ParseFloat:
+    if parse_float is None:
+        return float
+
+    def safe_parse_float(float_str: str) -> Any:
+        float_value = parse_float(float_str)  # type: ignore[misc]
+        if isinstance(float_value, (dict, list)):
+            raise ValueError("parse_float must not return dicts or lists")
+        return float_value
+
+    return safe_parse_float
