@@ -216,10 +216,9 @@ class NestedDict:
         last_key = key[-1]
         if last_key in cont:
             list_ = cont[last_key]
-            try:
-                list_.append({})
-            except AttributeError:
+            if not isinstance(list_, list):
                 raise KeyError("An object other than list found behind this key")
+            list_.append({})
         else:
             cont[last_key] = [{}]
 
