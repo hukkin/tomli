@@ -95,7 +95,7 @@ assert toml_dict["precision-matters"] == Decimal("0.982492")
 Note that `decimal.Decimal` can be replaced with another callable that converts a TOML float from string to a Python type.
 The `decimal.Decimal` is, however, a practical choice for use cases where float inaccuracies can not be tolerated.
 
-Illegal types include `dict`, `list`, and anything that has the `append` attribute.
+Illegal types are `dict` and `list`, and their subtypes.
 Parsing floats into an illegal type results in undefined behavior.
 
 ## FAQ<a name="faq"></a>
