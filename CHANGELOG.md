@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.0.1
+
+- Improve
+  - Make bundling easier by using relative imports internally and adding license and copyright notice to source files.
+  - Make error messages more uniform
+  - Raise a friendly `TypeError` for wrong file mode
+  - Allow `parse_float` to return objects having the `append` attr
+  - Eagerly raise an error if `parse_float` returns an illegal type
+- Packaging
+  - Move from `pytest` testing framework to `unittest` and remove `python-dateutil` test dependency.
+    Tests now only require Python interpreter.
+
 ## 1.2.3
 
 - Fixed
