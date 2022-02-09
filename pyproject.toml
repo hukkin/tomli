@@ -60,14 +60,18 @@ commands =
     python -m unittest {posargs}
 
 [testenv:profile]
-description = run profiler (use e.g. `firefox .tox/prof/combined.svg` to open)
-setenv =
-    PROFILER_ITERATIONS=1000
+description = run profiler (use e.g. `firefox .tox/prof/output.svg` to open)
 deps =
     -r profiler/requirements.txt
+allowlist_externals =
+    mkdir
+    dot
 commands =
-    pytest profiler/test_for_profiler.py --profile-svg --pstats-dir "{toxworkdir}/prof"
-    python -c 'import pathlib; print("profiler svg output under file://\{0\}".format(pathlib.Path(r"{toxworkdir}") / "prof" / "combined.svg"))'
+    mkdir -p "{toxworkdir}/prof"
+    python -m cProfile -o "{toxworkdir}/prof/output.pstats" profiler/profiler_script.py
+    gprof2dot -f pstats -o "{toxworkdir}/prof/output.dot" "{toxworkdir}/prof/output.pstats"
+    dot -Tsvg -o "{toxworkdir}/prof/output.svg" "{toxworkdir}/prof/output.dot"
+    python -c 'import pathlib; print("profiler svg output under file://\{0\}".format(pathlib.Path(r"{toxworkdir}") / "prof" / "output.svg"))'
 
 [testenv:pre-commit]
 description = run linters
