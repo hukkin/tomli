@@ -105,8 +105,8 @@ A `ValueError` will be raised if `parse_float` produces illegal types.
 - it's lil'
 - pure Python with zero dependencies
 - the fastest pure Python parser [\*](#performance):
-  15x as fast as [tomlkit](https://pypi.org/project/tomlkit/),
-  2.4x as fast as [toml](https://pypi.org/project/toml/)
+  16x as fast as [tomlkit](https://pypi.org/project/tomlkit/),
+  2.3x as fast as [toml](https://pypi.org/project/toml/)
 - outputs [basic data types](#how-do-toml-types-map-into-python-types) only
 - 100% spec compliant: passes all tests in
   [a test set](https://github.com/toml-lang/compliance/pull/8)
@@ -157,10 +157,10 @@ Running the benchmark on my personal computer output the following:
 
 ```console
 foo@bar:~/dev/tomli$ tox -e benchmark-pypi
-benchmark-pypi installed: attrs==19.3.0,click==7.1.2,pytomlpp==1.0.2,qtoml==0.3.0,rtoml==0.7.0,toml==0.10.2,tomli==1.1.0,tomlkit==0.7.2
-benchmark-pypi run-test-pre: PYTHONHASHSEED='2658546909'
+benchmark-pypi installed: attrs==21.4.0,click==8.0.3,pytomlpp==1.0.10,qtoml==0.3.1,rtoml==0.7.1,toml==0.10.2,tomli==2.0.1,tomlkit==0.9.2
+benchmark-pypi run-test-pre: PYTHONHASHSEED='3088452573'
 benchmark-pypi run-test: commands[0] | python -c 'import datetime; print(datetime.date.today())'
-2021-07-23
+2022-02-09
 benchmark-pypi run-test: commands[1] | python --version
 Python 3.8.10
 benchmark-pypi run-test: commands[2] | python benchmark/run.py
@@ -168,12 +168,12 @@ Parsing data.toml 5000 times:
 ------------------------------------------------------
     parser |  exec time | performance (more is better)
 -----------+------------+-----------------------------
-     rtoml |    0.901 s | baseline (100%)
-  pytomlpp |     1.08 s | 83.15%
-     tomli |     3.89 s | 23.15%
-      toml |     9.36 s | 9.63%
-     qtoml |     11.5 s | 7.82%
-   tomlkit |     56.8 s | 1.59%
+     rtoml |    0.891 s | baseline (100%)
+  pytomlpp |    0.969 s | 91.90%
+     tomli |        4 s | 22.25%
+      toml |     9.01 s | 9.88%
+     qtoml |     11.1 s | 8.05%
+   tomlkit |       63 s | 1.41%
 ```
 
 The parsers are ordered from fastest to slowest, using the fastest parser as baseline.
