@@ -44,23 +44,39 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Install package and test deps
+    - name: Install package
       run: |
-        pip install . coverage
+        pip install .
 
     - name: Test with unittest
       run: |
+        python -m unittest
+
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+      with:
+        python-version: '3.10'
+    - name: Install package and coverage deps
+      run: |
+        pip install . coverage
+    - name: Measure coverage
+      run: |
+        # Coverage should be 100% without external tests
+        rm -rf tests/data/valid/_external/
+        rm -rf tests/data/invalid/_external/
         coverage run -m unittest
         coverage report --fail-under=100
-
     - name: Report coverage
-      if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.10'
       uses: codecov/codecov-action@v2
 
   allgood:
     runs-on: ubuntu-latest
     needs:
     - tests
+    - coverage
     - linters
     steps:
     - run: echo "Great success!"
