@@ -115,7 +115,7 @@ but still works seamlessly with Python 3.6+,
 do the following.
 
 Instead of a hard Tomli dependency, use the following
-[PEP 508](https://www.python.org/dev/peps/pep-0508/) string
+[dependency specifier](https://packaging.python.org/en/latest/specifications/dependency-specifiers/)
 to only require Tomli when the standard library module is not available:
 
 ```
