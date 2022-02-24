@@ -17,6 +17,7 @@
   - [Parse a TOML file](#parse-a-toml-file)
   - [Handle invalid TOML](#handle-invalid-toml)
   - [Construct `decimal.Decimal`s from TOML floats](#construct-decimaldecimals-from-toml-floats)
+  - [Building a `tomli`/`tomllib` compatibility layer](#building-a-tomlitomllib-compatibility-layer)
 - [FAQ](#faq)
   - [Why this parser?](#why-this-parser)
   - [Is comment preserving round-trip parsing supported?](#is-comment-preserving-round-trip-parsing-supported)
@@ -29,7 +30,14 @@
 ## Intro<a name="intro"></a>
 
 Tomli is a Python library for parsing [TOML](https://toml.io).
-Tomli is fully compatible with [TOML v1.0.0](https://toml.io/en/v1.0.0).
+It is fully compatible with [TOML v1.0.0](https://toml.io/en/v1.0.0).
+
+A version of Tomli, the new `tomllib` module,
+will be added to the standard library in Python 3.11
+via [PEP 680](https://www.python.org/dev/peps/pep-0680/).
+Tomli continues to provide a backport on PyPI for Python versions
+where the standard library module is not available
+and that have not yet reached their end-of-life.
 
 ## Installation<a name="installation"></a>
 
@@ -97,6 +105,33 @@ The `decimal.Decimal` is, however, a practical choice for use cases where float 
 
 Illegal types are `dict` and `list`, and their subtypes.
 A `ValueError` will be raised if `parse_float` produces illegal types.
+
+### Building a `tomli`/`tomllib` compatibility layer<a name="building-a-tomlitomllib-compatibility-layer"></a>
+
+Python versions 3.11+ ship with a version of Tomli:
+the `tomllib` standard library module.
+To build code that uses the standard library if available,
+but still works seamlessly with Python 3.6+,
+do the following.
+
+Instead of a hard Tomli dependency, use the following
+[dependency specifier](https://packaging.python.org/en/latest/specifications/dependency-specifiers/)
+to only require Tomli when the standard library module is not available:
+
+```
+tomli >= 1.1.0 ; python_version < "3.11"
+```
+
+Then, in your code, import a TOML parser using the following fallback mechanism:
+
+```python
+try:
+    import tomllib
+except ModuleNotFoundError:
+    import tomli as tomllib
+
+tomllib.loads("['This parses fine with Python 3.6+']")
+```
 
 ## FAQ<a name="faq"></a>
 
