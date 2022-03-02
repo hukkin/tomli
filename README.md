@@ -53,14 +53,19 @@ pip install tomli
 import tomli
 
 toml_str = """
-           gretzky = 99
+[[players]]
+name = "Lehtinen"
+number = 26
 
-           [kurri]
-           jari = 17
-           """
+[[players]]
+name = "Numminen"
+number = 27
+"""
 
 toml_dict = tomli.loads(toml_str)
-assert toml_dict == {"gretzky": 99, "kurri": {"jari": 17}}
+assert toml_dict == {
+    "players": [{"name": "Lehtinen", "number": 26}, {"name": "Numminen", "number": 27}]
+}
 ```
 
 ### Parse a TOML file<a name="parse-a-toml-file"></a>
@@ -97,6 +102,7 @@ from decimal import Decimal
 import tomli
 
 toml_dict = tomli.loads("precision-matters = 0.982492", parse_float=Decimal)
+assert isinstance(toml_dict["precision-matters"], Decimal)
 assert toml_dict["precision-matters"] == Decimal("0.982492")
 ```
 
