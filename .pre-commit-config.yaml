@@ -1,6 +1,6 @@
 repos:
 - repo: https://github.com/Lucas-C/pre-commit-hooks
-  rev: ca52c4245639abd55c970e6bbbca95cab3de22d8  # frozen: v1.1.13
+  rev: 91c5c7bcc8115b7b847300bf5f147158e497c342  # frozen: v1.3.0
   hooks:
   - id: insert-license
     files: '^src/.+\.py$|^tests/.+\.py$'
@@ -32,7 +32,7 @@ repos:
   hooks:
   - id: isort
 - repo: https://github.com/psf/black
-  rev: ae2c0758c9e61a385df9700dc9c231bf54887041  # frozen: 22.3.0
+  rev: f6c139c5215ce04fd3e73a900f1372942d58eca0  # frozen: 22.6.0
   hooks:
   - id: black
 - repo: https://github.com/myint/docformatter
@@ -40,7 +40,7 @@ repos:
   hooks:
   - id: docformatter
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: db7346d375eda68a0174f2c057dd97f2fbffe030  # frozen: v4.2.0
+  rev: 3298ddab3c13dd77d6ce1fc0baf97691430d84b0  # frozen: v4.3.0
   hooks:
   - id: check-yaml
 - repo: https://github.com/pre-commit/pygrep-hooks
@@ -58,7 +58,7 @@ repos:
     - flake8-builtins
     - flake8-comprehensions
 - repo: https://github.com/pre-commit/mirrors-mypy
-  rev: a04404bdf52c2cbc9c5bd705454b89bd83b84383  # frozen: v0.950
+  rev: efd441f735bae5b41a437713f667d6669415f6a0  # frozen: v0.961
   hooks:
   - id: mypy
     args: ["--scripts-are-modules"]
