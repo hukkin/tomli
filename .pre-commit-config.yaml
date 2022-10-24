@@ -1,12 +1,12 @@
 repos:
 - repo: https://github.com/Lucas-C/pre-commit-hooks
-  rev: ca52c4245639abd55c970e6bbbca95cab3de22d8  # frozen: v1.1.13
+  rev: 04618e68aa2380828a36a23ff5f65a06ae8f59b9  # frozen: v1.3.1
   hooks:
   - id: insert-license
     files: '^src/.+\.py$|^tests/.+\.py$'
     args: ['--license-filepath', 'LICENSE-HEADER']
 - repo: https://github.com/executablebooks/mdformat
-  rev: b8c05ae822d53326e967da45367d0408afc56a81  # frozen: 0.7.14
+  rev: 82f84976fc57d5ae61cbf2d457a26a89d4b4eef4  # frozen: 0.7.16
   hooks:
   - id: mdformat
     additional_dependencies:
@@ -14,7 +14,7 @@ repos:
     - mdformat-gfm
     - mdformat-black
 - repo: https://github.com/asottile/yesqa
-  rev: 35cf7dc24fa922927caded7a21b2a8cb04bf8e10  # frozen: v1.3.0
+  rev: 265e9ff7c83add4949f81bb5fe14f4a743ffb04c  # frozen: v1.4.0
   hooks:
   - id: yesqa
     additional_dependencies:
@@ -32,15 +32,15 @@ repos:
   hooks:
   - id: isort
 - repo: https://github.com/psf/black
-  rev: ae2c0758c9e61a385df9700dc9c231bf54887041  # frozen: 22.3.0
+  rev: 27d20144a7517594e24a1649451177b2a11284be  # frozen: 22.10.0
   hooks:
   - id: black
 - repo: https://github.com/myint/docformatter
-  rev: 67919ee01837761f2d954d7fbb08c12cdd38ec5a  # frozen: v1.4
+  rev: 8b8dae1d990e2e4fec7ff6704a79c23a403cd605  # frozen: v1.5.0
   hooks:
   - id: docformatter
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: db7346d375eda68a0174f2c057dd97f2fbffe030  # frozen: v4.2.0
+  rev: 3298ddab3c13dd77d6ce1fc0baf97691430d84b0  # frozen: v4.3.0
   hooks:
   - id: check-yaml
 - repo: https://github.com/pre-commit/pygrep-hooks
@@ -50,7 +50,7 @@ repos:
   - id: python-check-blanket-noqa
   - id: python-check-blanket-type-ignore
 - repo: https://github.com/PyCQA/flake8
-  rev: cbeb4c9c4137cff1568659fcc48e8b85cddd0c8d  # frozen: 4.0.1
+  rev: f8e1b317742036ff11ff86356fd2b68147e169f7  # frozen: 5.0.4
   hooks:
   - id: flake8
     additional_dependencies:
@@ -58,7 +58,7 @@ repos:
     - flake8-builtins
     - flake8-comprehensions
 - repo: https://github.com/pre-commit/mirrors-mypy
-  rev: a04404bdf52c2cbc9c5bd705454b89bd83b84383  # frozen: v0.950
+  rev: 33f4a30be4e66513c51a857712fc732e1a9ddd78  # frozen: v0.982
   hooks:
   - id: mypy
     args: ["--scripts-are-modules"]
