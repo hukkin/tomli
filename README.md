@@ -117,7 +117,7 @@ A `ValueError` will be raised if `parse_float` produces illegal types.
 Python versions 3.11+ ship with a version of Tomli:
 the `tomllib` standard library module.
 To build code that uses the standard library if available,
-but still works seamlessly with Python 3.6+,
+but still works seamlessly with Python 3.7+,
 do the following.
 
 Instead of a hard Tomli dependency, use the following
@@ -136,7 +136,7 @@ try:
 except ModuleNotFoundError:
     import tomli as tomllib
 
-tomllib.loads("['This parses fine with Python 3.6+']")
+tomllib.loads("['This parses fine with Python 3.7+']")
 ```
 
 ## FAQ<a name="faq"></a>
