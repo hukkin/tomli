@@ -18,10 +18,6 @@ classifiers = [
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: Implementation :: PyPy",
     "Topic :: Software Development :: Libraries :: Python Modules",
@@ -51,10 +47,10 @@ profile = "black"
 legacy_tox_ini = '''
 [tox]
 # Only run unittest envs when no args given to tox
-envlist = py{37,38,39,310}
+envlist = py{37,38,39,310,311}
 isolated_build = True
 
-[testenv:py{37,38,39,310}]
+[testenv:py{37,38,39,310,311}]
 description = run tests against a built package
 commands =
     python -m unittest {posargs}
