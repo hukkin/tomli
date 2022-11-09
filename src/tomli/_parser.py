@@ -7,7 +7,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 import string
 from types import MappingProxyType
-from typing import Any, BinaryIO, NamedTuple
+from typing import IO, Any, NamedTuple
 
 from ._re import (
     RE_DATETIME,
@@ -54,7 +54,7 @@ class TOMLDecodeError(ValueError):
     """An error raised if a document is not valid TOML."""
 
 
-def load(__fp: BinaryIO, *, parse_float: ParseFloat = float) -> dict[str, Any]:
+def load(__fp: IO[bytes], *, parse_float: ParseFloat = float) -> dict[str, Any]:
     """Parse TOML from a binary file object."""
     b = __fp.read()
     try:
