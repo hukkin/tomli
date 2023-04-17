@@ -131,9 +131,10 @@ tomli >= 1.1.0 ; python_version < "3.11"
 Then, in your code, import a TOML parser using the following fallback mechanism:
 
 ```python
-try:
+import sys
+if sys.version_info >= (3, 11):
     import tomllib
-except ModuleNotFoundError:
+else:
     import tomli as tomllib
 
 tomllib.loads("['This parses fine with Python 3.6+']")
