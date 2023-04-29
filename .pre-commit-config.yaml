@@ -35,8 +35,8 @@ repos:
   rev: bf7a16254ec96b084a6caf3d435ec18f0f245cc7  # frozen: 23.3.0
   hooks:
   - id: black
-- repo: https://github.com/PyCQA/docformatter
-  rev: 403478c1e23468aff9889975b35a27d2c115a2e8  # frozen: v1.6.3
+- repo: https://github.com/myint/docformatter
+  rev: 8b8dae1d990e2e4fec7ff6704a79c23a403cd605  # frozen: v1.5.0
   hooks:
   - id: docformatter
 - repo: https://github.com/pre-commit/pre-commit-hooks
