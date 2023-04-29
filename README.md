@@ -132,6 +132,7 @@ Then, in your code, import a TOML parser using the following fallback mechanism:
 
 ```python
 import sys
+
 if sys.version_info >= (3, 11):
     import tomllib
 else:
