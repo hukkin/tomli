@@ -1,6 +1,6 @@
 repos:
 - repo: https://github.com/Lucas-C/pre-commit-hooks
-  rev: 04618e68aa2380828a36a23ff5f65a06ae8f59b9  # frozen: v1.3.1
+  rev: 12885e376b93dc4536ad68d156065601e4433665  # frozen: v1.5.1
   hooks:
   - id: insert-license
     files: '^src/.+\.py$|^tests/.+\.py$'
@@ -28,11 +28,11 @@ repos:
     files: '^src/.+\.py$'
     args: ['--never', '--application-directories', 'src']
 - repo: https://github.com/PyCQA/isort
-  rev: c5e8fa75dda5f764d20f66a215d71c21cfa198e1  # frozen: 5.10.1
+  rev: dbf82f2dd09ae41d9355bcd7ab69187a19e6bf2f  # frozen: 5.12.0
   hooks:
   - id: isort
 - repo: https://github.com/psf/black
-  rev: 27d20144a7517594e24a1649451177b2a11284be  # frozen: 22.10.0
+  rev: bf7a16254ec96b084a6caf3d435ec18f0f245cc7  # frozen: 23.3.0
   hooks:
   - id: black
 - repo: https://github.com/myint/docformatter
@@ -40,17 +40,17 @@ repos:
   hooks:
   - id: docformatter
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: 3298ddab3c13dd77d6ce1fc0baf97691430d84b0  # frozen: v4.3.0
+  rev: f71fa2c1f9cf5cb705f73dffe4b21f7c61470ba9  # frozen: v4.4.0
   hooks:
   - id: check-yaml
 - repo: https://github.com/pre-commit/pygrep-hooks
-  rev: 6f51a66bba59954917140ec2eeeaa4d5e630e6ce  # frozen: v1.9.0
+  rev: 3a6eb0fadf60b3cccfd80bad9dbb6fae7e47b316  # frozen: v1.10.0
   hooks:
   - id: python-use-type-annotations
   - id: python-check-blanket-noqa
   - id: python-check-blanket-type-ignore
 - repo: https://github.com/PyCQA/flake8
-  rev: f8e1b317742036ff11ff86356fd2b68147e169f7  # frozen: 5.0.4
+  rev: c838a5e98878f17889cfce311e1406d252f87ec5  # frozen: 6.0.0
   hooks:
   - id: flake8
     additional_dependencies:
@@ -58,7 +58,7 @@ repos:
     - flake8-builtins
     - flake8-comprehensions
 - repo: https://github.com/pre-commit/mirrors-mypy
-  rev: 33f4a30be4e66513c51a857712fc732e1a9ddd78  # frozen: v0.982
+  rev: b84480de6124681d551749528ab4b42c2269df8c  # frozen: v1.2.0
   hooks:
   - id: mypy
     args: ["--scripts-are-modules"]
