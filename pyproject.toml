@@ -10,7 +10,7 @@ authors = [
     { name = "Taneli Hukkinen", email = "hukkin@users.noreply.github.com" },
 ]
 license = { file = "LICENSE" }
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 readme = "README.md"
 classifiers = [
     "License :: OSI Approved :: MIT License",
@@ -47,10 +47,10 @@ profile = "black"
 legacy_tox_ini = '''
 [tox]
 # Only run unittest envs when no args given to tox
-envlist = py{37,38,39,310,311}
+envlist = py{38,39,310,311,312}
 isolated_build = True
 
-[testenv:py{37,38,39,310,311}]
+[testenv:py{38,39,310,311,312}]
 description = run tests against a built package
 commands =
     python -m unittest {posargs}
