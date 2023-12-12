@@ -13,8 +13,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-python@v3
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v4
       with:
         python-version: '3.8'
 
@@ -32,15 +32,15 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: ['pypy-3.7', '3.7', '3.8', '3.9', '3.10', '3.11', '3.12-dev']
+        python-version: ['pypy3.10', '3.8', '3.9', '3.10', '3.11', '3.12', '3.13-dev']
         os: [ubuntu-latest, macos-latest, windows-latest]
-    continue-on-error: ${{ matrix.python-version == '3.12-dev' }}
+    continue-on-error: ${{ matrix.python-version == '3.13-dev' }}
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -55,10 +55,10 @@ jobs:
   coverage:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-python@v3
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
+        python-version: '3.x'
     - name: Install package and coverage deps
       run: |
         pip install . coverage
@@ -70,7 +70,7 @@ jobs:
         coverage run -m unittest
         coverage report --fail-under=100
     - name: Report coverage
-      uses: codecov/codecov-action@v2
+      uses: codecov/codecov-action@v3
 
   allgood:
     runs-on: ubuntu-latest
@@ -87,10 +87,10 @@ jobs:
     if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-python@v3
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v4
       with:
-        python-version: '3.7'
+        python-version: '3.x'
     - name: Install build and publish tools
       run: |
         pip install build twine
