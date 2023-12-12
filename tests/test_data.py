@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 import unittest
 
-from . import burntsushi, tomllib
+from . import tomllib, tomltest
 
 
 class MissingFile:
@@ -41,7 +41,7 @@ class TestData(unittest.TestCase):
                 try:
                     toml_str = toml_bytes.decode()
                 except UnicodeDecodeError:
-                    # Some BurntSushi tests are not valid UTF-8. Skip those.
+                    # Some toml-test files are not valid UTF-8. Skip those.
                     continue
                 with self.assertRaises(tomllib.TOMLDecodeError):
                     tomllib.loads(toml_str)
@@ -49,16 +49,10 @@ class TestData(unittest.TestCase):
     def test_valid(self):
         for valid, expected in zip(VALID_FILES, VALID_FILES_EXPECTED):
             with self.subTest(msg=valid.stem):
-                if isinstance(expected, MissingFile):
-                    # For a poor man's xfail, assert that this is one of the
-                    # test cases where expected data is known to be missing.
-                    assert valid.stem in {
-                        "qa-array-inline-nested-1000",
-                        "qa-table-inline-nested-1000",
-                    }
-                    continue
                 toml_str = valid.read_bytes().decode()
                 actual = tomllib.loads(toml_str)
-                actual = burntsushi.convert(actual)
-                expected = burntsushi.normalize(expected)
+                actual = tomltest.convert(actual)
+
+                actual = tomltest.normalize(actual)
+                expected = tomltest.normalize(expected)
                 self.assertEqual(actual, expected)
