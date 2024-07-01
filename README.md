@@ -1,6 +1,6 @@
 # Tomli
 
-[![tomli Downloads Last Month](https://assets.piptrends.com/get-last-month-downloads-badge/tomli.svg 'tomli Downloads Last Month by pip Trends')](https://piptrends.com/package/tomli)
+[![tomli Downloads Last Month](https://assets.piptrends.com/get-last-month-downloads-badge/tomli.svg "tomli Downloads Last Month by pip Trends")](https://piptrends.com/package/tomli)
 [![Build Status](https://github.com/hukkin/tomli/workflows/Tests/badge.svg?branch=master)](https://github.com/hukkin/tomli/actions?query=workflow%3ATests+branch%3Amaster+event%3Apush)
 [![codecov.io](https://codecov.io/gh/hukkin/tomli/branch/master/graph/badge.svg)](https://codecov.io/gh/hukkin/tomli)
 [![PyPI version](https://img.shields.io/pypi/v/tomli)](https://pypi.org/project/tomli)
