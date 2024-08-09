@@ -66,7 +66,9 @@ def load(fp: IO[bytes], /, *, parse_float: ParseFloat = float) -> dict[str, Any]
     return loads(s, parse_float=parse_float)
 
 
-def loads(s: str, /, *, parse_float: ParseFloat = float) -> dict[str, Any]:  # noqa: C901
+def loads(
+    s: str, /, *, parse_float: ParseFloat = float
+) -> dict[str, Any]:  # noqa: C901
     """Parse TOML from a string."""
 
     # The spec allows converting "\r\n" to "\n", even in string
