@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: 2021 Taneli Hukkinen
 # Licensed to PSF under a Contributor Agreement.
-
 """Utilities for tests that are in the "burntsushi" format."""
 
 import datetime
@@ -53,11 +52,14 @@ def convert(obj):  # noqa: C901
 def normalize(obj: Any) -> Any:
     """Normalize test objects.
 
-    This normalizes primitive values (e.g. floats), and also converts from
-    TOML compliance format [1] to BurntSushi format [2].
+    This normalizes primitive values (e.g. floats), and also converts
+    from TOML compliance format [1] to BurntSushi format [2].
 
-    [1] https://github.com/toml-lang/compliance/blob/db7c3211fda30ff9ddb10292f4aeda7e2e10abc4/docs/json-encoding.md  # noqa: E501
-    [2] https://github.com/BurntSushi/toml-test/blob/4634fdf3a6ecd6aaea5f4cdcd98b2733c2694993/README.md  # noqa: E501
+    [1]
+    https://github.com/toml-lang/compliance/blob/db7c3211fda30ff9ddb10292f4aeda7e2e10abc4/docs/json-encoding.md
+    # noqa: E501   [2]
+    https://github.com/BurntSushi/toml-test/blob/4634fdf3a6ecd6aaea5f4cdcd98b2733c2694993/README.md
+    # noqa: E501
     """
     if isinstance(obj, list):
         return [normalize(item) for item in obj]
