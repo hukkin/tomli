@@ -41,7 +41,7 @@ class TestError(unittest.TestCase):
 
     def test_type_error(self):
         with self.assertRaises(TypeError) as exc_info:
-            tomllib.loads(b"v = 1")
+            tomllib.loads(b"v = 1")  # type: ignore[arg-type]
         self.assertEqual(str(exc_info.exception), "Expected str object, not 'bytes'")
 
     def test_module_name(self):
