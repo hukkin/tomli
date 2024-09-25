@@ -44,6 +44,10 @@ class TestError(unittest.TestCase):
             tomllib.loads(b"v = 1")  # type: ignore[arg-type]
         self.assertEqual(str(exc_info.exception), "Expected str object, not 'bytes'")
 
+        with self.assertRaises(TypeError) as exc_info:
+            tomllib.loads(False)  # type: ignore[arg-type]
+        self.assertEqual(str(exc_info.exception), "Expected str object, not 'bool'")
+
     def test_module_name(self):
         self.assertEqual(tomllib.TOMLDecodeError().__module__, tomllib.__name__)
 
