@@ -39,6 +39,11 @@ class TestError(unittest.TestCase):
             tomllib.loads("v = '\n'")
         self.assertTrue(" '\\n' " in str(exc_info.exception))
 
+    def test_type_error(self):
+        with self.assertRaises(TypeError) as exc_info:
+            tomllib.loads(b"v = 1")
+        self.assertEqual(str(exc_info.exception), "Expected str object, not 'bytes'")
+
     def test_module_name(self):
         self.assertEqual(tomllib.TOMLDecodeError().__module__, tomllib.__name__)
 
