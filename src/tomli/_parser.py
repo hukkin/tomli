@@ -74,7 +74,9 @@ def loads(__s: str, *, parse_float: ParseFloat = float) -> dict[str, Any]:  # no
     try:
         src = __s.replace("\r\n", "\n")
     except (AttributeError, TypeError):
-        raise TypeError(f"Expected str object, not '{type(__s).__qualname__}'") from None
+        raise TypeError(
+            f"Expected str object, not '{type(__s).__qualname__}'"
+        ) from None
     pos = 0
     out = Output(NestedDict(), Flags())
     header: Key = ()
