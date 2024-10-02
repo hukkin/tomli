@@ -1,8 +1,18 @@
 # Changelog
 
+## 2.0.2
+
+- Removed
+  - Python 3.7 support
+- Improved
+  - Make `loads` raise `TypeError` not `AttributeError` on bad input types that do not have the `replace` attribute.
+    Improve error message when `bytes` is received.
+- Type annotations
+  - Type annotate `load` input as `typing.IO[bytes]` (previously `typing.BinaryIO`).
+
 ## 2.0.1
 
-- Improve
+- Improved
   - Make bundling easier by using relative imports internally and adding license and copyright notice to source files.
   - Make error messages more uniform
   - Raise a friendly `TypeError` for wrong file mode
