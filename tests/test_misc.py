@@ -31,8 +31,12 @@ class TestMiscellaneous(unittest.TestCase):
             file_path.write_text(content)
 
             with open(file_path, "r") as txt_f:
-                with self.assertRaises(TypeError):
+                with self.assertRaises(TypeError) as exc_info:
                     tomllib.load(txt_f)  # type: ignore[arg-type]
+            self.assertEqual(
+                str(exc_info.exception),
+                "File must be opened in binary mode, e.g. use `open('foo.toml', 'rb')`",
+            )
 
     def test_parse_float(self):
         doc = """

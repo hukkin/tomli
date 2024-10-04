@@ -2,7 +2,6 @@
 # SPDX-FileCopyrightText: 2021 Taneli Hukkinen
 # Licensed to PSF under a Contributor Agreement.
 
-import io
 import unittest
 
 from . import tomllib
@@ -65,11 +64,3 @@ class TestError(unittest.TestCase):
             self.assertEqual(
                 str(exc_info.exception), "parse_float must not return dicts or lists"
             )
-
-    def test_text_mode_error(self):
-        with self.assertRaises(TypeError) as exc_info:
-            tomllib.load(io.StringIO())  # type: ignore[arg-type]
-        self.assertEqual(
-            str(exc_info.exception),
-            "File must be opened in binary mode, e.g. use `open('foo.toml', 'rb')`",
-        )
