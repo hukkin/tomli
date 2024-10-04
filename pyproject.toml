@@ -44,71 +44,79 @@ profile = "black"
 
 
 [tool.tox]
-legacy_tox_ini = '''
-[tox]
+requires = ["tox>=4.21.1"]
 # Only run unittest envs when no args given to tox
-envlist = py{38,39,310,311,312}
-isolated_build = True
+env_list = ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
 
-[testenv:py{38,39,310,311,312}]
-description = run tests against a built package
-commands =
-    python -m unittest {posargs}
+[tool.tox.env_run_base]
+description = "run tests against a built package under {base_python}"
+commands = [
+    ["python", "-m", "unittest", { replace = "posargs", extend = true }],
+]
 
-[testenv:profile]
-description = run profiler (use e.g. `firefox .tox/prof/output.svg` to open)
-deps =
-    -r profiler/requirements.txt
-allowlist_externals =
-    mkdir
-    dot
-commands =
-    mkdir -p "{toxworkdir}/prof"
-    python -m cProfile -o "{toxworkdir}/prof/output.pstats" profiler/profiler_script.py
-    gprof2dot -f pstats -o "{toxworkdir}/prof/output.dot" "{toxworkdir}/prof/output.pstats"
-    dot -Tsvg -o "{toxworkdir}/prof/output.svg" "{toxworkdir}/prof/output.dot"
-    python -c 'import pathlib; print("profiler svg output under file://\{0\}".format(pathlib.Path(r"{toxworkdir}") / "prof" / "output.svg"))'
+[tool.tox.env."profile"]
+description = "run profiler (use e.g. `firefox .tox/prof/output.svg` to open)"
+deps = [
+    "-r profiler/requirements.txt",
+]
+allowlist_externals = [
+    "mkdir",
+    "dot",
+]
+commands = [
+    ["mkdir", "-p", "{toxworkdir}/prof"],
+    ["python", "-m", "cProfile", "-o", "{toxworkdir}/prof/output.pstats", "profiler/profiler_script.py"],
+    ["gprof2dot", "-f", "pstats", "-o", "{toxworkdir}/prof/output.dot", "{toxworkdir}/prof/output.pstats"],
+    ["dot", "-Tsvg", "-o", "{toxworkdir}/prof/output.svg", "{toxworkdir}/prof/output.dot"],
+    ["python", "-c", 'import pathlib; print("profiler svg output under file://\{0\}".format(pathlib.Path(r"{toxworkdir}") / "prof" / "output.svg"))'],
+]
 
-[testenv:pre-commit]
-description = run linters
-skip_install = True
-deps = pre-commit
-commands = pre-commit run {posargs:--all}
+[tool.tox.env."pre-commit"]
+description = "run linters"
+skip_install = true
+deps = ["pre-commit"]
+commands = [
+    ["pre-commit", "run", { replace = "posargs", default = ["--all"], extend = true }],
+]
 
-[testenv:benchmark]
-description = run the benchmark script against a local Tomli version
-deps =
-    -r benchmark/requirements.txt
-commands =
-    python -c 'import datetime; print(datetime.date.today())'
-    python --version
-    python benchmark/run.py
+[tool.tox.env."benchmark"]
+description = "run the benchmark script against a local Tomli version"
+deps = ["-r benchmark/requirements.txt"]
+commands = [
+    ["python", "-c", "import datetime; print(datetime.date.today())"],
+    ["python", "--version"],
+    ["python", "benchmark/run.py"],
+]
 
-[testenv:benchmark-pypi]
-description = run the benchmark script against the latest Tomli in PyPI
-skip_install = True
-deps =
-    tomli
-    -r benchmark/requirements.txt
-commands =
-    python -c 'import datetime; print(datetime.date.today())'
-    python --version
-    python benchmark/run.py
+[tool.tox.env."benchmark-pypi"]
+description = "run the benchmark script against the latest Tomli in PyPI"
+skip_install = true
+deps = [
+    "tomli",
+    "-r benchmark/requirements.txt",
+]
+commands = [
+    ["python", "-c", "import datetime; print(datetime.date.today())"],
+    ["python", "--version"],
+    ["python", "benchmark/run.py"],
+]
 
-[testenv:fuzz]
-description = run the fuzzer against a local Tomli version (needs "apt install clang")
-deps =
-    -r fuzzer/requirements.txt
-allowlist_externals =
-    mkdir
-    cp
-commands =
+[tool.tox.env."fuzz"]
+description = 'run the fuzzer against a local Tomli version (needs "apt install clang")'
+deps = [
+    "-r fuzzer/requirements.txt",
+]
+allowlist_externals = [
+    "mkdir",
+    "cp",
+]
+commands = [
     # Create a folder for persistent corpus and use benchmark data as initial seed
-    mkdir -p {toxworkdir}/fuzzer-corpus
-    cp -n benchmark/data.toml {toxworkdir}/fuzzer-corpus/data.toml
+    ["mkdir", "-p", "{toxworkdir}/fuzzer-corpus"],
+    ["cp", "-n", "benchmark/data.toml", "{toxworkdir}/fuzzer-corpus/data.toml"],
     # Run fuzzer
-    python fuzzer/fuzz.py {toxworkdir}/fuzzer-corpus {posargs:-len_control=10000}
-'''
+    ["python", "fuzzer/fuzz.py", "{toxworkdir}/fuzzer-corpus", { replace = "posargs", default = ["-len_control=10000"], extend = true }],
+]
 
 
 [tool.coverage.run]
