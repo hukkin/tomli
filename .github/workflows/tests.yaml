@@ -71,6 +71,8 @@ jobs:
         coverage report --fail-under=100
     - name: Report coverage
       uses: codecov/codecov-action@v4
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
 
   allgood:
     runs-on: ubuntu-latest
