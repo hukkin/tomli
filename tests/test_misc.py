@@ -103,3 +103,12 @@ class TestMiscellaneous(unittest.TestCase):
         nest_count = 310
         recursive_table_toml = nest_count * "key = {" + nest_count * "}"
         tomllib.loads(recursive_table_toml)
+
+    def test_truncate_sub_seconds(self):
+        for t in [
+            "t = 2012-12-12T00:00:00.99999999999999Z",
+            "t = 2012-12-12T00:00:00.99999999999999",
+            "t = 00:00:00.99999999999999",
+        ]:
+            obj = tomllib.loads(t)
+            self.assertEqual(obj["t"].microsecond, 999999)

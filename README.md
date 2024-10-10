@@ -152,7 +152,7 @@ tomllib.loads("['This parses fine with Python 3.6+']")
   2.3x as fast as [toml](https://pypi.org/project/toml/)
 - outputs [basic data types](#how-do-toml-types-map-into-python-types) only
 - 100% spec compliant: passes all tests in
-  [BurntSushi/toml-test](https://github.com/BurntSushi/toml-test)
+  [toml-lang/toml-test](https://github.com/toml-lang/toml-test)
   test suite
 - thoroughly tested: 100% branch coverage
 

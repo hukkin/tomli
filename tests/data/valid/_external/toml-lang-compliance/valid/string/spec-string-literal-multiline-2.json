@@ -1,2 +1,0 @@
-{"lines":
-  {"type":"string","value":"The first newline is\ntrimmed in raw strings.\n   All other whitespace\n   is preserved.\n"}}
