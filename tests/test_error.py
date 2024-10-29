@@ -49,7 +49,9 @@ class TestError(unittest.TestCase):
         self.assertEqual(str(exc_info.exception), "Expected str object, not 'bool'")
 
     def test_module_name(self):
-        self.assertEqual(tomllib.TOMLDecodeError().__module__, tomllib.__name__)
+        self.assertEqual(
+            tomllib.TOMLDecodeError("", "", 0).__module__, tomllib.__name__
+        )
 
     def test_invalid_parse_float(self):
         def dict_returner(s: str) -> dict:
