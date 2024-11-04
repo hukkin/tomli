@@ -178,7 +178,7 @@ def loads(__s: str, *, parse_float: ParseFloat = float) -> dict[str, Any]:  # no
                 pos, header = create_dict_rule(src, pos, out)
             pos = skip_chars(src, pos, TOML_WS)
         elif char != "#":
-            raise TOMLDecodeError(msg="Invalid statement", doc=src, pos=pos)
+            raise TOMLDecodeError("Invalid statement", src, pos)
 
         # 3. Skip comment
         pos = skip_comment(src, pos)
@@ -190,9 +190,7 @@ def loads(__s: str, *, parse_float: ParseFloat = float) -> dict[str, Any]:  # no
             break
         if char != "\n":
             raise TOMLDecodeError(
-                msg="Expected newline or end of document after a statement",
-                doc=src,
-                pos=pos,
+                "Expected newline or end of document after a statement", src, pos
             )
         pos += 1
 
@@ -318,16 +316,12 @@ def skip_until(
     except ValueError:
         new_pos = len(src)
         if error_on_eof:
-            raise TOMLDecodeError(
-                msg=f"Expected {expect!r}", doc=src, pos=new_pos
-            ) from None
+            raise TOMLDecodeError(f"Expected {expect!r}", src, new_pos) from None
 
     if not error_on.isdisjoint(src[pos:new_pos]):
         while src[pos] not in error_on:
             pos += 1
-        raise TOMLDecodeError(
-            msg=f"Found invalid character {src[pos]!r}", doc=src, pos=pos
-        )
+        raise TOMLDecodeError(f"Found invalid character {src[pos]!r}", src, pos)
     return new_pos
 
 
@@ -358,18 +352,16 @@ def create_dict_rule(src: str, pos: Pos, out: Output) -> tuple[Pos, Key]:
     pos, key = parse_key(src, pos)
 
     if out.flags.is_(key, Flags.EXPLICIT_NEST) or out.flags.is_(key, Flags.FROZEN):
-        raise TOMLDecodeError(msg=f"Cannot declare {key} twice", doc=src, pos=pos)
+        raise TOMLDecodeError(f"Cannot declare {key} twice", src, pos)
     out.flags.set(key, Flags.EXPLICIT_NEST, recursive=False)
     try:
         out.data.get_or_create_nest(key)
     except KeyError:
-        raise TOMLDecodeError(
-            msg="Cannot overwrite a value", doc=src, pos=pos
-        ) from None
+        raise TOMLDecodeError("Cannot overwrite a value", src, pos) from None
 
     if not src.startswith("]", pos):
         raise TOMLDecodeError(
-            msg="Expected ']' at the end of a table declaration", doc=src, pos=pos
+            "Expected ']' at the end of a table declaration", src, pos
         )
     return pos + 1, key
 
@@ -380,9 +372,7 @@ def create_list_rule(src: str, pos: Pos, out: Output) -> tuple[Pos, Key]:
     pos, key = parse_key(src, pos)
 
     if out.flags.is_(key, Flags.FROZEN):
-        raise TOMLDecodeError(
-            msg=f"Cannot mutate immutable namespace {key}", doc=src, pos=pos
-        )
+        raise TOMLDecodeError(f"Cannot mutate immutable namespace {key}", src, pos)
     # Free the namespace now that it points to another empty list item...
     out.flags.unset_all(key)
     # ...but this key precisely is still prohibited from table declaration
@@ -390,13 +380,11 @@ def create_list_rule(src: str, pos: Pos, out: Output) -> tuple[Pos, Key]:
     try:
         out.data.append_nest_to_list(key)
     except KeyError:
-        raise TOMLDecodeError(
-            msg="Cannot overwrite a value", doc=src, pos=pos
-        ) from None
+        raise TOMLDecodeError("Cannot overwrite a value", src, pos) from None
 
     if not src.startswith("]]", pos):
         raise TOMLDecodeError(
-            msg="Expected ']]' at the end of an array declaration", doc=src, pos=pos
+            "Expected ']]' at the end of an array declaration", src, pos
         )
     return pos + 2, key
 
@@ -412,26 +400,22 @@ def key_value_rule(
     for cont_key in relative_path_cont_keys:
         # Check that dotted key syntax does not redefine an existing table
         if out.flags.is_(cont_key, Flags.EXPLICIT_NEST):
-            raise TOMLDecodeError(
-                msg=f"Cannot redefine namespace {cont_key}", doc=src, pos=pos
-            )
+            raise TOMLDecodeError(f"Cannot redefine namespace {cont_key}", src, pos)
         # Containers in the relative path can't be opened with the table syntax or
         # dotted key/value syntax in following table sections.
         out.flags.add_pending(cont_key, Flags.EXPLICIT_NEST)
 
     if out.flags.is_(abs_key_parent, Flags.FROZEN):
         raise TOMLDecodeError(
-            msg=f"Cannot mutate immutable namespace {abs_key_parent}", doc=src, pos=pos
+            f"Cannot mutate immutable namespace {abs_key_parent}", src, pos
         )
 
     try:
         nest = out.data.get_or_create_nest(abs_key_parent)
     except KeyError:
-        raise TOMLDecodeError(
-            msg="Cannot overwrite a value", doc=src, pos=pos
-        ) from None
+        raise TOMLDecodeError("Cannot overwrite a value", src, pos) from None
     if key_stem in nest:
-        raise TOMLDecodeError(msg="Cannot overwrite a value", doc=src, pos=pos)
+        raise TOMLDecodeError("Cannot overwrite a value", src, pos)
     # Mark inline table and array namespaces recursively immutable
     if isinstance(value, (dict, list)):
         out.flags.set(header + key, Flags.FROZEN, recursive=True)
@@ -448,9 +432,7 @@ def parse_key_value_pair(
     except IndexError:
         char = None
     if char != "=":
-        raise TOMLDecodeError(
-            msg="Expected '=' after a key in a key/value pair", doc=src, pos=pos
-        )
+        raise TOMLDecodeError("Expected '=' after a key in a key/value pair", src, pos)
     pos += 1
     pos = skip_chars(src, pos, TOML_WS)
     pos, value = parse_value(src, pos, parse_float)
@@ -488,9 +470,7 @@ def parse_key_part(src: str, pos: Pos) -> tuple[Pos, str]:
         return parse_literal_str(src, pos)
     if char == '"':
         return parse_one_line_basic_str(src, pos)
-    raise TOMLDecodeError(
-        msg="Invalid initial character for a key part", doc=src, pos=pos
-    )
+    raise TOMLDecodeError("Invalid initial character for a key part", src, pos)
 
 
 def parse_one_line_basic_str(src: str, pos: Pos) -> tuple[Pos, str]:
@@ -514,7 +494,7 @@ def parse_array(src: str, pos: Pos, parse_float: ParseFloat) -> tuple[Pos, list]
         if c == "]":
             return pos + 1, array
         if c != ",":
-            raise TOMLDecodeError(msg="Unclosed array", doc=src, pos=pos)
+            raise TOMLDecodeError("Unclosed array", src, pos)
         pos += 1
 
         pos = skip_comments_and_array_ws(src, pos)
@@ -534,26 +514,20 @@ def parse_inline_table(src: str, pos: Pos, parse_float: ParseFloat) -> tuple[Pos
         pos, key, value = parse_key_value_pair(src, pos, parse_float)
         key_parent, key_stem = key[:-1], key[-1]
         if flags.is_(key, Flags.FROZEN):
-            raise TOMLDecodeError(
-                msg=f"Cannot mutate immutable namespace {key}", doc=src, pos=pos
-            )
+            raise TOMLDecodeError(f"Cannot mutate immutable namespace {key}", src, pos)
         try:
             nest = nested_dict.get_or_create_nest(key_parent, access_lists=False)
         except KeyError:
-            raise TOMLDecodeError(
-                msg="Cannot overwrite a value", doc=src, pos=pos
-            ) from None
+            raise TOMLDecodeError("Cannot overwrite a value", src, pos) from None
         if key_stem in nest:
-            raise TOMLDecodeError(
-                msg=f"Duplicate inline table key {key_stem!r}", doc=src, pos=pos
-            )
+            raise TOMLDecodeError(f"Duplicate inline table key {key_stem!r}", src, pos)
         nest[key_stem] = value
         pos = skip_chars(src, pos, TOML_WS)
         c = src[pos : pos + 1]
         if c == "}":
             return pos + 1, nested_dict.dict
         if c != ",":
-            raise TOMLDecodeError(msg="Unclosed inline table", doc=src, pos=pos)
+            raise TOMLDecodeError("Unclosed inline table", src, pos)
         if isinstance(value, (dict, list)):
             flags.set(key, Flags.FROZEN, recursive=True)
         pos += 1
@@ -575,9 +549,7 @@ def parse_basic_str_escape(
             except IndexError:
                 return pos, ""
             if char != "\n":
-                raise TOMLDecodeError(
-                    msg="Unescaped '\\' in a string", doc=src, pos=pos
-                )
+                raise TOMLDecodeError("Unescaped '\\' in a string", src, pos)
             pos += 1
         pos = skip_chars(src, pos, TOML_WS_AND_NEWLINE)
         return pos, ""
@@ -588,9 +560,7 @@ def parse_basic_str_escape(
     try:
         return pos, BASIC_STR_ESCAPE_REPLACEMENTS[escape_id]
     except KeyError:
-        raise TOMLDecodeError(
-            msg="Unescaped '\\' in a string", doc=src, pos=pos
-        ) from None
+        raise TOMLDecodeError("Unescaped '\\' in a string", src, pos) from None
 
 
 def parse_basic_str_escape_multiline(src: str, pos: Pos) -> tuple[Pos, str]:
@@ -600,12 +570,12 @@ def parse_basic_str_escape_multiline(src: str, pos: Pos) -> tuple[Pos, str]:
 def parse_hex_char(src: str, pos: Pos, hex_len: int) -> tuple[Pos, str]:
     hex_str = src[pos : pos + hex_len]
     if len(hex_str) != hex_len or not HEXDIGIT_CHARS.issuperset(hex_str):
-        raise TOMLDecodeError(msg="Invalid hex value", doc=src, pos=pos)
+        raise TOMLDecodeError("Invalid hex value", src, pos)
     pos += hex_len
     hex_int = int(hex_str, 16)
     if not is_unicode_scalar_value(hex_int):
         raise TOMLDecodeError(
-            msg="Escaped character is not a Unicode scalar value", doc=src, pos=pos
+            "Escaped character is not a Unicode scalar value", src, pos
         )
     return pos, chr(hex_int)
 
@@ -663,7 +633,7 @@ def parse_basic_str(src: str, pos: Pos, *, multiline: bool) -> tuple[Pos, str]:
         try:
             char = src[pos]
         except IndexError:
-            raise TOMLDecodeError(msg="Unterminated string", doc=src, pos=pos) from None
+            raise TOMLDecodeError("Unterminated string", src, pos) from None
         if char == '"':
             if not multiline:
                 return pos + 1, result + src[start_pos:pos]
@@ -678,7 +648,7 @@ def parse_basic_str(src: str, pos: Pos, *, multiline: bool) -> tuple[Pos, str]:
             start_pos = pos
             continue
         if char in error_on:
-            raise TOMLDecodeError(msg=f"Illegal character {char!r}", doc=src, pos=pos)
+            raise TOMLDecodeError(f"Illegal character {char!r}", src, pos)
         pos += 1
 
 
@@ -726,9 +696,7 @@ def parse_value(  # noqa: C901
         try:
             datetime_obj = match_to_datetime(datetime_match)
         except ValueError as e:
-            raise TOMLDecodeError(
-                msg="Invalid date or datetime", doc=src, pos=pos
-            ) from e
+            raise TOMLDecodeError("Invalid date or datetime", src, pos) from e
         return datetime_match.end(), datetime_obj
     localtime_match = RE_LOCALTIME.match(src, pos)
     if localtime_match:
@@ -749,7 +717,7 @@ def parse_value(  # noqa: C901
     if first_four in {"-inf", "+inf", "-nan", "+nan"}:
         return pos + 4, parse_float(first_four)
 
-    raise TOMLDecodeError(msg="Invalid value", doc=src, pos=pos)
+    raise TOMLDecodeError("Invalid value", src, pos)
 
 
 def is_unicode_scalar_value(codepoint: int) -> bool:
