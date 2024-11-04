@@ -50,6 +50,10 @@ BASIC_STR_ESCAPE_REPLACEMENTS = MappingProxyType(
     }
 )
 
+# Sentinel to be used as default arg during deprecation period of
+# TOMLDecodeError's free-form arguments
+_DEFAULT = object()
+
 
 class TOMLDecodeError(ValueError):
     """An error raised if a document is not valid TOML.
@@ -64,27 +68,31 @@ class TOMLDecodeError(ValueError):
 
     def __init__(
         self,
+        msg: str = _DEFAULT,  # type: ignore[assignment]
+        doc: str = _DEFAULT,  # type: ignore[assignment]
+        pos: Pos = _DEFAULT,  # type: ignore[assignment]
         *args: Any,
-        msg: str | None = None,
-        doc: str | None = None,
-        pos: Pos | None = None,
     ):
-        if args:
+        if (
+            args
+            or not isinstance(msg, str)
+            or not isinstance(doc, str)
+            or not isinstance(pos, int)
+        ):
             warnings.warn(
-                "Positional arguments are deprecated. "
-                "Please set 'msg', 'doc' and 'pos' keyword arguments.",
+                "Free-form arguments for TOMLDecodeError are deprecated. "
+                "Please set 'msg' (str), 'doc' (str) and 'pos' (int) arguments only.",
                 DeprecationWarning,
                 stacklevel=2,
             )
+            if pos is not _DEFAULT:
+                args = pos, *args
+            if doc is not _DEFAULT:
+                args = doc, *args
+            if msg is not _DEFAULT:
+                args = msg, *args
             ValueError.__init__(self, *args)
             return
-
-        if msg is None:
-            raise TypeError("'msg' keyword argument must be provided and of type 'str'")
-        if doc is None:
-            raise TypeError("'doc' keyword argument must be provided and of type 'str'")
-        if pos is None:
-            raise TypeError("'pos' keyword argument must be provided and of type 'int'")
 
         lineno = doc.count("\n", 0, pos) + 1
         if lineno == 1:
