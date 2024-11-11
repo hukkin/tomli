@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.1.0
+
+- Deprecated
+  - Instantiating `TOMLDecodeError` with free-form arguments.
+    `msg`, `doc` and `pos` arguments should be given.
+- Added
+  - `msg`, `doc`, `pos`, `lineno` and `colno` attributes to `TOMLDecodeError`
+
 ## 2.0.2
 
 - Removed
