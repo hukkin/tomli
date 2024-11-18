@@ -16,7 +16,7 @@ jobs:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5
       with:
-        python-version: '3.8'
+        python-version: '3.11'
 
     - name: Install pre-commit
       run: |
@@ -26,7 +26,7 @@ jobs:
       # pre-commit also runs in pre-commit.ci, but let's have it here too
       # to block `pypi-publish` job from triggering if pre-commit fails
       run: |
-        pre-commit run -a
+        pre-commit run --all-files
 
   tests:
     runs-on: ${{ matrix.os }}

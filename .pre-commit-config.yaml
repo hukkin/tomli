@@ -6,7 +6,7 @@ repos:
     files: '^src/.+\.py$|^tests/.+\.py$'
     args: ['--license-filepath', 'LICENSE-HEADER']
 - repo: https://github.com/executablebooks/mdformat
-  rev: 08fba30538869a440b5059de90af03e3502e35fb  # frozen: 0.7.17
+  rev: 00812cd1850e41aae5c0916645b4b7404f538e8c  # frozen: 0.7.19
   hooks:
   - id: mdformat
     additional_dependencies:
@@ -32,11 +32,11 @@ repos:
   hooks:
   - id: isort
 - repo: https://github.com/psf/black
-  rev: b965c2a5026f8ba399283ba3e01898b012853c79  # frozen: 24.8.0
+  rev: 1b2427a2b785cc4aac97c19bb4b9a0de063f9547  # frozen: 24.10.0
   hooks:
   - id: black
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: 2c9f875913ee60ca25ce70243dc24d5b6415598c  # frozen: v4.6.0
+  rev: cef0300fd0fc4d2a87a85fa2093c6b283ea36f4b  # frozen: v5.0.0
   hooks:
   - id: check-yaml
 - repo: https://github.com/pre-commit/pygrep-hooks
@@ -54,7 +54,7 @@ repos:
     - flake8-builtins
     - flake8-comprehensions
 - repo: https://github.com/pre-commit/mirrors-mypy
-  rev: d4911cfb7f1010759fde68da196036feeb25b99d  # frozen: v1.11.2
+  rev: f56614daa94d5cd733d3b7004c5df9caad267b4a  # frozen: v1.13.0
   hooks:
   - id: mypy
     args: ["--scripts-are-modules"]
