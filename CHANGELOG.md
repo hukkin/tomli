@@ -140,7 +140,7 @@
 ## 0.2.5
 
 - Fixed
-  - Made exception type `TOMLDecodeError` when  overwriting a value with a deeply nested table
+  - Made exception type `TOMLDecodeError` when overwriting a value with a deeply nested table
 
 ## 0.2.4
 
