@@ -89,10 +89,14 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+
     - name: Switch build backend to setuptools
       run: |
-        sed -i 's/requires = \["flit_core.\+]/requires = ["setuptools>=69", "mypy[mypyc]>=1.13"]/g' pyproject.toml
-        sed -i 's/build-backend = "flit_core\.buildapi"/build-backend = "setuptools.build_meta"/g' pyproject.toml
+        pip install -r scripts/requirements.txt
+        python scripts/use_setuptools.py
 
     - name: Build wheels
       uses: pypa/cibuildwheel@v2.22.0
@@ -136,10 +140,14 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+
     - name: Switch build backend to setuptools
       run: |
-        sed -i 's/requires = \["flit_core.\+]/requires = ["setuptools>=69", "mypy[mypyc]>=1.13"]/g' pyproject.toml
-        sed -i 's/build-backend = "flit_core\.buildapi"/build-backend = "setuptools.build_meta"/g' pyproject.toml
+        pip install -r scripts/requirements.txt
+        python scripts/use_setuptools.py
 
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
