@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.2.0
+
+- Added
+  - mypyc generated binary wheels for common platforms
+
 ## 2.1.0
 
 - Deprecated
