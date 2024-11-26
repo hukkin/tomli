@@ -33,9 +33,13 @@ class TestMiscellaneous(unittest.TestCase):
             with open(file_path, "r") as txt_f:
                 with self.assertRaises(TypeError) as exc_info:
                     tomllib.load(txt_f)  # type: ignore[arg-type]
-            self.assertEqual(
+            # Mypyc extension leads to different message than pure Python
+            self.assertIn(
                 str(exc_info.exception),
-                "File must be opened in binary mode, e.g. use `open('foo.toml', 'rb')`",
+                (
+                    "File must be opened in binary mode, e.g. use `open('foo.toml', 'rb')`",  # noqa: E501
+                    "bytes object expected; got str",
+                ),
             )
 
     def test_parse_float(self):

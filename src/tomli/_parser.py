@@ -7,7 +7,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 import string
 from types import MappingProxyType
-from typing import IO, Any, NamedTuple
+from typing import IO, Any, Final, NamedTuple
 import warnings
 
 from ._re import (
@@ -69,9 +69,9 @@ class TOMLDecodeError(ValueError):
 
     def __init__(
         self,
-        msg: str = DEPRECATED_DEFAULT,  # type: ignore[assignment]
-        doc: str = DEPRECATED_DEFAULT,  # type: ignore[assignment]
-        pos: Pos = DEPRECATED_DEFAULT,  # type: ignore[assignment]
+        msg: str | type[DEPRECATED_DEFAULT] = DEPRECATED_DEFAULT,
+        doc: str | type[DEPRECATED_DEFAULT] = DEPRECATED_DEFAULT,
+        pos: Pos | type[DEPRECATED_DEFAULT] = DEPRECATED_DEFAULT,
         *args: Any,
     ):
         if (
@@ -86,11 +86,11 @@ class TOMLDecodeError(ValueError):
                 DeprecationWarning,
                 stacklevel=2,
             )
-            if pos is not DEPRECATED_DEFAULT:  # type: ignore[comparison-overlap]
+            if pos is not DEPRECATED_DEFAULT:
                 args = pos, *args
-            if doc is not DEPRECATED_DEFAULT:  # type: ignore[comparison-overlap]
+            if doc is not DEPRECATED_DEFAULT:
                 args = doc, *args
-            if msg is not DEPRECATED_DEFAULT:  # type: ignore[comparison-overlap]
+            if msg is not DEPRECATED_DEFAULT:
                 args = msg, *args
             ValueError.__init__(self, *args)
             return
@@ -202,10 +202,10 @@ class Flags:
     """Flags that map to parsed keys/namespaces."""
 
     # Marks an immutable namespace (inline array or inline table).
-    FROZEN = 0
+    FROZEN: Final = 0
     # Marks a nest that has been explicitly created and can no longer
     # be opened using the "[table]" syntax.
-    EXPLICIT_NEST = 1
+    EXPLICIT_NEST: Final = 1
 
     def __init__(self) -> None:
         self._flags: dict[str, dict] = {}
@@ -251,8 +251,8 @@ class Flags:
             cont = inner_cont["nested"]
         key_stem = key[-1]
         if key_stem in cont:
-            cont = cont[key_stem]
-            return flag in cont["flags"] or flag in cont["recursive_flags"]
+            inner_cont = cont[key_stem]
+            return flag in inner_cont["flags"] or flag in inner_cont["recursive_flags"]
         return False
 
 
