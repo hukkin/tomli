@@ -675,7 +675,7 @@ def parse_value(  # noqa: C901
     if nest_lvl > MAX_INLINE_NESTING:
         # Pure Python should have raised RecursionError already.
         # This ensures mypyc binaries eventually do the same.
-        raise RecursionError(
+        raise RecursionError(  # pragma: no cover
             "TOML inline arrays/tables are nested more than the allowed"
             f" {MAX_INLINE_NESTING} levels"
         )
