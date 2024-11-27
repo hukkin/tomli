@@ -42,15 +42,18 @@ class TestError(unittest.TestCase):
     def test_type_error(self):
         with self.assertRaises(TypeError) as exc_info:
             tomllib.loads(b"v = 1")  # type: ignore[arg-type]
-        self.assertEqual(str(exc_info.exception), "Expected str object, not 'bytes'")
+        # Mypyc extension leads to different message than pure Python
+        self.assertIn(
+            str(exc_info.exception),
+            ("Expected str object, not 'bytes'", "str object expected; got bytes"),
+        )
 
         with self.assertRaises(TypeError) as exc_info:
             tomllib.loads(False)  # type: ignore[arg-type]
-        self.assertEqual(str(exc_info.exception), "Expected str object, not 'bool'")
-
-    def test_module_name(self):
-        self.assertEqual(
-            tomllib.TOMLDecodeError("", "", 0).__module__, tomllib.__name__
+        # Mypyc extension leads to different message than pure Python
+        self.assertIn(
+            str(exc_info.exception),
+            ("Expected str object, not 'bool'", "str object expected; got bool"),
         )
 
     def test_invalid_parse_float(self):

@@ -6,6 +6,7 @@ import copy
 import datetime
 from decimal import Decimal as D
 from pathlib import Path
+import sys
 import tempfile
 import unittest
 
@@ -33,9 +34,13 @@ class TestMiscellaneous(unittest.TestCase):
             with open(file_path, "r") as txt_f:
                 with self.assertRaises(TypeError) as exc_info:
                     tomllib.load(txt_f)  # type: ignore[arg-type]
-            self.assertEqual(
+            # Mypyc extension leads to different message than pure Python
+            self.assertIn(
                 str(exc_info.exception),
-                "File must be opened in binary mode, e.g. use `open('foo.toml', 'rb')`",
+                (
+                    "File must be opened in binary mode, e.g. use `open('foo.toml', 'rb')`",  # noqa: E501
+                    "bytes object expected; got str",
+                ),
             )
 
     def test_parse_float(self):
@@ -99,7 +104,27 @@ class TestMiscellaneous(unittest.TestCase):
         recursive_array_toml = "arr = " + nest_count * "[" + nest_count * "]"
         tomllib.loads(recursive_array_toml)
 
+        nest_count = sys.getrecursionlimit() + 2
+        recursive_array_toml = "arr = " + nest_count * "[" + nest_count * "]"
+        with self.assertRaisesRegex(
+            RecursionError,
+            r"maximum recursion depth exceeded"
+            r"|"
+            r"TOML inline arrays/tables are nested more than the allowed [0-9]+ levels",
+        ):
+            tomllib.loads(recursive_array_toml)
+
     def test_inline_table_recursion_limit(self):
         nest_count = 310
         recursive_table_toml = nest_count * "key = {" + nest_count * "}"
         tomllib.loads(recursive_table_toml)
+
+        nest_count = sys.getrecursionlimit() + 2
+        recursive_table_toml = nest_count * "key = {" + nest_count * "}"
+        with self.assertRaisesRegex(
+            RecursionError,
+            r"maximum recursion depth exceeded"
+            r"|"
+            r"TOML inline arrays/tables are nested more than the allowed [0-9]+ levels",
+        ):
+            tomllib.loads(recursive_table_toml)

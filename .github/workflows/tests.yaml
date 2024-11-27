@@ -7,6 +7,11 @@ on:
   pull_request:
     branches: [ master ]
 
+env:
+  CIBW_TEST_COMMAND: python -m unittest discover --start-directory {project}
+  CIBW_SKIP: pp*
+  CIBW_ENVIRONMENT_PASS_LINUX: TOMLI_USE_MYPYC
+
 jobs:
 
   linters:
@@ -74,12 +79,102 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
 
+  binary-wheels-standard:
+    name: Binary wheels for ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-') && 'Windows' || 'Linux' }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+
+    - name: Switch build backend to setuptools
+      run: |
+        pip install -r scripts/requirements.txt
+        python scripts/use_setuptools.py
+
+    - name: Build wheels
+      uses: pypa/cibuildwheel@v2.22.0
+      env:
+        CIBW_ARCHS_MACOS: x86_64 arm64
+        TOMLI_USE_MYPYC: '1'
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: artifact-standard-${{ matrix.os }}
+        path: wheelhouse/*.whl
+        if-no-files-found: error
+
+  pure-python-wheel-and-sdist:
+    name: Build a pure Python wheel and source distribution
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install build dependencies
+      run: pip install build
+
+    - name: Build
+      run: python -m build
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: artifact-pure-python
+        path: dist/*
+        if-no-files-found: error
+
+  binary-wheels-arm:
+    name: Build Linux wheels for ARM
+    runs-on: ubuntu-latest
+    # Very slow (~ 1 hour), no need to run on PRs
+    if: >
+      github.event_name == 'push'
+      &&
+      (github.ref == 'refs/heads/master' || startsWith(github.event.ref, 'refs/tags'))
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+
+    - name: Switch build backend to setuptools
+      run: |
+        pip install -r scripts/requirements.txt
+        python scripts/use_setuptools.py
+
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+      with:
+        platforms: arm64
+
+    - name: Build wheels
+      uses: pypa/cibuildwheel@v2.22.0
+      env:
+        CIBW_ARCHS_LINUX: aarch64
+        TOMLI_USE_MYPYC: '1'
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: artifact-arm-linux
+        path: wheelhouse/*.whl
+        if-no-files-found: error
+
   allgood:
     runs-on: ubuntu-latest
     needs:
     - tests
     - coverage
     - linters
+    - binary-wheels-standard
+    - pure-python-wheel-and-sdist
+    - binary-wheels-arm
     steps:
     - run: echo "Great success!"
 
@@ -89,19 +184,20 @@ jobs:
     if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/download-artifact@v4
+      with:
+        path: dist
+        pattern: artifact-*
+        merge-multiple: true
     - uses: actions/setup-python@v5
       with:
         python-version: '3.x'
-    - name: Install build and publish tools
+    - name: Install twine
       run: |
-        pip install build twine
-    - name: Build and check
+        pip install twine
+    - name: Check and publish
       run: |
-        rm -rf dist/ && python -m build
         twine check --strict dist/*
-    - name: Publish
-      run: |
         twine upload dist/*
       env:
         TWINE_USERNAME: __token__
