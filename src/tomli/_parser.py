@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 import string
+import sys
 from types import MappingProxyType
 from typing import IO, Any, Final, NamedTuple
 import warnings
@@ -19,6 +20,17 @@ from ._re import (
     match_to_number,
 )
 from ._types import Key, ParseFloat, Pos
+
+# Inline tables/arrays are implemented using recursion. Pathologically
+# nested documents cause pure Python to raise RecursionError (which is OK),
+# but mypyc binary wheels will crash unrecoverably (not OK). According to
+# mypyc docs this will be fixed in the future:
+# https://mypyc.readthedocs.io/en/latest/differences_from_python.html#stack-overflows
+# Before mypyc's fix is in, recursion needs to be limited by this library.
+# Choosing `sys.getrecursionlimit()` as maximum inline table/array nesting
+# level, as it allows more nesting than pure Python, but still seems a far
+# lower number than where mypyc binaries crash.
+MAX_INLINE_NESTING: Final = sys.getrecursionlimit()
 
 ASCII_CTRL = frozenset(chr(i) for i in range(32)) | frozenset(chr(127))
 
@@ -393,7 +405,7 @@ def create_list_rule(src: str, pos: Pos, out: Output) -> tuple[Pos, Key]:
 def key_value_rule(
     src: str, pos: Pos, out: Output, header: Key, parse_float: ParseFloat
 ) -> Pos:
-    pos, key, value = parse_key_value_pair(src, pos, parse_float)
+    pos, key, value = parse_key_value_pair(src, pos, parse_float, nest_lvl=0)
     key_parent, key_stem = key[:-1], key[-1]
     abs_key_parent = header + key_parent
 
@@ -425,7 +437,7 @@ def key_value_rule(
 
 
 def parse_key_value_pair(
-    src: str, pos: Pos, parse_float: ParseFloat
+    src: str, pos: Pos, parse_float: ParseFloat, nest_lvl: int
 ) -> tuple[Pos, Key, Any]:
     pos, key = parse_key(src, pos)
     try:
@@ -436,7 +448,7 @@ def parse_key_value_pair(
         raise TOMLDecodeError("Expected '=' after a key in a key/value pair", src, pos)
     pos += 1
     pos = skip_chars(src, pos, TOML_WS)
-    pos, value = parse_value(src, pos, parse_float)
+    pos, value = parse_value(src, pos, parse_float, nest_lvl)
     return pos, key, value
 
 
@@ -479,7 +491,9 @@ def parse_one_line_basic_str(src: str, pos: Pos) -> tuple[Pos, str]:
     return parse_basic_str(src, pos, multiline=False)
 
 
-def parse_array(src: str, pos: Pos, parse_float: ParseFloat) -> tuple[Pos, list]:
+def parse_array(
+    src: str, pos: Pos, parse_float: ParseFloat, nest_lvl: int
+) -> tuple[Pos, list]:
     pos += 1
     array: list = []
 
@@ -487,7 +501,7 @@ def parse_array(src: str, pos: Pos, parse_float: ParseFloat) -> tuple[Pos, list]
     if src.startswith("]", pos):
         return pos + 1, array
     while True:
-        pos, val = parse_value(src, pos, parse_float)
+        pos, val = parse_value(src, pos, parse_float, nest_lvl)
         array.append(val)
         pos = skip_comments_and_array_ws(src, pos)
 
@@ -503,7 +517,9 @@ def parse_array(src: str, pos: Pos, parse_float: ParseFloat) -> tuple[Pos, list]
             return pos + 1, array
 
 
-def parse_inline_table(src: str, pos: Pos, parse_float: ParseFloat) -> tuple[Pos, dict]:
+def parse_inline_table(
+    src: str, pos: Pos, parse_float: ParseFloat, nest_lvl: int
+) -> tuple[Pos, dict]:
     pos += 1
     nested_dict = NestedDict()
     flags = Flags()
@@ -512,7 +528,7 @@ def parse_inline_table(src: str, pos: Pos, parse_float: ParseFloat) -> tuple[Pos
     if src.startswith("}", pos):
         return pos + 1, nested_dict.dict
     while True:
-        pos, key, value = parse_key_value_pair(src, pos, parse_float)
+        pos, key, value = parse_key_value_pair(src, pos, parse_float, nest_lvl)
         key_parent, key_stem = key[:-1], key[-1]
         if flags.is_(key, Flags.FROZEN):
             raise TOMLDecodeError(f"Cannot mutate immutable namespace {key}", src, pos)
@@ -654,8 +670,16 @@ def parse_basic_str(src: str, pos: Pos, *, multiline: bool) -> tuple[Pos, str]:
 
 
 def parse_value(  # noqa: C901
-    src: str, pos: Pos, parse_float: ParseFloat
+    src: str, pos: Pos, parse_float: ParseFloat, nest_lvl: int
 ) -> tuple[Pos, Any]:
+    if nest_lvl > MAX_INLINE_NESTING:
+        # Pure Python should have raised RecursionError already.
+        # This ensures mypyc binaries eventually do the same.
+        raise RecursionError(
+            "TOML inline arrays/tables are nested more than the allowed"
+            f" {MAX_INLINE_NESTING} levels"
+        )
+
     try:
         char: str | None = src[pos]
     except IndexError:
@@ -685,11 +709,11 @@ def parse_value(  # noqa: C901
 
     # Arrays
     if char == "[":
-        return parse_array(src, pos, parse_float)
+        return parse_array(src, pos, parse_float, nest_lvl + 1)
 
     # Inline tables
     if char == "{":
-        return parse_inline_table(src, pos, parse_float)
+        return parse_inline_table(src, pos, parse_float, nest_lvl + 1)
 
     # Dates and times
     datetime_match = RE_DATETIME.match(src, pos)
