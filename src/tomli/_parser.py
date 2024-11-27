@@ -32,25 +32,25 @@ from ._types import Key, ParseFloat, Pos
 # lower number than where mypyc binaries crash.
 MAX_INLINE_NESTING: Final = sys.getrecursionlimit()
 
-ASCII_CTRL = frozenset(chr(i) for i in range(32)) | frozenset(chr(127))
+ASCII_CTRL: Final = frozenset(chr(i) for i in range(32)) | frozenset(chr(127))
 
 # Neither of these sets include quotation mark or backslash. They are
 # currently handled as separate cases in the parser functions.
-ILLEGAL_BASIC_STR_CHARS = ASCII_CTRL - frozenset("\t")
-ILLEGAL_MULTILINE_BASIC_STR_CHARS = ASCII_CTRL - frozenset("\t\n")
+ILLEGAL_BASIC_STR_CHARS: Final = ASCII_CTRL - frozenset("\t")
+ILLEGAL_MULTILINE_BASIC_STR_CHARS: Final = ASCII_CTRL - frozenset("\t\n")
 
-ILLEGAL_LITERAL_STR_CHARS = ILLEGAL_BASIC_STR_CHARS
-ILLEGAL_MULTILINE_LITERAL_STR_CHARS = ILLEGAL_MULTILINE_BASIC_STR_CHARS
+ILLEGAL_LITERAL_STR_CHARS: Final = ILLEGAL_BASIC_STR_CHARS
+ILLEGAL_MULTILINE_LITERAL_STR_CHARS: Final = ILLEGAL_MULTILINE_BASIC_STR_CHARS
 
-ILLEGAL_COMMENT_CHARS = ILLEGAL_BASIC_STR_CHARS
+ILLEGAL_COMMENT_CHARS: Final = ILLEGAL_BASIC_STR_CHARS
 
-TOML_WS = frozenset(" \t")
-TOML_WS_AND_NEWLINE = TOML_WS | frozenset("\n")
-BARE_KEY_CHARS = frozenset(string.ascii_letters + string.digits + "-_")
-KEY_INITIAL_CHARS = BARE_KEY_CHARS | frozenset("\"'")
-HEXDIGIT_CHARS = frozenset(string.hexdigits)
+TOML_WS: Final = frozenset(" \t")
+TOML_WS_AND_NEWLINE: Final = TOML_WS | frozenset("\n")
+BARE_KEY_CHARS: Final = frozenset(string.ascii_letters + string.digits + "-_")
+KEY_INITIAL_CHARS: Final = BARE_KEY_CHARS | frozenset("\"'")
+HEXDIGIT_CHARS: Final = frozenset(string.hexdigits)
 
-BASIC_STR_ESCAPE_REPLACEMENTS = MappingProxyType(
+BASIC_STR_ESCAPE_REPLACEMENTS: Final = MappingProxyType(
     {
         "\\b": "\u0008",  # backspace
         "\\t": "\u0009",  # tab

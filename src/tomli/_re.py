@@ -7,16 +7,18 @@ from __future__ import annotations
 from datetime import date, datetime, time, timedelta, timezone, tzinfo
 from functools import lru_cache
 import re
-from typing import Any
+from typing import Any, Final
 
 from ._types import ParseFloat
 
 # E.g.
 # - 00:32:00.999999
 # - 00:32:00
-_TIME_RE_STR = r"([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])(?:\.([0-9]{1,6})[0-9]*)?"
+_TIME_RE_STR: Final = (
+    r"([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])(?:\.([0-9]{1,6})[0-9]*)?"
+)
 
-RE_NUMBER = re.compile(
+RE_NUMBER: Final = re.compile(
     r"""
 0
 (?:
@@ -35,8 +37,8 @@ RE_NUMBER = re.compile(
 """,
     flags=re.VERBOSE,
 )
-RE_LOCALTIME = re.compile(_TIME_RE_STR)
-RE_DATETIME = re.compile(
+RE_LOCALTIME: Final = re.compile(_TIME_RE_STR)
+RE_DATETIME: Final = re.compile(
     rf"""
 ([0-9]{{4}})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])  # date, e.g. 1988-10-27
 (?:
