@@ -24,6 +24,8 @@
   - [Is there a `dumps`, `write` or `encode` function?](#is-there-a-dumps-write-or-encode-function)
   - [How do TOML types map into Python types?](#how-do-toml-types-map-into-python-types)
 - [Performance](#performance)
+  - [Pure Python](#pure-python)
+  - [Mypyc generated wheel](#mypyc-generated-wheel)
 
 <!-- mdformat-toc end -->
 
@@ -38,6 +40,11 @@ via [PEP 680](https://www.python.org/dev/peps/pep-0680/).
 Tomli continues to provide a backport on PyPI for Python versions
 where the standard library module is not available
 and that have not yet reached their end-of-life.
+
+Tomli uses [mypyc](https://github.com/mypyc/mypyc)
+to generate binary wheels for most of the widely used platforms,
+so Python 3.11+ users may prefer it over `tomllib` for improved performance.
+Pure Python wheels are available on any platform and should perform the same as `tomllib`.
 
 ## Installation<a name="installation"></a>
 
@@ -147,9 +154,9 @@ tomllib.loads("['This parses fine with Python 3.6+']")
 
 - it's lil'
 - pure Python with zero dependencies
-- the fastest pure Python parser [\*](#performance):
-  16x as fast as [tomlkit](https://pypi.org/project/tomlkit/),
-  2.3x as fast as [toml](https://pypi.org/project/toml/)
+- the fastest pure Python parser [\*](#pure-python):
+  18x as fast as [tomlkit](https://pypi.org/project/tomlkit/),
+  2.1x as fast as [toml](https://pypi.org/project/toml/)
 - outputs [basic data types](#how-do-toml-types-map-into-python-types) only
 - 100% spec compliant: passes all tests in
   [BurntSushi/toml-test](https://github.com/BurntSushi/toml-test)
@@ -193,30 +200,48 @@ The core library does not include write capability, as most TOML use cases are r
 ## Performance<a name="performance"></a>
 
 The `benchmark/` folder in this repository contains a performance benchmark for comparing the various Python TOML parsers.
-The benchmark can be run with `tox -e benchmark-pypi`.
-Running the benchmark on my personal computer output the following:
+
+Below are the results for commit [0724e2a](https://github.com/hukkin/tomli/tree/0724e2ab1858da7f5e05a9bffdb24c33589d951c).
+
+### Pure Python<a name="pure-python"></a>
 
 ```console
-foo@bar:~/dev/tomli$ tox -e benchmark-pypi
-benchmark-pypi installed: attrs==21.4.0,click==8.0.3,pytomlpp==1.0.10,qtoml==0.3.1,rtoml==0.7.1,toml==0.10.2,tomli==2.0.1,tomlkit==0.9.2
-benchmark-pypi run-test-pre: PYTHONHASHSEED='3088452573'
-benchmark-pypi run-test: commands[0] | python -c 'import datetime; print(datetime.date.today())'
-2022-02-09
-benchmark-pypi run-test: commands[1] | python --version
-Python 3.8.10
-benchmark-pypi run-test: commands[2] | python benchmark/run.py
+foo@bar:~/dev/tomli$ python --version
+Python 3.12.7
+foo@bar:~/dev/tomli$ pip freeze
+attrs==21.4.0
+click==8.1.7
+pytomlpp==1.0.13
+qtoml==0.3.1
+rtoml==0.11.0
+toml==0.10.2
+tomli @ file:///home/foo/dev/tomli
+tomlkit==0.13.2
+foo@bar:~/dev/tomli$ python benchmark/run.py
 Parsing data.toml 5000 times:
 ------------------------------------------------------
     parser |  exec time | performance (more is better)
 -----------+------------+-----------------------------
-     rtoml |    0.891 s | baseline (100%)
-  pytomlpp |    0.969 s | 91.90%
-     tomli |        4 s | 22.25%
-      toml |     9.01 s | 9.88%
-     qtoml |     11.1 s | 8.05%
-   tomlkit |       63 s | 1.41%
+     rtoml |    0.647 s | baseline (100%)
+  pytomlpp |    0.891 s | 72.62%
+     tomli |     3.14 s | 20.56%
+      toml |     6.69 s | 9.67%
+     qtoml |     8.27 s | 7.82%
+   tomlkit |     56.1 s | 1.15%
 ```
 
-The parsers are ordered from fastest to slowest, using the fastest parser as baseline.
-Tomli performed the best out of all pure Python TOML parsers,
-losing only to pytomlpp (wraps C++) and rtoml (wraps Rust).
+### Mypyc generated wheel<a name="mypyc-generated-wheel"></a>
+
+```console
+foo@bar:~/dev/tomli$ python benchmark/run.py
+Parsing data.toml 5000 times:
+------------------------------------------------------
+    parser |  exec time | performance (more is better)
+-----------+------------+-----------------------------
+     rtoml |    0.668 s | baseline (100%)
+  pytomlpp |    0.893 s | 74.81%
+     tomli |     1.96 s | 34.18%
+      toml |     6.64 s | 10.07%
+     qtoml |     8.26 s | 8.09%
+   tomlkit |     52.9 s | 1.26%
+```
