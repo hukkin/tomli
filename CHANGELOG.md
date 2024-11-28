@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.2.1
+
+- Fixed
+  - Don't attempt to compile binary wheels for Python 3.8, 3.9 and 3.10 where cibuildwheel depends on a conflicting Tomli version
+
 ## 2.2.0
 
 - Added
