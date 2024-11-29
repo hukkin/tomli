@@ -27,7 +27,8 @@ tox_env_vars["TOMLI_USE_MYPYC"] = "1"
 shutil.copy2(pyproject_path, backup_path)
 try:
     use_setuptools()
-    subprocess.run(["tox", *sys.argv[1:]], env=tox_env_vars)
+    result = subprocess.run(["tox", *sys.argv[1:]], env=tox_env_vars)
+    raise SystemExit(result.returncode)
 finally:
     shutil.copy2(backup_path, pyproject_path)
     backup_path.unlink()
