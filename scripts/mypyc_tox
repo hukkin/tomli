@@ -1,0 +1,34 @@
+#!/usr/bin/env python3
+"""A tox wrapper to make it build Tomli with setuptools + mypyc.
+
+Run this instead of tox. For example: `./scripts/mypyc_tox -e benchmark`
+All arguments are passed to tox.
+
+Prior to running tox, this edits the [build-system] table in pyproject.toml
+to support mypyc builds. The change is reverted before exiting. This also
+sets the `TOMLI_USE_MYPYC=1` environment variable that setup.py reads to
+enable mypyc.
+"""
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+
+from use_setuptools import use_setuptools
+
+project_root = Path(__file__).parent.parent
+pyproject_path = project_root / "pyproject.toml"
+backup_path = project_root / ".backup.pyproject.toml"
+
+tox_env_vars = os.environ.copy()
+tox_env_vars["TOMLI_USE_MYPYC"] = "1"
+
+shutil.copy2(pyproject_path, backup_path)
+try:
+    use_setuptools()
+    result = subprocess.run(["tox", *sys.argv[1:]], env=tox_env_vars)
+    raise SystemExit(result.returncode)
+finally:
+    shutil.copy2(backup_path, pyproject_path)
+    backup_path.unlink()
