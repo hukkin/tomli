@@ -6,7 +6,7 @@ repos:
     files: '^src/.+\.py$|^tests/.+\.py$'
     args: ['--license-filepath', 'LICENSE-HEADER']
 - repo: https://github.com/executablebooks/mdformat
-  rev: 00812cd1850e41aae5c0916645b4b7404f538e8c  # frozen: 0.7.19
+  rev: e20b1ac5acb8aba0b49d3a9109c6e6b58684ee83  # frozen: 0.7.21
   hooks:
   - id: mdformat
     additional_dependencies:
@@ -54,7 +54,7 @@ repos:
     - flake8-builtins
     - flake8-comprehensions
 - repo: https://github.com/pre-commit/mirrors-mypy
-  rev: f56614daa94d5cd733d3b7004c5df9caad267b4a  # frozen: v1.13.0
+  rev: 648203cec3e499b9eff54a24d6cf4b25ce02eb1e  # frozen: v1.14.0
   hooks:
   - id: mypy
     args: ["--scripts-are-modules"]
