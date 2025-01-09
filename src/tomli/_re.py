@@ -59,6 +59,7 @@ def match_to_datetime(match: re.Match) -> datetime | date:
     Raises ValueError if the match does not correspond to a valid date
     or datetime.
     """
+    # Lazy import to improve module import time
     from datetime import date, datetime, timezone, tzinfo
 
     (
@@ -95,6 +96,7 @@ def match_to_datetime(match: re.Match) -> datetime | date:
 # 24 (hours) * 60 (minutes) * 2 (offset direction) = 2880.
 @lru_cache(maxsize=None)
 def cached_tz(hour_str: str, minute_str: str, sign_str: str) -> timezone:
+    # Lazy import to improve module import time
     from datetime import timedelta, timezone
 
     sign = 1 if sign_str == "+" else -1
@@ -107,6 +109,7 @@ def cached_tz(hour_str: str, minute_str: str, sign_str: str) -> timezone:
 
 
 def match_to_localtime(match: re.Match) -> time:
+    # Lazy import to improve module import time
     from datetime import time
 
     hour_str, minute_str, sec_str, micros_str = match.groups()
