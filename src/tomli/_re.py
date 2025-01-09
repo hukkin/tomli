@@ -7,9 +7,10 @@ from __future__ import annotations
 from datetime import date, datetime, time, timedelta, timezone, tzinfo
 from functools import lru_cache
 import re
-from typing import Any, Final
+from typing import TYPE_CHECKING, Any, Final
 
-from ._types import ParseFloat
+if TYPE_CHECKING:
+    from ._types import ParseFloat
 
 # E.g.
 # - 00:32:00.999999

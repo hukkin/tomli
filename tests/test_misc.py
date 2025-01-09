@@ -5,6 +5,7 @@
 import copy
 import datetime
 from decimal import Decimal as D
+import importlib
 from pathlib import Path
 import sys
 import tempfile
@@ -128,3 +129,11 @@ class TestMiscellaneous(unittest.TestCase):
             r"TOML inline arrays/tables are nested more than the allowed [0-9]+ levels",
         ):
             tomllib.loads(recursive_table_toml)
+
+    def test_types_import(self):
+        """Test that `_types` module runs.
+
+        The module is for type annotations only, so it is otherwise
+        never imported by tests.
+        """
+        importlib.import_module(f"{tomllib.__name__}._types")

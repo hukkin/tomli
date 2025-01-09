@@ -102,6 +102,12 @@ commands = [
     ["python", "benchmark/run.py"],
 ]
 
+[tool.tox.env."benchmark-import"]
+description = "Measure module import times. Tox sends Python output to stderr, so to filter use e.g. `tox -e benchmark-import 2> >(grep tomli)`."
+commands = [
+    ["python", "-X", "importtime", "-c", "import tomli"],
+]
+
 [tool.tox.env."fuzz"]
 description = 'run the fuzzer against a local Tomli version (needs "apt install clang")'
 deps = [

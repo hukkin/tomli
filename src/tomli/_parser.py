@@ -4,12 +4,9 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
-import string
 import sys
 from types import MappingProxyType
-from typing import IO, Any, Final, NamedTuple
-import warnings
+from typing import IO, TYPE_CHECKING, Any, Final, NamedTuple
 
 from ._re import (
     RE_DATETIME,
@@ -19,7 +16,11 @@ from ._re import (
     match_to_localtime,
     match_to_number,
 )
-from ._types import Key, ParseFloat, Pos
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
+    from ._types import Key, ParseFloat, Pos
 
 # Inline tables/arrays are implemented using recursion. Pathologically
 # nested documents cause pure Python to raise RecursionError (which is OK),
@@ -46,9 +47,11 @@ ILLEGAL_COMMENT_CHARS: Final = ILLEGAL_BASIC_STR_CHARS
 
 TOML_WS: Final = frozenset(" \t")
 TOML_WS_AND_NEWLINE: Final = TOML_WS | frozenset("\n")
-BARE_KEY_CHARS: Final = frozenset(string.ascii_letters + string.digits + "-_")
+BARE_KEY_CHARS: Final = frozenset(
+    "abcdefghijklmnopqrstuvwxyz" "ABCDEFGHIJKLMNOPQRSTUVWXYZ" "0123456789" "-_"
+)
 KEY_INITIAL_CHARS: Final = BARE_KEY_CHARS | frozenset("\"'")
-HEXDIGIT_CHARS: Final = frozenset(string.hexdigits)
+HEXDIGIT_CHARS: Final = frozenset("abcdef" "ABCDEF" "0123456789")
 
 BASIC_STR_ESCAPE_REPLACEMENTS: Final = MappingProxyType(
     {
@@ -92,6 +95,8 @@ class TOMLDecodeError(ValueError):
             or not isinstance(doc, str)
             or not isinstance(pos, int)
         ):
+            import warnings
+
             warnings.warn(
                 "Free-form arguments for TOMLDecodeError are deprecated. "
                 "Please set 'msg' (str), 'doc' (str) and 'pos' (int) arguments only.",
