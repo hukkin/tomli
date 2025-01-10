@@ -310,8 +310,8 @@ class NestedDict:
 
 class Output:
     def __init__(self) -> None:
-        self.data: Final = NestedDict()
-        self.flags: Final = Flags()
+        self.data = NestedDict()
+        self.flags = Flags()
 
 
 def skip_chars(src: str, pos: Pos, chars: Iterable[str]) -> Pos:
