@@ -9,7 +9,7 @@ from functools import lru_cache
 import re
 
 MYPY = False
-if MYPY:
+if MYPY:  # pragma: no cover
     from typing import Any, Final
 
     from ._types import ParseFloat

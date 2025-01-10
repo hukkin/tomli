@@ -17,7 +17,7 @@ from ._re import (
 )
 
 MYPY = False
-if MYPY:
+if MYPY:  # pragma: no cover
     from collections.abc import Iterable
     from typing import IO, Any, Final
 
