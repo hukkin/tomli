@@ -8,8 +8,8 @@ from datetime import date, datetime, time, timedelta, timezone, tzinfo
 from functools import lru_cache
 import re
 
-MYPY = False
-if MYPY:  # pragma: no cover
+TYPE_CHECKING = False
+if TYPE_CHECKING:
     from typing import Any, Final
 
     from ._types import ParseFloat

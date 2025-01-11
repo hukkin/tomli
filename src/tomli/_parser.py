@@ -16,8 +16,8 @@ from ._re import (
     match_to_number,
 )
 
-MYPY = False
-if MYPY:  # pragma: no cover
+TYPE_CHECKING = False
+if TYPE_CHECKING:
     from collections.abc import Iterable
     from typing import IO, Any, Final
 
