@@ -6,10 +6,11 @@ from __future__ import annotations
 
 from functools import lru_cache
 import re
-from typing import TYPE_CHECKING, Any, Final
 
+TYPE_CHECKING = False
 if TYPE_CHECKING:
     from datetime import date, datetime, time, timezone
+    from typing import Any, Final
 
     from ._types import ParseFloat
 
