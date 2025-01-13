@@ -9,7 +9,7 @@ import re
 
 TYPE_CHECKING = False
 if TYPE_CHECKING:
-    from datetime import date, datetime, time, timezone
+    from datetime import date, datetime, time, timezone, tzinfo
     from typing import Any, Final
 
     from ._types import ParseFloat
@@ -61,7 +61,7 @@ def match_to_datetime(match: re.Match) -> datetime | date:
     or datetime.
     """
     # Lazy import to improve module import time
-    from datetime import date, datetime, timezone, tzinfo
+    from datetime import date, datetime, timezone
 
     (
         year_str,
