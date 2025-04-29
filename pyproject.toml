@@ -148,6 +148,9 @@ warn_unreachable = true
 strict = true
 strict_bytes = true
 local_partial_types = true
+# Disabling incremental mode is required for `warn_unused_configs = true`
+# (implied by `strict = true`) to work
+incremental = false
 
 enable_error_code = ["ignore-without-code"]
 
