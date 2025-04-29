@@ -2,8 +2,8 @@
 # SPDX-FileCopyrightText: 2021 Taneli Hukkinen
 # Licensed to PSF under a Contributor Agreement.
 
-import unittest
 from typing import Any
+import unittest
 
 from . import tomllib
 
