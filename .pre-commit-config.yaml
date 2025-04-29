@@ -54,7 +54,7 @@ repos:
     - flake8-builtins
     - flake8-comprehensions
 - repo: https://github.com/pre-commit/mirrors-mypy
-  rev: f56614daa94d5cd733d3b7004c5df9caad267b4a  # frozen: v1.13.0
+  rev: f40886d54c729f533f864ed6ce584e920feb0af7  # frozen: v1.15.0
   hooks:
   - id: mypy
     args: ["--scripts-are-modules"]

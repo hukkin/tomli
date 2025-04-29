@@ -59,6 +59,6 @@ class TestData(unittest.TestCase):
                     continue
                 toml_str = valid.read_bytes().decode()
                 actual = tomllib.loads(toml_str)
-                actual = burntsushi.convert(actual)
+                actual = burntsushi.convert(actual)  # type: ignore[no-untyped-call]
                 expected = burntsushi.normalize(expected)
                 self.assertEqual(actual, expected)

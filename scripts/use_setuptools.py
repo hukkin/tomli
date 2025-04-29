@@ -13,7 +13,7 @@ def use_setuptools() -> None:
     pyproject_path = Path(__file__).parent.parent / "pyproject.toml"
     data = tomllib.loads(pyproject_path.read_bytes().decode())
     data["build-system"] = {
-        "requires": ["setuptools>=69", "mypy[mypyc]>=1.13"],
+        "requires": ["setuptools>=69", "mypy[mypyc]>=1.15"],
         "build-backend": "setuptools.build_meta",
     }
     pyproject_path.write_bytes(tomli_w.dumps(data).encode())

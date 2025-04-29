@@ -3,6 +3,7 @@
 # Licensed to PSF under a Contributor Agreement.
 
 import unittest
+from typing import Any
 
 from . import tomllib
 
@@ -57,10 +58,10 @@ class TestError(unittest.TestCase):
         )
 
     def test_invalid_parse_float(self):
-        def dict_returner(s: str) -> dict:
+        def dict_returner(s: str) -> dict[Any, Any]:
             return {}
 
-        def list_returner(s: str) -> list:
+        def list_returner(s: str) -> list[Any]:
             return []
 
         for invalid_parse_float in (dict_returner, list_returner):
