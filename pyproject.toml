@@ -145,16 +145,14 @@ exclude_lines = [
 [tool.mypy]
 show_error_codes = true
 warn_unreachable = true
-warn_unused_ignores = true
-warn_redundant_casts = true
-warn_unused_configs = true
-# Disabling incremental mode is required for `warn_unused_configs = true` to work
+strict = true
+strict_bytes = true
+local_partial_types = true
+# Disabling incremental mode is required for `warn_unused_configs = true`
+# (implied by `strict = true`) to work
 incremental = false
-disallow_untyped_defs = true
-check_untyped_defs = true
-strict_equality = true
-implicit_reexport = false
-no_implicit_optional = true
+
+enable_error_code = ["ignore-without-code"]
 
 [[tool.mypy.overrides]]
 module = "tests.*"
