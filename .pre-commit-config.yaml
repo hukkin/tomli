@@ -6,7 +6,7 @@ repos:
     files: '^src/.+\.py$|^tests/.+\.py$'
     args: ['--license-filepath', 'LICENSE-HEADER']
 - repo: https://github.com/executablebooks/mdformat
-  rev: 00812cd1850e41aae5c0916645b4b7404f538e8c  # frozen: 0.7.19
+  rev: ff29be1a1ba8029d9375882aa2c812b62112a593  # frozen: 0.7.22
   hooks:
   - id: mdformat
     additional_dependencies:
@@ -28,11 +28,11 @@ repos:
     files: '^src/.+\.py$'
     args: ['--never', '--application-directories', 'src']
 - repo: https://github.com/PyCQA/isort
-  rev: c235f5e450b4b84e58d114ed4c589cbf454175a3  # frozen: 5.13.2
+  rev: c8ab4a5b21bac924d106e3103dd7c979fdd0f9bc  # frozen: 6.0.1
   hooks:
   - id: isort
 - repo: https://github.com/psf/black
-  rev: 1b2427a2b785cc4aac97c19bb4b9a0de063f9547  # frozen: 24.10.0
+  rev: 8a737e727ac5ab2f1d4cf5876720ed276dc8dc4b  # frozen: 25.1.0
   hooks:
   - id: black
 - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -46,7 +46,7 @@ repos:
   - id: python-check-blanket-noqa
   - id: python-check-blanket-type-ignore
 - repo: https://github.com/PyCQA/flake8
-  rev: e43806be3607110919eff72939fda031776e885a  # frozen: 7.1.1
+  rev: d93590f5be797aabb60e3b09f2f52dddb02f349f  # frozen: 7.3.0
   hooks:
   - id: flake8
     additional_dependencies:
@@ -54,7 +54,7 @@ repos:
     - flake8-builtins
     - flake8-comprehensions
 - repo: https://github.com/pre-commit/mirrors-mypy
-  rev: f40886d54c729f533f864ed6ce584e920feb0af7  # frozen: v1.15.0
+  rev: 0f86793af5ef5f6dc63c8d04a3cabfa3ea8f9c6a  # frozen: v1.16.1
   hooks:
   - id: mypy
     args: ["--scripts-are-modules"]
