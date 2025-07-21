@@ -558,7 +558,7 @@ def parse_inline_table(
         pos = skip_chars(src, pos, TOML_WS)
 
 
-def parse_basic_str_escape(
+def parse_basic_str_escape(  # noqa: C901
     src: str, pos: Pos, *, multiline: bool = False
 ) -> tuple[Pos, str]:
     escape_id = src[pos : pos + 2]
@@ -577,6 +577,8 @@ def parse_basic_str_escape(
             pos += 1
         pos = skip_chars(src, pos, TOML_WS_AND_NEWLINE)
         return pos, ""
+    if escape_id == "\\x":
+        return parse_hex_char(src, pos, 2)
     if escape_id == "\\u":
         return parse_hex_char(src, pos, 4)
     if escape_id == "\\U":
