@@ -9,7 +9,7 @@ on:
 
 env:
   CIBW_TEST_COMMAND: python -m unittest discover --start-directory {project}
-  CIBW_SKIP: pp* cp38-* cp39-* cp310-*
+  CIBW_SKIP: cp38-* cp39-* cp310-*
   CIBW_ENVIRONMENT_PASS_LINUX: TOMLI_USE_MYPYC
 
 jobs:
