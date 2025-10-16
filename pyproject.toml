@@ -46,7 +46,7 @@ profile = "black"
 [tool.tox]
 requires = ["tox>=4.21.1"]
 # Only run unittest envs when no args given to tox
-env_list = ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
+env_list = ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
 
 [tool.tox.env_run_base]
 description = "run tests against a built package under {base_python}"
