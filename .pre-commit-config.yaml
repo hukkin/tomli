@@ -6,7 +6,7 @@ repos:
     files: '^src/.+\.py$|^tests/.+\.py$'
     args: ['--license-filepath', 'LICENSE-HEADER']
 - repo: https://github.com/executablebooks/mdformat
-  rev: 00812cd1850e41aae5c0916645b4b7404f538e8c  # frozen: 0.7.19
+  rev: ff29be1a1ba8029d9375882aa2c812b62112a593  # frozen: 0.7.22
   hooks:
   - id: mdformat
     additional_dependencies:
@@ -28,15 +28,15 @@ repos:
     files: '^src/.+\.py$'
     args: ['--never', '--application-directories', 'src']
 - repo: https://github.com/PyCQA/isort
-  rev: c235f5e450b4b84e58d114ed4c589cbf454175a3  # frozen: 5.13.2
+  rev: ec0efaee4acfce198521e43caa3029b06cedd64a  # frozen: 6.1.0
   hooks:
   - id: isort
-- repo: https://github.com/psf/black
-  rev: 1b2427a2b785cc4aac97c19bb4b9a0de063f9547  # frozen: 24.10.0
+- repo: https://github.com/psf/black-pre-commit-mirror
+  rev: fe95161893684893d68b1225356702ca71f8d388  # frozen: 25.9.0
   hooks:
   - id: black
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: cef0300fd0fc4d2a87a85fa2093c6b283ea36f4b  # frozen: v5.0.0
+  rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c  # frozen: v6.0.0
   hooks:
   - id: check-yaml
 - repo: https://github.com/pre-commit/pygrep-hooks
@@ -46,7 +46,7 @@ repos:
   - id: python-check-blanket-noqa
   - id: python-check-blanket-type-ignore
 - repo: https://github.com/PyCQA/flake8
-  rev: e43806be3607110919eff72939fda031776e885a  # frozen: 7.1.1
+  rev: d93590f5be797aabb60e3b09f2f52dddb02f349f  # frozen: 7.3.0
   hooks:
   - id: flake8
     additional_dependencies:
@@ -54,7 +54,7 @@ repos:
     - flake8-builtins
     - flake8-comprehensions
 - repo: https://github.com/pre-commit/mirrors-mypy
-  rev: f56614daa94d5cd733d3b7004c5df9caad267b4a  # frozen: v1.13.0
+  rev: 9f70dc58c23dfcca1b97af99eaeee3140a807c7e  # frozen: v1.18.2
   hooks:
   - id: mypy
     args: ["--scripts-are-modules"]

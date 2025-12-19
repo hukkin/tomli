@@ -2,6 +2,9 @@
 # SPDX-FileCopyrightText: 2021 Taneli Hukkinen
 # Licensed to PSF under a Contributor Agreement.
 
+from __future__ import annotations
+
+from typing import Any
 import unittest
 
 from . import tomllib
@@ -57,10 +60,10 @@ class TestError(unittest.TestCase):
         )
 
     def test_invalid_parse_float(self):
-        def dict_returner(s: str) -> dict:
+        def dict_returner(s: str) -> dict[Any, Any]:
             return {}
 
-        def list_returner(s: str) -> list:
+        def list_returner(s: str) -> list[Any]:
             return []
 
         for invalid_parse_float in (dict_returner, list_returner):

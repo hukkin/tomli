@@ -9,7 +9,7 @@ on:
 
 env:
   CIBW_TEST_COMMAND: python -m unittest discover --start-directory {project}
-  CIBW_SKIP: pp* cp38-* cp39-* cp310-*
+  CIBW_SKIP: cp38-* cp39-* cp310-*
   CIBW_ENVIRONMENT_PASS_LINUX: TOMLI_USE_MYPYC
 
 jobs:
@@ -18,8 +18,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-python@v5
+    - uses: actions/checkout@v5
+    - uses: actions/setup-python@v6
       with:
         python-version: '3.11'
 
@@ -37,15 +37,15 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: ['pypy3.10', '3.8', '3.9', '3.10', '3.11', '3.12', '3.13', '3.14-dev']
+        python-version: ['pypy3.10', '3.8', '3.9', '3.10', '3.11', '3.12', '3.13', '3.14', '3.15-dev']
         os: [ubuntu-latest, macos-latest, windows-latest]
-    continue-on-error: ${{ matrix.python-version == '3.14-dev' }}
+    continue-on-error: ${{ matrix.python-version == '3.15-dev' }}
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -60,8 +60,8 @@ jobs:
   coverage:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-python@v5
+    - uses: actions/checkout@v5
+    - uses: actions/setup-python@v6
       with:
         python-version: '3.x'
     - name: Install package and coverage deps
@@ -75,7 +75,7 @@ jobs:
         coverage run -m unittest
         coverage report --fail-under=100
     - name: Report coverage
-      uses: codecov/codecov-action@v4
+      uses: codecov/codecov-action@v5
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
 
@@ -87,9 +87,9 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v6
       with:
         python-version: '3.x'
 
@@ -99,7 +99,7 @@ jobs:
         python scripts/use_setuptools.py
 
     - name: Build wheels
-      uses: pypa/cibuildwheel@v2.22.0
+      uses: pypa/cibuildwheel@v3.2.0
       env:
         CIBW_ARCHS_MACOS: x86_64 arm64
         TOMLI_USE_MYPYC: '1'
@@ -115,7 +115,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - name: Install build dependencies
       run: pip install build
@@ -138,9 +138,9 @@ jobs:
       &&
       (github.ref == 'refs/heads/master' || startsWith(github.event.ref, 'refs/tags'))
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v6
       with:
         python-version: '3.x'
 
@@ -155,7 +155,7 @@ jobs:
         platforms: arm64
 
     - name: Build wheels
-      uses: pypa/cibuildwheel@v2.22.0
+      uses: pypa/cibuildwheel@v3.2.0
       env:
         CIBW_ARCHS_LINUX: aarch64
         TOMLI_USE_MYPYC: '1'
@@ -184,12 +184,12 @@ jobs:
     if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v5
       with:
         path: dist
         pattern: artifact-*
         merge-multiple: true
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v6
       with:
         python-version: '3.x'
     - name: Install twine
