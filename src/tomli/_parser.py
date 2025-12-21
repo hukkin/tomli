@@ -61,6 +61,7 @@ BASIC_STR_ESCAPE_REPLACEMENTS: Final = MappingProxyType(
         "\\n": "\u000a",  # linefeed
         "\\f": "\u000c",  # form feed
         "\\r": "\u000d",  # carriage return
+        "\\e": "\u001b",  # escape
         '\\"': "\u0022",  # quote
         "\\\\": "\u005c",  # backslash
     }
