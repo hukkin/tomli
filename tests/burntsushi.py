@@ -19,7 +19,7 @@ _aliases = {
 }
 
 
-def convert(obj):  # noqa: C901
+def convert(obj):
     if isinstance(obj, str):
         return {"type": "string", "value": obj}
     elif isinstance(obj, bool):
