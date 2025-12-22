@@ -131,12 +131,7 @@ jobs:
 
   binary-wheels-arm:
     name: Build Linux wheels for ARM
-    runs-on: ubuntu-latest
-    # Very slow (~ 1 hour), no need to run on PRs
-    if: >
-      github.event_name == 'push'
-      &&
-      (github.ref == 'refs/heads/master' || startsWith(github.event.ref, 'refs/tags'))
+    runs-on: ubuntu-24.04-arm
     steps:
     - uses: actions/checkout@v5
 
@@ -148,11 +143,6 @@ jobs:
       run: |
         pip install -r scripts/requirements.txt
         python scripts/use_setuptools.py
-
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
-      with:
-        platforms: arm64
 
     - name: Build wheels
       uses: pypa/cibuildwheel@v3.2.0
