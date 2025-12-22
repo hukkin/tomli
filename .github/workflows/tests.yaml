@@ -82,7 +82,7 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
 
   binary-wheels-standard:
-    name: Binary wheels for ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-') && 'Windows' || 'Linux' }}
+    name: Binary wheels for ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-') && 'Windows' || endsWith(matrix.os, '-arm') && 'Linux ARM' || 'Linux' }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
