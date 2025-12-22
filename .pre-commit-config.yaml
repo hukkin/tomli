@@ -6,7 +6,7 @@ repos:
     files: '^src/.+\.py$|^tests/.+\.py$'
     args: ['--license-filepath', 'LICENSE-HEADER']
 - repo: https://github.com/executablebooks/mdformat
-  rev: ff29be1a1ba8029d9375882aa2c812b62112a593  # frozen: 0.7.22
+  rev: 2d496dbc18e31b83a1596685347ffe0b6041daf0  # frozen: 1.0.0
   hooks:
   - id: mdformat
     additional_dependencies:
@@ -28,11 +28,11 @@ repos:
     files: '^src/.+\.py$'
     args: ['--never', '--application-directories', 'src']
 - repo: https://github.com/PyCQA/isort
-  rev: ec0efaee4acfce198521e43caa3029b06cedd64a  # frozen: 6.1.0
+  rev: 0a09c783808cfe77bb3269250f663ff733d23302  # frozen: 7.0.0
   hooks:
   - id: isort
 - repo: https://github.com/psf/black-pre-commit-mirror
-  rev: fe95161893684893d68b1225356702ca71f8d388  # frozen: 25.9.0
+  rev: 831207fd435b47aeffdf6af853097e64322b4d44  # frozen: 25.12.0
   hooks:
   - id: black
 - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -54,7 +54,7 @@ repos:
     - flake8-builtins
     - flake8-comprehensions
 - repo: https://github.com/pre-commit/mirrors-mypy
-  rev: 9f70dc58c23dfcca1b97af99eaeee3140a807c7e  # frozen: v1.18.2
+  rev: a66e98df7b4aeeb3724184b332785976d062b92e  # frozen: v1.19.1
   hooks:
   - id: mypy
     args: ["--scripts-are-modules"]
