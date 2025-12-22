@@ -137,3 +137,12 @@ class TestMiscellaneous(unittest.TestCase):
         never imported by tests.
         """
         importlib.import_module(f"{tomllib.__name__}._types")
+
+    def test_truncate_sub_seconds(self):
+        for t in [
+            "t = 2012-12-12T00:00:00.99999999999999Z",
+            "t = 2012-12-12T00:00:00.99999999999999",
+            "t = 00:00:00.99999999999999",
+        ]:
+            obj = tomllib.loads(t)
+            self.assertEqual(obj["t"].microsecond, 999999)
