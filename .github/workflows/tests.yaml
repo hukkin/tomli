@@ -82,11 +82,11 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
 
   binary-wheels-standard:
-    name: Binary wheels for ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-') && 'Windows' || endsWith(matrix.os, '-arm') && 'Linux ARM' || 'Linux' }}
+    name: Binary wheels for ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-11-arm') && 'Windows (arm64)' || startsWith(matrix.os, 'windows-') && 'Windows' || endsWith(matrix.os, '-arm') && 'Linux (arm64)' || 'Linux' }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, macos-latest]
+        os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, windows-11-arm, macos-latest]
 
     steps:
     - uses: actions/checkout@v5
