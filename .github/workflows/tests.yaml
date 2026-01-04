@@ -81,7 +81,7 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
 
-  binary-wheels-standard:
+  binary-wheels:
     name: Binary wheels for ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-11-arm') && 'Windows (arm64)' || startsWith(matrix.os, 'windows-') && 'Windows' || endsWith(matrix.os, '-arm') && 'Linux (arm64)' || 'Linux' }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -108,7 +108,7 @@ jobs:
 
     - uses: actions/upload-artifact@v4
       with:
-        name: artifact-standard-${{ matrix.os }}
+        name: artifact-binary-${{ matrix.os }}
         path: wheelhouse/*.whl
         if-no-files-found: error
 
@@ -137,7 +137,7 @@ jobs:
     - tests
     - coverage
     - linters
-    - binary-wheels-standard
+    - binary-wheels
     - pure-python-wheel-and-sdist
     steps:
     - run: echo "Great success!"
