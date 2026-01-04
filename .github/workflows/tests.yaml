@@ -108,7 +108,7 @@ jobs:
 
     - uses: actions/upload-artifact@v4
       with:
-        name: artifact-${{ matrix.os }}
+        name: artifact-binary-${{ matrix.os }}
         path: wheelhouse/*.whl
         if-no-files-found: error
 
