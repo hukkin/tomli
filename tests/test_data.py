@@ -46,11 +46,9 @@ class TestData(unittest.TestCase):
                 # compatible with yet.
                 if valid.stem in {
                     "no-seconds",
-                    "hex-escape",
                     "common-34",
                     "common-31",
                     "common-29",
-                    "common-12",
                 }:
                     with self.assertRaises(tomllib.TOMLDecodeError):
                         tomllib.loads(toml_str)
