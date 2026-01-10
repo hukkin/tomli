@@ -19,7 +19,7 @@ _aliases = {
 }
 
 
-def convert(obj):  # noqa: C901
+def convert(obj):
     if isinstance(obj, str):
         return {"type": "string", "value": obj}
     elif isinstance(obj, bool):
@@ -44,9 +44,9 @@ def convert(obj):  # noqa: C901
             "value": str(obj),
         }
     elif isinstance(obj, list):
-        return [convert(i) for i in obj]
+        return [convert(i) for i in obj]  # type: ignore[no-untyped-call]
     elif isinstance(obj, dict):
-        return {k: convert(v) for k, v in obj.items()}
+        return {k: convert(v) for k, v in obj.items()}  # type: ignore[no-untyped-call]
     raise Exception("unsupported type")
 
 
