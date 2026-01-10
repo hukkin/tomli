@@ -41,19 +41,6 @@ class TestData(unittest.TestCase):
         for valid, expected in zip(VALID_FILES, VALID_FILES_EXPECTED):
             with self.subTest(msg=valid.stem):
                 toml_str = valid.read_bytes().decode()
-
-                # xfail on TOML 1.1 compatibility tests that Tomli isn't
-                # compatible with yet.
-                if valid.stem in {
-                    "no-seconds",
-                    "common-34",
-                    "common-31",
-                    "common-29",
-                }:
-                    with self.assertRaises(tomllib.TOMLDecodeError):
-                        tomllib.loads(toml_str)
-                    continue
-
                 actual = tomllib.loads(toml_str)
                 actual = burntsushi.convert(actual)  # type: ignore[no-untyped-call]
                 expected = burntsushi.normalize(expected)
