@@ -525,7 +525,7 @@ def parse_array(
             return pos + 1, array
 
 
-def parse_inline_table(  # noqa: C901
+def parse_inline_table(
     src: str, pos: Pos, parse_float: ParseFloat, nest_lvl: int
 ) -> tuple[Pos, dict[str, Any]]:
     pos += 1
