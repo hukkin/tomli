@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.3.0
+
+- Added
+  - Binary wheels for Python 3.14 (also free-threaded)
+- Performance
+  - Reduced import time
+
 ## 2.2.1
 
 - Fixed

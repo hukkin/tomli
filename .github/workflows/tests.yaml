@@ -9,8 +9,10 @@ on:
 
 env:
   CIBW_TEST_COMMAND: python -m unittest discover --start-directory {project}
-  CIBW_SKIP: pp* cp38-* cp39-* cp310-*
+  CIBW_SKIP: cp38-* cp39-* cp310-*
   CIBW_ENVIRONMENT_PASS_LINUX: TOMLI_USE_MYPYC
+  FORCE_COLOR: 1
+  PIP_DISABLE_PIP_VERSION_CHECK: 1
 
 jobs:
 
@@ -18,8 +20,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-python@v5
+    - uses: actions/checkout@v5
+    - uses: actions/setup-python@v6
       with:
         python-version: '3.11'
 
@@ -37,15 +39,15 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: ['pypy3.10', '3.8', '3.9', '3.10', '3.11', '3.12', '3.13', '3.14-dev']
+        python-version: ['pypy3.11', '3.8', '3.9', '3.10', '3.11', '3.12', '3.13', '3.14', '3.15-dev']
         os: [ubuntu-latest, macos-latest, windows-latest]
-    continue-on-error: ${{ matrix.python-version == '3.14-dev' }}
+    continue-on-error: ${{ matrix.python-version == '3.15-dev' }}
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -60,8 +62,8 @@ jobs:
   coverage:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-python@v5
+    - uses: actions/checkout@v5
+    - uses: actions/setup-python@v6
       with:
         python-version: '3.x'
     - name: Install package and coverage deps
@@ -75,21 +77,21 @@ jobs:
         coverage run -m unittest
         coverage report --fail-under=100
     - name: Report coverage
-      uses: codecov/codecov-action@v4
+      uses: codecov/codecov-action@v5
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
 
-  binary-wheels-standard:
-    name: Binary wheels for ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-') && 'Windows' || 'Linux' }}
+  binary-wheels:
+    name: Binary wheels for ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-11-arm') && 'Windows (arm64)' || startsWith(matrix.os, 'windows-') && 'Windows' || endsWith(matrix.os, '-arm') && 'Linux (arm64)' || 'Linux' }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, windows-11-arm, macos-latest]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v6
       with:
         python-version: '3.x'
 
@@ -99,14 +101,14 @@ jobs:
         python scripts/use_setuptools.py
 
     - name: Build wheels
-      uses: pypa/cibuildwheel@v2.22.0
+      uses: pypa/cibuildwheel@v3.2.0
       env:
         CIBW_ARCHS_MACOS: x86_64 arm64
         TOMLI_USE_MYPYC: '1'
 
     - uses: actions/upload-artifact@v4
       with:
-        name: artifact-standard-${{ matrix.os }}
+        name: artifact-binary-${{ matrix.os }}
         path: wheelhouse/*.whl
         if-no-files-found: error
 
@@ -115,7 +117,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - name: Install build dependencies
       run: pip install build
@@ -129,52 +131,14 @@ jobs:
         path: dist/*
         if-no-files-found: error
 
-  binary-wheels-arm:
-    name: Build Linux wheels for ARM
-    runs-on: ubuntu-latest
-    # Very slow (~ 1 hour), no need to run on PRs
-    if: >
-      github.event_name == 'push'
-      &&
-      (github.ref == 'refs/heads/master' || startsWith(github.event.ref, 'refs/tags'))
-    steps:
-    - uses: actions/checkout@v4
-
-    - uses: actions/setup-python@v5
-      with:
-        python-version: '3.x'
-
-    - name: Switch build backend to setuptools
-      run: |
-        pip install -r scripts/requirements.txt
-        python scripts/use_setuptools.py
-
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
-      with:
-        platforms: arm64
-
-    - name: Build wheels
-      uses: pypa/cibuildwheel@v2.22.0
-      env:
-        CIBW_ARCHS_LINUX: aarch64
-        TOMLI_USE_MYPYC: '1'
-
-    - uses: actions/upload-artifact@v4
-      with:
-        name: artifact-arm-linux
-        path: wheelhouse/*.whl
-        if-no-files-found: error
-
   allgood:
     runs-on: ubuntu-latest
     needs:
     - tests
     - coverage
     - linters
-    - binary-wheels-standard
+    - binary-wheels
     - pure-python-wheel-and-sdist
-    - binary-wheels-arm
     steps:
     - run: echo "Great success!"
 
@@ -184,12 +148,12 @@ jobs:
     if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v5
       with:
         path: dist
         pattern: artifact-*
         merge-multiple: true
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v6
       with:
         python-version: '3.x'
     - name: Install twine

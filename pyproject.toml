@@ -1,19 +1,19 @@
 [build-system]
-requires = ["flit_core>=3.2.0,<4"]
+requires = ["flit_core>=3.12,<4"]
 build-backend = "flit_core.buildapi"
 
 [project]
 name = "tomli"
-version = "2.2.1"  # DO NOT EDIT THIS LINE MANUALLY. LET bump2version UTILITY DO IT
+version = "2.3.0"  # DO NOT EDIT THIS LINE MANUALLY. LET bump2version UTILITY DO IT
 description = "A lil' TOML parser"
 authors = [
     { name = "Taneli Hukkinen", email = "hukkin@users.noreply.github.com" },
 ]
-license = { file = "LICENSE" }
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.8"
 readme = "README.md"
 classifiers = [
-    "License :: OSI Approved :: MIT License",
     "Operating System :: MacOS",
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX :: Linux",
@@ -46,7 +46,7 @@ profile = "black"
 [tool.tox]
 requires = ["tox>=4.21.1"]
 # Only run unittest envs when no args given to tox
-env_list = ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
+env_list = ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
 
 [tool.tox.env_run_base]
 description = "run tests against a built package under {base_python}"
@@ -145,16 +145,14 @@ exclude_lines = [
 [tool.mypy]
 show_error_codes = true
 warn_unreachable = true
-warn_unused_ignores = true
-warn_redundant_casts = true
-warn_unused_configs = true
-# Disabling incremental mode is required for `warn_unused_configs = true` to work
+strict = true
+strict_bytes = true
+local_partial_types = true
+# Disabling incremental mode is required for `warn_unused_configs = true`
+# (implied by `strict = true`) to work
 incremental = false
-disallow_untyped_defs = true
-check_untyped_defs = true
-strict_equality = true
-implicit_reexport = false
-no_implicit_optional = true
+
+enable_error_code = ["ignore-without-code"]
 
 [[tool.mypy.overrides]]
 module = "tests.*"
