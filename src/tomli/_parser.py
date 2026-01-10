@@ -561,7 +561,7 @@ def parse_inline_table(
             flags.set(key, Flags.FROZEN, recursive=True)
 
 
-def parse_basic_str_escape(  # noqa: C901
+def parse_basic_str_escape(
     src: str, pos: Pos, *, multiline: bool = False
 ) -> tuple[Pos, str]:
     escape_id = src[pos : pos + 2]
