@@ -1,8 +1,43 @@
 # Changelog
 
+## 2.3.0
+
+- Added
+  - Binary wheels for Python 3.14 (also free-threaded)
+- Performance
+  - Reduced import time
+
+## 2.2.1
+
+- Fixed
+  - Don't attempt to compile binary wheels for Python 3.8, 3.9 and 3.10 where cibuildwheel depends on a conflicting Tomli version
+
+## 2.2.0
+
+- Added
+  - mypyc generated binary wheels for common platforms
+
+## 2.1.0
+
+- Deprecated
+  - Instantiating `TOMLDecodeError` with free-form arguments.
+    `msg`, `doc` and `pos` arguments should be given.
+- Added
+  - `msg`, `doc`, `pos`, `lineno` and `colno` attributes to `TOMLDecodeError`
+
+## 2.0.2
+
+- Removed
+  - Python 3.7 support
+- Improved
+  - Make `loads` raise `TypeError` not `AttributeError` on bad input types that do not have the `replace` attribute.
+    Improve error message when `bytes` is received.
+- Type annotations
+  - Type annotate `load` input as `typing.IO[bytes]` (previously `typing.BinaryIO`).
+
 ## 2.0.1
 
-- Improve
+- Improved
   - Make bundling easier by using relative imports internally and adding license and copyright notice to source files.
   - Make error messages more uniform
   - Raise a friendly `TypeError` for wrong file mode
@@ -122,7 +157,7 @@
 ## 0.2.5
 
 - Fixed
-  - Made exception type `TOMLDecodeError` when  overwriting a value with a deeply nested table
+  - Made exception type `TOMLDecodeError` when overwriting a value with a deeply nested table
 
 ## 0.2.4
 

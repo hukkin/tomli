@@ -2,6 +2,9 @@
 # SPDX-FileCopyrightText: 2021 Taneli Hukkinen
 # Licensed to PSF under a Contributor Agreement.
 
+from __future__ import annotations
+
+from typing import Any
 import unittest
 
 from . import tomllib
@@ -39,14 +42,28 @@ class TestError(unittest.TestCase):
             tomllib.loads("v = '\n'")
         self.assertTrue(" '\\n' " in str(exc_info.exception))
 
-    def test_module_name(self):
-        self.assertEqual(tomllib.TOMLDecodeError().__module__, tomllib.__name__)
+    def test_type_error(self):
+        with self.assertRaises(TypeError) as exc_info:
+            tomllib.loads(b"v = 1")  # type: ignore[arg-type]
+        # Mypyc extension leads to different message than pure Python
+        self.assertIn(
+            str(exc_info.exception),
+            ("Expected str object, not 'bytes'", "str object expected; got bytes"),
+        )
+
+        with self.assertRaises(TypeError) as exc_info:
+            tomllib.loads(False)  # type: ignore[arg-type]
+        # Mypyc extension leads to different message than pure Python
+        self.assertIn(
+            str(exc_info.exception),
+            ("Expected str object, not 'bool'", "str object expected; got bool"),
+        )
 
     def test_invalid_parse_float(self):
-        def dict_returner(s: str) -> dict:
+        def dict_returner(s: str) -> dict[Any, Any]:
             return {}
 
-        def list_returner(s: str) -> list:
+        def list_returner(s: str) -> list[Any]:
             return []
 
         for invalid_parse_float in (dict_returner, list_returner):
@@ -55,3 +72,33 @@ class TestError(unittest.TestCase):
             self.assertEqual(
                 str(exc_info.exception), "parse_float must not return dicts or lists"
             )
+
+    def test_deprecated_tomldecodeerror(self):
+        for args in [
+            (),
+            ("err msg",),
+            (None,),
+            (None, "doc"),
+            ("err msg", None),
+            (None, "doc", None),
+            ("err msg", "doc", None),
+            ("one", "two", "three", "four"),
+            ("one", "two", 3, "four", "five"),
+        ]:
+            with self.assertWarns(DeprecationWarning):
+                e = tomllib.TOMLDecodeError(*args)  # type: ignore[arg-type]
+            self.assertEqual(e.args, args)
+
+    def test_tomldecodeerror(self):
+        msg = "error parsing"
+        doc = "v=1\n[table]\nv='val'"
+        pos = 13
+        formatted_msg = "error parsing (at line 3, column 2)"
+        e = tomllib.TOMLDecodeError(msg, doc, pos)
+        self.assertEqual(e.args, (formatted_msg,))
+        self.assertEqual(str(e), formatted_msg)
+        self.assertEqual(e.msg, msg)
+        self.assertEqual(e.doc, doc)
+        self.assertEqual(e.pos, pos)
+        self.assertEqual(e.lineno, 3)
+        self.assertEqual(e.colno, 2)
