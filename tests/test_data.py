@@ -46,10 +46,7 @@ class TestData(unittest.TestCase):
                 # compatible with yet.
                 if valid.stem in {
                     "no-seconds",
-                    "newline",
-                    "newline-comment",
                     "hex-escape",
-                    "common-47",
                     "common-34",
                     "common-31",
                     "common-29",
