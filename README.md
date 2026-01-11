@@ -32,7 +32,8 @@
 ## Intro<a name="intro"></a>
 
 Tomli is a Python library for parsing [TOML](https://toml.io).
-It is fully compatible with [TOML v1.0.0](https://toml.io/en/v1.0.0).
+Version 2.4.0 and later are compatible with [TOML v1.1.0](https://toml.io/en/v1.1.0).
+Older versions are [TOML v1.0.0](https://toml.io/en/v1.0.0) compatible.
 
 A version of Tomli, the `tomllib` module,
 was added to the standard library in Python 3.11
@@ -159,7 +160,7 @@ tomllib.loads("['This parses fine with Python 3.6+']")
   2.1x as fast as [toml](https://pypi.org/project/toml/)
 - outputs [basic data types](#how-do-toml-types-map-into-python-types) only
 - 100% spec compliant: passes all tests in
-  [BurntSushi/toml-test](https://github.com/BurntSushi/toml-test)
+  [toml-lang/toml-test](https://github.com/toml-lang/toml-test)
   test suite
 - thoroughly tested: 100% branch coverage
 
