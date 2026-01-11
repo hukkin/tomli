@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - uses: actions/setup-python@v6
       with:
         python-version: '3.11'
@@ -44,7 +44,7 @@ jobs:
     continue-on-error: ${{ matrix.python-version == '3.15-dev' }}
 
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v6
@@ -62,7 +62,7 @@ jobs:
   coverage:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - uses: actions/setup-python@v6
       with:
         python-version: '3.x'
@@ -89,7 +89,7 @@ jobs:
         os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, windows-11-arm, macos-latest]
 
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
 
     - uses: actions/setup-python@v6
       with:
@@ -101,12 +101,12 @@ jobs:
         python scripts/use_setuptools.py
 
     - name: Build wheels
-      uses: pypa/cibuildwheel@v3.2.0
+      uses: pypa/cibuildwheel@v3.3.1
       env:
         CIBW_ARCHS_MACOS: x86_64 arm64
         TOMLI_USE_MYPYC: '1'
 
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v6
       with:
         name: artifact-binary-${{ matrix.os }}
         path: wheelhouse/*.whl
@@ -117,7 +117,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
 
     - name: Install build dependencies
       run: pip install build
@@ -125,7 +125,7 @@ jobs:
     - name: Build
       run: python -m build
 
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v6
       with:
         name: artifact-pure-python
         path: dist/*
@@ -148,7 +148,7 @@ jobs:
     if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/download-artifact@v5
+    - uses: actions/download-artifact@v7
       with:
         path: dist
         pattern: artifact-*
