@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.4.0
+
+- Added
+  - TOML v1.1.0 compatibility
+  - Binary wheels for Windows arm64
+
 ## 2.3.0
 
 - Added
