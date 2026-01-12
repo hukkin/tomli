@@ -5,7 +5,6 @@ from pathlib import Path
 import timeit
 
 import pytomlpp
-import qtoml
 import rtoml
 import toml
 import tomlkit
@@ -22,7 +21,7 @@ def benchmark(
 ) -> float:
     placeholder = "Running..."
     print(f"{name:>{col_width[0]}} | {placeholder}", end="", flush=True)
-    time_taken = timeit.timeit(func, number=run_count)
+    time_taken = min(timeit.repeat(func, number=run_count, repeat=5))
     print("\b" * len(placeholder), end="")
     time_suffix = " s"
     print(f"{time_taken:{col_width[1]-len(time_suffix)}.3g}{time_suffix}", end="")
@@ -39,9 +38,6 @@ def run(run_count: int) -> None:
     data_path = Path(__file__).parent / "data.toml"
     test_data = data_path.read_bytes().decode()
 
-    # qtoml has a bug making it crash without this newline normalization
-    test_data = test_data.replace("\r\n", "\n")
-
     col_width = (10, 10, 28)
     col_head = ("parser", "exec time", "performance (more is better)")
     print(f"Parsing data.toml {run_count} times:")
@@ -55,7 +51,6 @@ def run(run_count: int) -> None:
     benchmark("pytomlpp", run_count, lambda: pytomlpp.loads(test_data), col_width, compare_to=baseline)  # noqa: E501
     benchmark("tomli", run_count, lambda: tomli.loads(test_data), col_width, compare_to=baseline)  # noqa: E501
     benchmark("toml", run_count, lambda: toml.loads(test_data), col_width, compare_to=baseline)  # noqa: E501
-    benchmark("qtoml", run_count, lambda: qtoml.loads(test_data), col_width, compare_to=baseline)  # noqa: E501
     benchmark("tomlkit", run_count, lambda: tomlkit.parse(test_data), col_width, compare_to=baseline)  # noqa: E501
     # fmt: on
 

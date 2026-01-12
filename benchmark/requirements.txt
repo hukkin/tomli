@@ -5,5 +5,4 @@
 pytomlpp
 toml
 tomlkit
-qtoml
 rtoml
