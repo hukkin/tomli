@@ -1,6 +1,6 @@
 repos:
 - repo: https://github.com/Lucas-C/pre-commit-hooks
-  rev: a30f0d816e5062a67d87c8de753cfe499672b959  # frozen: v1.5.5
+  rev: ad1b27d73581aa16cca06fc4a0761fc563ffe8e8  # frozen: v1.5.6
   hooks:
   - id: insert-license
     files: '^src/.+\.py$|^tests/.+\.py$'
@@ -32,7 +32,7 @@ repos:
   hooks:
   - id: isort
 - repo: https://github.com/psf/black-pre-commit-mirror
-  rev: 831207fd435b47aeffdf6af853097e64322b4d44  # frozen: 25.12.0
+  rev: ea488cebbfd88a5f50b8bd95d5c829d0bb76feb8  # frozen: 26.1.0
   hooks:
   - id: black
 - repo: https://github.com/pre-commit/pre-commit-hooks
