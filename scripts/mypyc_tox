@@ -9,6 +9,7 @@ to support mypyc builds. The change is reverted before exiting. This also
 sets the `TOMLI_USE_MYPYC=1` environment variable that setup.py reads to
 enable mypyc.
 """
+
 import os
 from pathlib import Path
 import shutil

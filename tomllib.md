@@ -35,7 +35,6 @@ matches Tomli commit https://github.com/hukkin/tomli/commit/7e563eed5286b5d46b82
 
   from . import load_tests
 
-
   unittest.main()
   ```
 
