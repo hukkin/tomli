@@ -4,7 +4,7 @@ repos:
   hooks:
   - id: insert-license
     files: '^src/.+\.py$|^tests/.+\.py$'
-    args: ['--license-filepath', 'LICENSE-HEADER']
+    args: ['--license-filepath', 'license_header_template.txt']
 - repo: https://github.com/executablebooks/mdformat
   rev: 2d496dbc18e31b83a1596685347ffe0b6041daf0  # frozen: 1.0.0
   hooks:
