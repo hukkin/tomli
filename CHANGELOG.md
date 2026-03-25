@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.3.1
+
+- Fixed
+  - Backport: Limit number of parts of a TOML key to address quadratic time complexity
+
+## 2.4.1
+
+- Fixed
+  - Limit number of parts of a TOML key to address quadratic time complexity
+
 ## 2.4.0
 
 - Added
