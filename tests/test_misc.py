@@ -143,8 +143,6 @@ class TestMiscellaneous(unittest.TestCase):
         nested_key_toml = "a." * nest_count + "a = 1"
         with self.assertRaisesRegex(
             RecursionError,
-            r"maximum recursion depth exceeded"
-            r"|"
             r"TOML key has more than the allowed [0-9]+ parts",
         ):
             tomllib.loads(nested_key_toml)
