@@ -130,6 +130,25 @@ class TestMiscellaneous(unittest.TestCase):
         ):
             tomllib.loads(recursive_table_toml)
 
+    def test_key_recursion_limit(self):
+        nest_count = 310
+        nested_key_toml = 'a.' * nest_count + 'a = 1'
+        tomllib.loads(nested_key_toml)
+
+        nest_count = sys.getrecursionlimit() - 2
+        nested_key_toml = 'a.' * nest_count + 'a = 1'
+        tomllib.loads(nested_key_toml)
+
+        nest_count = sys.getrecursionlimit() + 2
+        nested_key_toml = 'a.' * nest_count + 'a = 1'
+        with self.assertRaisesRegex(
+            RecursionError,
+            r"maximum recursion depth exceeded"
+            r"|"
+            r"TOML key has more than the allowed [0-9]+ parts",
+        ):
+            tomllib.loads(nested_key_toml)
+
     def test_types_import(self):
         """Test that `_types` module runs.
 
