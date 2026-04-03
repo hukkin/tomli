@@ -186,7 +186,7 @@ class TestMiscellaneous(unittest.TestCase):
         self.assertIsNone(try_simple_decimal("0o123\n", 0))
         self.assertIsNone(try_simple_decimal("0b100\n", 0))
 
-    @unittest.skipUnless(sys.version_info >= (3, 15), 'need Python 3.15+')
+    @unittest.skipUnless(sys.version_info >= (3, 15), "need Python 3.15+")
     def test_lazy_import(self):
         # Test that try_simple_decimal() can parse the TOML file without
         # importing regular expressions (tomli._re)
@@ -207,6 +207,6 @@ class TestMiscellaneous(unittest.TestCase):
                     tomli.load(fp)
                 print("lazy import?", 'tomli._re' not in sys.modules)
             """)
-            cmd = [sys.executable, '-c', code]
+            cmd = [sys.executable, "-c", code]
             proc = subprocess.run(cmd, check=True, capture_output=True)
-            self.assertIn(b'lazy import? True', proc.stdout.rstrip())
+            self.assertIn(b"lazy import? True", proc.stdout.rstrip())
