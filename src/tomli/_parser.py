@@ -20,7 +20,7 @@ from ._re import (
     match_to_number,
 )
 
-if sys.version_info < (3, 15):
+if sys.version_info < (3, 15):  # pragma: no cover
     from types import MappingProxyType as frozendict
 
 TYPE_CHECKING = False
