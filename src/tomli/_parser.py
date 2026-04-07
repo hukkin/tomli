@@ -712,6 +712,7 @@ def parse_basic_str(src: str, pos: Pos, *, multiline: bool) -> tuple[Pos, str]:
 
 USE_SIMPLE_DECIMAL = True
 
+
 def try_simple_decimal(src: str, pos: Pos) -> None | tuple[Pos, int]:
     """Parse a "simple" decimal integer.
 
