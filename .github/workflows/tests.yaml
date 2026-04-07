@@ -75,7 +75,7 @@ jobs:
         rm -rf tests/data/valid/_external/
         rm -rf tests/data/invalid/_external/
         coverage run -m unittest
-        coverage report --fail-under=100
+        coverage report --fail-under=100 --show-missing
     - name: Report coverage
       uses: codecov/codecov-action@v5
       with:
