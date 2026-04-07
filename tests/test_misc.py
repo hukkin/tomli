@@ -186,6 +186,25 @@ class TestMiscellaneous(unittest.TestCase):
         self.assertIsNone(try_simple_decimal("0o123\n", 0))
         self.assertIsNone(try_simple_decimal("0b100\n", 0))
 
+    def test_use_simple_decimal(self):
+        # USE_SIMPLE_DECIMAL remains True if parsing only simple numbers
+        toml = textwrap.dedent("""
+            [metadata]
+            only_ints = [123, 456]
+        """)
+        tomllib._parser.USE_SIMPLE_DECIMAL = True
+        tomllib.loads(toml)
+        self.assertTrue(tomllib._parser.USE_SIMPLE_DECIMAL)
+
+        # Turn off USE_SIMPLE_DECIMAL when meeting the first non-simple number
+        # (a datetime in this case)
+        toml = textwrap.dedent("""
+            [metadata]
+            datatime = 2007-02-01T17:09:54-08:45
+        """)
+        tomllib.loads(toml)
+        self.assertFalse(tomllib._parser.USE_SIMPLE_DECIMAL)
+
     @unittest.skipUnless(sys.version_info >= (3, 15), "need Python 3.15+")
     def test_lazy_import(self):
         # Test that try_simple_decimal() can parse the TOML file without

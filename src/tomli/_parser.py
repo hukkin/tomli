@@ -795,7 +795,7 @@ def parse_value(
     if USE_SIMPLE_DECIMAL:
         number = try_simple_decimal(src, pos)
         if number is not None:
-            return number  # pragma: no cover
+            return number
 
         # No longer use try_simple_decimal(), switch to regex
         USE_SIMPLE_DECIMAL = False
