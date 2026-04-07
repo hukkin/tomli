@@ -710,6 +710,8 @@ def parse_basic_str(src: str, pos: Pos, *, multiline: bool) -> tuple[Pos, str]:
         pos += 1
 
 
+USE_SIMPLE_DECIMAL = True
+
 def try_simple_decimal(src: str, pos: Pos) -> None | tuple[Pos, int]:
     """Parse a "simple" decimal integer.
 
@@ -788,9 +790,14 @@ def parse_value(
     # Try a simple parser for decimal numbers. If it's able to parse all
     # numbers, it avoids importing tomli._re which has an impact on
     # the tomli startup time.
-    number = try_simple_decimal(src, pos)
-    if number is not None:
-        return number
+    global USE_SIMPLE_DECIMAL
+    if USE_SIMPLE_DECIMAL:
+        number = try_simple_decimal(src, pos)
+        if number is not None:
+            return number
+
+        # No longer use try_simple_decimal(), switch to regex
+        USE_SIMPLE_DECIMAL = False
 
     # Dates and times
     datetime_match = RE_DATETIME.match(src, pos)
