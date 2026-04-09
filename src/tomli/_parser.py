@@ -7,6 +7,10 @@ from __future__ import annotations
 import sys
 from types import MappingProxyType
 
+# Defer loading regular expressions until we actually need them in
+# parse_value().
+__lazy_modules__ = ["tomli._re"]
+
 from ._re import (
     RE_DATETIME,
     RE_LOCALTIME,
