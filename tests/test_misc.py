@@ -161,7 +161,7 @@ class TestMiscellaneous(unittest.TestCase):
     def test_lazy_import(self):
         # Test the TOML file can be parsed without importing regular
         # expressions (tomli._re)
-        code = textwrap.dedent(f"""
+        code = textwrap.dedent("""
             import sys, tomli, textwrap
             document = textwrap.dedent('''
                 [metadata]
