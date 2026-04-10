@@ -11,6 +11,13 @@ from types import MappingProxyType
 # parse_value().
 __lazy_modules__ = ["tomli._re"]
 
+# Defer loading regular expressions until we actually need them in
+# parse_value().
+__lazy_modules__ = ["tomli._re"]
+
+import sys
+from types import MappingProxyType
+
 from ._re import (
     RE_DATETIME,
     RE_LOCALTIME,
