@@ -105,6 +105,7 @@ jobs:
       env:
         CIBW_ARCHS_MACOS: x86_64 arm64
         TOMLI_USE_MYPYC: '1'
+        MACOSX_DEPLOYMENT_TARGET: '10.13'
 
     - uses: actions/upload-artifact@v6
       with:
