@@ -7,8 +7,10 @@ import datetime
 from decimal import Decimal as D
 import importlib
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
+import textwrap
 import unittest
 
 from . import tomllib
@@ -154,3 +156,22 @@ class TestMiscellaneous(unittest.TestCase):
         never imported by tests.
         """
         importlib.import_module(f"{tomllib.__name__}._types")
+
+    @unittest.skipUnless(sys.version_info >= (3, 15), "need Python 3.15+")
+    def test_lazy_import(self):
+        # Test the TOML file can be parsed without importing regular
+        # expressions (tomli._re)
+        code = textwrap.dedent("""
+            import sys, tomli, textwrap
+            document = textwrap.dedent('''
+                [metadata]
+                key = "text"
+                array = ["array", "of", "text"]
+                booleans = [true, false]
+            ''')
+            tomli.loads(document)
+            print("lazy import?", 'tomli._re' not in sys.modules)
+        """)
+        cmd = [sys.executable, "-c", code]
+        proc = subprocess.run(cmd, check=True, capture_output=True)
+        self.assertIn(b"lazy import? True", proc.stdout.rstrip())
