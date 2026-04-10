@@ -10,11 +10,6 @@ from types import MappingProxyType
 # Defer loading regular expressions until we actually need them in
 # parse_value().
 __lazy_modules__ = ["tomli._re"]
-
-# Defer loading regular expressions until we actually need them in
-# parse_value().
-__lazy_modules__ = ["tomli._re"]
-
 import sys
 from types import MappingProxyType
 
