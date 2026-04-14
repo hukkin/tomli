@@ -87,9 +87,19 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, windows-11-arm, macos-latest]
+        arch: ['']
+        include:
+          - os: ubuntu-latest
+            arch: riscv64
 
     steps:
     - uses: actions/checkout@v6
+
+    - name: Set up QEMU
+      if: matrix.arch == 'riscv64'
+      uses: docker/setup-qemu-action@v3
+      with:
+        platforms: riscv64
 
     - uses: actions/setup-python@v6
       with:
@@ -104,6 +114,7 @@ jobs:
       uses: pypa/cibuildwheel@v3.3.1
       env:
         CIBW_ARCHS_MACOS: x86_64 arm64
+        CIBW_ARCHS_LINUX: ${{ matrix.arch == 'riscv64' && 'riscv64' || 'auto' }}
         TOMLI_USE_MYPYC: '1'
 
     - uses: actions/upload-artifact@v6
