@@ -6,7 +6,7 @@ from __future__ import annotations
 
 # Defer loading regular expressions until we actually need them in
 # parse_value().
-__lazy_modules__ = ["tomli._re"]
+__lazy_modules__ = ["tomli._re", "tomllib._re"]
 
 import sys
 
