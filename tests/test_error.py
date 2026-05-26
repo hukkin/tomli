@@ -109,7 +109,9 @@ class TestError(unittest.TestCase):
             tomllib.loads('a = """hello')
         self.assertEqual(exc_info.exception.msg, "Unterminated string")
         self.assertEqual(exc_info.exception.pos, 12)
-        self.assertEqual(str(exc_info.exception), "Unterminated string (at end of document)")
+        self.assertEqual(
+            str(exc_info.exception), "Unterminated string (at end of document)"
+        )
         self.assertEqual(exc_info.exception.lineno, 1)
         self.assertEqual(exc_info.exception.colno, 13)
 
@@ -118,7 +120,9 @@ class TestError(unittest.TestCase):
             tomllib.loads("a = '''hello")
         self.assertEqual(exc_info.exception.msg, "Expected \"'''\"")
         self.assertEqual(exc_info.exception.pos, 12)
-        self.assertEqual(str(exc_info.exception), "Expected \"'''\" (at end of document)")
+        self.assertEqual(
+            str(exc_info.exception), "Expected \"'''\" (at end of document)"
+        )
         self.assertEqual(exc_info.exception.lineno, 1)
         self.assertEqual(exc_info.exception.colno, 13)
 
@@ -161,9 +165,11 @@ class TestError(unittest.TestCase):
 
         # Multi-line unterminated string on a later line
         with self.assertRaises(tomllib.TOMLDecodeError) as exc_info:
-            tomllib.loads("a = 1\n\nb = \"\"\"hello\nworld")
+            tomllib.loads('a = 1\n\nb = """hello\nworld')
         self.assertEqual(exc_info.exception.msg, "Unterminated string")
         self.assertEqual(exc_info.exception.pos, 25)
-        self.assertEqual(str(exc_info.exception), "Unterminated string (at end of document)")
+        self.assertEqual(
+            str(exc_info.exception), "Unterminated string (at end of document)"
+        )
         self.assertEqual(exc_info.exception.lineno, 4)
         self.assertEqual(exc_info.exception.colno, 6)
