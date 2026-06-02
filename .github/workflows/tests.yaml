@@ -7,6 +7,8 @@ on:
   pull_request:
     branches: [ master ]
 
+permissions: {}
+
 env:
   CIBW_TEST_COMMAND: python -m unittest discover --start-directory {project}
   CIBW_SKIP: cp38-* cp39-* cp310-*
