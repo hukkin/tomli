@@ -1,0 +1,4 @@
+rules:
+  use-trusted-publishing:
+    ignore:
+      - tests.yaml
