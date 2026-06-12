@@ -147,6 +147,9 @@ jobs:
     needs: [ allgood ]
     if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
     runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
     steps:
     - uses: actions/download-artifact@v7
       with:
@@ -156,13 +159,9 @@ jobs:
     - uses: actions/setup-python@v6
       with:
         python-version: '3.x'
-    - name: Install twine
+    - name: Check distributions
       run: |
         pip install twine
-    - name: Check and publish
-      run: |
         twine check --strict dist/*
-        twine upload dist/*
-      env:
-        TWINE_USERNAME: __token__
-        TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+    - name: Publish to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
