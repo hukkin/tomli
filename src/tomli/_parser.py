@@ -373,11 +373,11 @@ def skip_comment(src: str, pos: Pos) -> Pos:
 
 def skip_comments_and_array_ws(src: str, pos: Pos) -> Pos:
     while True:
-        pos_before_skip = pos
         pos = skip_chars(src, pos, TOML_WS_AND_NEWLINE)
-        pos = skip_comment(src, pos)
-        if pos == pos_before_skip:
+        new_pos = skip_comment(src, pos)
+        if new_pos == pos:
             return pos
+        pos = new_pos
 
 
 def create_dict_rule(src: str, pos: Pos, out: Output) -> tuple[Pos, Key]:
