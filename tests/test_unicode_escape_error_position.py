@@ -20,12 +20,14 @@ def test_unicode_escape_surrogate_error_position():
     doc = 'val = "\\uD800"'
     with pytest.raises(tomllib.TOMLDecodeError) as exc_info:
         tomllib.loads(doc)
-    
+
     err = exc_info.value
     # The error should be at or near the start of "D800"
     # Column 10 is position 9 (0-indexed), which is the 'D' in D800
     # Before the fix, this would report column 14 (the closing quote)
-    assert err.colno <= 11, f"Error column {err.colno} is too late, should be near start of hex digits"
+    assert (
+        err.colno <= 11
+    ), f"Error column {err.colno} is too late, should be near start of hex digits"
 
 
 def test_unicode_escape_large_codepoint_error_position():
@@ -34,7 +36,7 @@ def test_unicode_escape_large_codepoint_error_position():
     doc = 'val = "\\U00110000"'
     with pytest.raises(tomllib.TOMLDecodeError) as exc_info:
         tomllib.loads(doc)
-    
+
     err = exc_info.value
     # Error should be at start of hex digits, not at end
     assert err.colno <= 11, f"Error column {err.colno} is too late"
@@ -45,7 +47,7 @@ def test_unicode_escape_in_middle_of_string():
     doc = 'key = "before \\uDFFF after"'
     with pytest.raises(tomllib.TOMLDecodeError) as exc_info:
         tomllib.loads(doc)
-    
+
     err = exc_info.value
     # Error should be around where the hex digits are, not at end of string
     # The escape starts around position 14-15
