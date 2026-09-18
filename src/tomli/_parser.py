@@ -170,6 +170,9 @@ def loads(__s: str, *, parse_float: ParseFloat = float) -> dict[str, Any]:
         raise TypeError(
             f"Expected str object, not '{type(__s).__qualname__}'"
         ) from None
+    # Skip a single leading UTF-8 BOM (U+FEFF). Windows editors often write
+    # one; without this, loads() fails with a cryptic "Invalid statement".
+    src = src.removeprefix("\ufeff")
     pos = 0
     out = Output()
     header: Key = ()
