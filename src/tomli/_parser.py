@@ -582,6 +582,8 @@ def parse_basic_str_escape(
     src: str, pos: Pos, *, multiline: bool = False
 ) -> tuple[Pos, str]:
     escape_id = src[pos : pos + 2]
+    if escape_id == "\\":
+        raise TOMLDecodeError("Unescaped '\\' in a string", src, pos + 1)
     pos += 2
     if multiline and escape_id in {"\\ ", "\\\t", "\\\n"}:
         # Skip whitespace until next non-whitespace character or end of

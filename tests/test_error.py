@@ -32,6 +32,14 @@ class TestError(unittest.TestCase):
             str(exc_info.exception), "Invalid statement (at line 3, column 1)"
         )
 
+    def test_incomplete_escape_position(self):
+        for doc in ['"\\', 'value = "abc\\', 'value = """abc\\', '"key\\']:
+            with self.subTest(doc=doc):
+                with self.assertRaises(tomllib.TOMLDecodeError) as exc_info:
+                    tomllib.loads(doc)
+                self.assertEqual(exc_info.exception.pos, len(doc))
+                self.assertEqual(exc_info.exception.colno, len(doc) + 1)
+
     def test_missing_value(self):
         with self.assertRaises(tomllib.TOMLDecodeError) as exc_info:
             tomllib.loads("\n\nfwfw=")
