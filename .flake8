@@ -6,3 +6,6 @@ extend-ignore =
     # B042: Requires calling super().__init__ in custom exceptions
     B042,
 extend-exclude = */site-packages/*
+# Python 3.14 added a stdlib module named _types. This file is tomli._types,
+# a private submodule, and does not replace that module.
+builtins-allowed-modules = _types
