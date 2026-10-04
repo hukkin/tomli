@@ -582,6 +582,10 @@ def parse_basic_str_escape(
     src: str, pos: Pos, *, multiline: bool = False
 ) -> tuple[Pos, str]:
     escape_id = src[pos : pos + 2]
+    # A trailing backslash has no escape character. Advancing by two would
+    # report the error one code point past EOF (see #312).
+    if len(escape_id) != 2:
+        raise TOMLDecodeError("Unescaped '\\' in a string", src, pos)
     pos += 2
     if multiline and escape_id in {"\\ ", "\\\t", "\\\n"}:
         # Skip whitespace until next non-whitespace character or end of

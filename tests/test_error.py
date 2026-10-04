@@ -89,6 +89,24 @@ class TestError(unittest.TestCase):
                 e = tomllib.TOMLDecodeError(*args)  # type: ignore[arg-type]
             self.assertEqual(e.args, args)
 
+    def test_unfinished_escape_position_is_not_past_eof(self):
+        # A document that ends on the backslash of an unfinished escape used
+        # to report pos == len(doc) + 1. The position now points at that
+        # backslash, which is inside the document.
+        cases = (
+            ('"\\', 1),
+            ('value = "\\', 9),
+            ('value = """\\', 11),
+        )
+        for document, expected_pos in cases:
+            with self.subTest(document=document):
+                with self.assertRaises(tomllib.TOMLDecodeError) as exc_info:
+                    tomllib.loads(document)
+                exc = exc_info.exception
+                self.assertEqual(exc.pos, expected_pos)
+                self.assertLess(exc.pos, len(exc.doc))
+                self.assertEqual(exc.colno, expected_pos + 1)
+
     def test_tomldecodeerror(self):
         msg = "error parsing"
         doc = "v=1\n[table]\nv='val'"
