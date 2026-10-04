@@ -107,6 +107,11 @@ class TestError(unittest.TestCase):
                 self.assertLess(exc.pos, len(exc.doc))
                 self.assertEqual(exc.colno, expected_pos + 1)
 
+    def test_invalid_two_character_escape(self):
+        with self.assertRaises(tomllib.TOMLDecodeError) as exc_info:
+            tomllib.loads('value = "\\q"')
+        self.assertIn("Unescaped", str(exc_info.exception))
+
     def test_tomldecodeerror(self):
         msg = "error parsing"
         doc = "v=1\n[table]\nv='val'"
