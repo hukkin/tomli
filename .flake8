@@ -6,3 +6,7 @@ extend-ignore =
     # B042: Requires calling super().__init__ in custom exceptions
     B042,
 extend-exclude = */site-packages/*
+
+builtins-allowed-modules =
+    # Allow tomli/_types.py
+    _types,
