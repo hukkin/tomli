@@ -9,6 +9,7 @@
 
 - Fixed
   - Limit number of parts of a TOML key to address quadratic time complexity
+  - Report correct error position for invalid Unicode escapes (surrogates and out-of-range codepoints)
 
 ## 2.4.0
 

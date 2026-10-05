@@ -617,12 +617,12 @@ def parse_hex_char(src: str, pos: Pos, hex_len: int) -> tuple[Pos, str]:
     hex_str = src[pos : pos + hex_len]
     if len(hex_str) != hex_len or not HEXDIGIT_CHARS.issuperset(hex_str):
         raise TOMLDecodeError("Invalid hex value", src, pos)
-    pos += hex_len
     hex_int = int(hex_str, 16)
     if not is_unicode_scalar_value(hex_int):
         raise TOMLDecodeError(
             "Escaped character is not a Unicode scalar value", src, pos
         )
+    pos += hex_len
     return pos, chr(hex_int)
 
 
