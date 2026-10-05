@@ -58,3 +58,7 @@ repos:
   hooks:
   - id: mypy
     args: ["--scripts-are-modules"]
+- repo: https://github.com/zizmorcore/zizmor-pre-commit
+  rev: 9257c6050c0261b8c57e712f632dc4a8010109a9  # frozen: v1.25.2
+  hooks:
+  - id: zizmor
