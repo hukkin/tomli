@@ -157,7 +157,10 @@ class TestMiscellaneous(unittest.TestCase):
         """
         importlib.import_module(f"{tomllib.__name__}._types")
 
-    @unittest.skipUnless(sys.version_info >= (3, 15), "need Python 3.15+")
+    @unittest.skipUnless(
+        sys.version_info >= (3, 15) and tomllib._parser.__file__.endswith(".py"),
+        "need pure Python 3.15+",
+    )
     def test_lazy_import(self):
         # Test the TOML file can be parsed without importing regular
         # expressions (tomli._re)
