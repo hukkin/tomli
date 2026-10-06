@@ -29,10 +29,12 @@ if TYPE_CHECKING:
 # mypyc docs this will be fixed in the future:
 # https://mypyc.readthedocs.io/en/latest/differences_from_python.html#stack-overflows
 # Before mypyc's fix is in, recursion needs to be limited by this library.
-# Choosing `sys.getrecursionlimit()` as maximum inline table/array nesting
-# level, as it allows more nesting than pure Python, but still seems a far
-# lower number than where mypyc binaries crash.
-MAX_INLINE_NESTING: Final = sys.getrecursionlimit()
+# Choosing 400 as maximum inline table/array nesting level, as it's 4x the
+# spec recommended minimum (https://github.com/toml-lang/toml/pull/1087)
+# (unreleased at the time of writing) and less than half of what causes an
+# unrecoverable crash in a worker (not main) thread on a python:3.13-alpine
+# image.
+MAX_INLINE_NESTING: Final = 400
 
 # Pathologically excessive number of parts in a key runs into quadratic
 # behavior (e.g. in Flags.is_).

@@ -101,11 +101,11 @@ class TestMiscellaneous(unittest.TestCase):
         self.assertEqual(obj_copy, expected_obj)
 
     def test_inline_array_recursion_limit(self):
-        nest_count = 470
+        nest_count = 401
         recursive_array_toml = "arr = " + nest_count * "[" + nest_count * "]"
         tomllib.loads(recursive_array_toml)
 
-        nest_count = sys.getrecursionlimit() + 2
+        nest_count = 402
         recursive_array_toml = "arr = " + nest_count * "[" + nest_count * "]"
         with self.assertRaisesRegex(
             RecursionError,
@@ -120,7 +120,7 @@ class TestMiscellaneous(unittest.TestCase):
         recursive_table_toml = nest_count * "key = {" + nest_count * "}"
         tomllib.loads(recursive_table_toml)
 
-        nest_count = sys.getrecursionlimit() + 2
+        nest_count = 402
         recursive_table_toml = nest_count * "key = {" + nest_count * "}"
         with self.assertRaisesRegex(
             RecursionError,
