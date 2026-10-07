@@ -154,7 +154,7 @@ tomllib.loads("['This parses fine with Python 3.6+']")
 - it's lil'
 - pure Python with zero dependencies
 - the fastest pure Python parser [\*](#pure-python):
-  14x as fast as [tomlkit](https://pypi.org/project/tomlkit/),
+  8x as fast as [tomlkit](https://pypi.org/project/tomlkit/),
   2.1x as fast as [toml](https://pypi.org/project/toml/)
 - outputs [basic data types](#how-do-toml-types-map-into-python-types) only
 - 100% spec compliant: passes all tests in
@@ -200,29 +200,29 @@ The core library does not include write capability, as most TOML use cases are r
 
 The `benchmark/` folder in this repository contains a performance benchmark for comparing the various Python TOML parsers.
 
-Below are the results for commit [064e492](https://github.com/hukkin/tomli/tree/064e492919b2338def788753b8c981c9131334c0).
+Below are the results for commit [5d51b8f](https://github.com/hukkin/tomli/tree/5d51b8f567df7a0e93e6da889b70f507627e9892).
 
 ### Mypyc generated wheel<a name="mypyc-generated-wheel"></a>
 
 ```console
 foo@bar:~/dev/tomli$ python --version
-Python 3.14.2
+Python 3.14.8
 foo@bar:~/dev/tomli$ pip freeze
 pytomlpp==1.1.0
 rtoml==0.13.0
 toml==0.10.2
 tomli @ file:///home/foo/dev/tomli
-tomlkit==0.13.3
+tomlkit==0.15.1
 foo@bar:~/dev/tomli$ python benchmark/run.py
 Parsing data.toml 5000 times:
 ------------------------------------------------------
     parser |  exec time | performance (more is better)
 -----------+------------+-----------------------------
-     rtoml |    0.328 s | baseline (100%)
-  pytomlpp |    0.365 s | 89.75%
-     tomli |    0.838 s | 39.12%
-      toml |     3.01 s | 10.90%
-   tomlkit |     20.7 s | 1.59%
+     rtoml |    0.322 s | baseline (100%)
+  pytomlpp |    0.386 s | 83.50%
+     tomli |    0.579 s | 55.63%
+      toml |     3.16 s | 10.18%
+   tomlkit |     11.6 s | 2.77%
 ```
 
 ### Pure Python<a name="pure-python"></a>
@@ -233,9 +233,9 @@ Parsing data.toml 5000 times:
 ------------------------------------------------------
     parser |  exec time | performance (more is better)
 -----------+------------+-----------------------------
-     rtoml |    0.323 s | baseline (100%)
-  pytomlpp |    0.365 s | 88.40%
-     tomli |     1.44 s | 22.36%
-      toml |     3.03 s | 10.65%
-   tomlkit |     20.6 s | 1.57%
+     rtoml |    0.319 s | baseline (100%)
+  pytomlpp |    0.386 s | 82.57%
+     tomli |     1.49 s | 21.44%
+      toml |     3.12 s | 10.23%
+   tomlkit |     11.5 s | 2.78%
 ```
