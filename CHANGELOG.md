@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.5.0
+
+- Added
+  - Binary wheels for Python 3.15
+- Fixed
+  - Set inline array/table nesting limit to 400 to fix mypyc generated binaries crashing in `python:3.13-alpine` image's worker thread
+
 ## 2.3.1
 
 - Fixed
