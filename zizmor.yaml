@@ -1,0 +1,5 @@
+rules:
+  archived-uses:
+    ignore:
+      # allow archived absolufy-imports, for now
+      - .pre-commit-config.yaml:24
