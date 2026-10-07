@@ -52,3 +52,14 @@ matches Tomli commit https://github.com/hukkin/tomli/commit/7e563eed5286b5d46b82
   Also change `import tomli as tomllib` to `import tomllib`.
 
 - In `cpython:Lib/tomllib/_parser.py` replace `__fp` with `fp` and `__s` with `s`. Add the `/` to `load` and `loads` function signatures.
+
+- Add the following to `cpython:Lib/tomllib/__init__.py`:
+
+  ```python
+  # Pretend this exception was created here.
+  TOMLDecodeError.__module__ = __name__
+  ```
+
+- Restore `cpython:Lib/tomllib/mypy.ini`
+
+- Examine the diff, and revert mypyc-related changes in code and tests.
