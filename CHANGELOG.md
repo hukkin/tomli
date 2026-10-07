@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.3.2
+
+- Fixed
+  - Backport: Set nested inline array/table limit to 400 to fix mypyc generated binaries crashing unrecoverably in `python:3.13-alpine` image's worker thread
+
 ## 2.5.0
 
 - Added
