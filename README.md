@@ -1,5 +1,4 @@
 [![Build Status](https://github.com/hukkin/tomli/actions/workflows/tests.yaml/badge.svg?branch=master)](https://github.com/hukkin/tomli/actions?query=workflow%3ATests+branch%3Amaster+event%3Apush)
-[![codecov.io](https://codecov.io/gh/hukkin/tomli/branch/master/graph/badge.svg)](https://codecov.io/gh/hukkin/tomli)
 [![PyPI version](https://img.shields.io/pypi/v/tomli)](https://pypi.org/project/tomli)
 
 # Tomli
@@ -38,13 +37,12 @@ Older versions are [TOML v1.0.0](https://toml.io/en/v1.0.0) compatible.
 A version of Tomli, the `tomllib` module,
 was added to the standard library in Python 3.11
 via [PEP 680](https://www.python.org/dev/peps/pep-0680/).
-Tomli continues to provide a backport on PyPI for Python versions
-where the standard library module is not available
-and that have not yet reached their end-of-life.
+Tomli provides a TOML v1.1.0 compatible backport for Pythons older than 3.15.
+On the other hand, installing `tomli<2.4` allows TOML v1.0.0 parsing on Python 3.15+.
 
 Tomli uses [mypyc](https://github.com/mypyc/mypyc)
 to generate binary wheels for most of the widely used platforms,
-so Python 3.11+ users may prefer it over `tomllib` for improved performance.
+so some may prefer it over `tomllib` for improved performance.
 Pure Python wheels are available on any platform and should perform the same as `tomllib`.
 
 ## Installation<a name="installation"></a>
