@@ -98,6 +98,10 @@ except tomli.TOMLDecodeError:
     print("Yep, definitely not valid.")
 ```
 
+Note that Tomli may raise a different exception if an implementation-defined
+limit is exceeded, such as `RecursionError` for deeply nested tables or
+`ValueError` for extremely large integers.
+
 Note that error messages are considered informational only.
 They should not be assumed to stay constant across Tomli versions.
 
