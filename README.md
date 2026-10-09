@@ -100,29 +100,9 @@ except tomli.TOMLDecodeError:
     print("Yep, definitely not valid.")
 ```
 
-`TOMLDecodeError` is raised only for documents that are not valid TOML.
-Errors caused by implementation limits of Tomli itself are not converted,
-because the document may be perfectly valid TOML that this implementation
-cannot represent:
-
-- a decimal integer with more digits than Python's integer string
-  conversion limit allows
-  ([`sys.set_int_max_str_digits`](https://docs.python.org/3/library/sys.html#sys.set_int_max_str_digits),
-  4300 digits by default) raises `ValueError`
-- a deeply nested array or inline table raises `RecursionError`
-
-```python
-import tomli
-
-tomli.loads("a = " + "1" * 4301)
-# ValueError: Exceeds the limit (4300 digits) for integer string conversion
-
-tomli.loads("a = " + "[" * 1000 + "]" * 1000)
-# RecursionError: maximum recursion depth exceeded
-```
-
-`TOMLDecodeError` subclasses `ValueError`, so catching `ValueError` handles
-all of the above.
+Note that Tomli may raise a different exception if an implementation-defined
+limit is exceeded, such as `RecursionError` for deeply nested tables or
+`ValueError` for extremely large integers.
 
 Note that error messages are considered informational only.
 They should not be assumed to stay constant across Tomli versions.
