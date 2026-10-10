@@ -432,8 +432,8 @@ def key_value_rule(
     key_parent, key_stem = key[:-1], key[-1]
     abs_key_parent = header + key_parent
 
-    relative_path_cont_keys = (header + key[:i] for i in range(1, len(key)))
-    for cont_key in relative_path_cont_keys:
+    for i in range(1, len(key)):
+        cont_key = header + key[:i]
         # Check that dotted key syntax does not redefine an existing table
         if out.flags.is_(cont_key, Flags.EXPLICIT_NEST):
             raise TOMLDecodeError(f"Cannot redefine namespace {cont_key}", src, pos)
