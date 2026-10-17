@@ -89,6 +89,48 @@ class TestError(unittest.TestCase):
                 e = tomllib.TOMLDecodeError(*args)  # type: ignore[arg-type]
             self.assertEqual(e.args, args)
 
+    def test_unfinished_escape_position_is_not_past_eof(self):
+        # A document that ends on the backslash of an unfinished escape used
+        # to report pos == len(doc) + 1. The position now points at that
+        # backslash, which is inside the document.
+        cases = (
+            ('"\\', 1),
+            ('value = "\\', 9),
+            ('value = """\\', 11),
+        )
+        for document, expected_pos in cases:
+            with self.subTest(document=document):
+                with self.assertRaises(tomllib.TOMLDecodeError) as exc_info:
+                    tomllib.loads(document)
+                exc = exc_info.exception
+                self.assertEqual(exc.pos, expected_pos)
+                self.assertLess(exc.pos, len(exc.doc))
+                self.assertEqual(exc.colno, expected_pos + 1)
+
+    def test_unfinished_escape_unicode_and_newlines(self):
+        for newline in ("\n", "\r\n"):
+            prefixes = (
+                'value = "\u2603',
+                'value = """' + newline + "\u2603",
+                '"\u2603',
+            )
+            for prefix in prefixes:
+                document = "title = 'ok'" + newline + prefix + "\\"
+                normalized = document.replace("\r\n", "\n")
+                with self.subTest(document=document):
+                    with self.assertRaises(tomllib.TOMLDecodeError) as exc_info:
+                        tomllib.loads(document)
+                    exc = exc_info.exception
+                    self.assertEqual(exc.doc, normalized)
+                    self.assertEqual(exc.pos, len(normalized) - 1)
+                    self.assertEqual(exc.lineno, normalized.count("\n") + 1)
+                    self.assertEqual(exc.colno, len(normalized.rsplit("\n", 1)[-1]))
+
+    def test_invalid_two_character_escape(self):
+        with self.assertRaises(tomllib.TOMLDecodeError) as exc_info:
+            tomllib.loads('value = "\\q"')
+        self.assertIn("Unescaped", str(exc_info.exception))
+
     def test_tomldecodeerror(self):
         msg = "error parsing"
         doc = "v=1\n[table]\nv='val'"
