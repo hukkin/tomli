@@ -107,6 +107,25 @@ class TestError(unittest.TestCase):
                 self.assertLess(exc.pos, len(exc.doc))
                 self.assertEqual(exc.colno, expected_pos + 1)
 
+    def test_unfinished_escape_unicode_and_newlines(self):
+        for newline in ("\n", "\r\n"):
+            prefixes = (
+                'value = "\u2603',
+                'value = """' + newline + "\u2603",
+                '"\u2603',
+            )
+            for prefix in prefixes:
+                document = "title = 'ok'" + newline + prefix + "\\"
+                normalized = document.replace("\r\n", "\n")
+                with self.subTest(document=document):
+                    with self.assertRaises(tomllib.TOMLDecodeError) as exc_info:
+                        tomllib.loads(document)
+                    exc = exc_info.exception
+                    self.assertEqual(exc.doc, normalized)
+                    self.assertEqual(exc.pos, len(normalized) - 1)
+                    self.assertEqual(exc.lineno, normalized.count("\n") + 1)
+                    self.assertEqual(exc.colno, len(normalized.rsplit("\n", 1)[-1]))
+
     def test_invalid_two_character_escape(self):
         with self.assertRaises(tomllib.TOMLDecodeError) as exc_info:
             tomllib.loads('value = "\\q"')
