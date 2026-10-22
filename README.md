@@ -147,6 +147,10 @@ else:
 tomllib.loads("['This parses fine with Python 3.6+']")
 ```
 
+This fallback keeps the API available, but the supported TOML version depends on the selected parser.
+The standard library's `tomllib` supports TOML v1.0.0 on Python 3.11–3.14 and TOML v1.1.0 on Python 3.15+.
+To use TOML v1.1.0 on Python 3.8–3.14, import Tomli 2.4.0 or later directly instead of using this fallback.
+
 ## FAQ<a name="faq"></a>
 
 ### Why this parser?<a name="why-this-parser"></a>
