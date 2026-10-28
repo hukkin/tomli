@@ -149,6 +149,14 @@ class TestMiscellaneous(unittest.TestCase):
         ):
             tomllib.loads(nested_key_toml)
 
+    def test_leading_bom(self):
+        """Leading UTF-8 BOM must be ignored (Windows editors often emit one)."""
+        self.assertEqual(tomllib.loads("\ufeffx = 1"), {"x": 1})
+        self.assertEqual(tomllib.loads("\ufeff\nx = 1\n"), {"x": 1})
+        # BOM only valid as a leading document marker, not mid-document.
+        with self.assertRaises(tomllib.TOMLDecodeError):
+            tomllib.loads("x = 1\n\ufeffy = 2")
+
     def test_types_import(self):
         """Test that `_types` module runs.
 
