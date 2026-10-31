@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import io
 from typing import Any
 import unittest
 
@@ -36,6 +37,40 @@ class TestError(unittest.TestCase):
         with self.assertRaises(tomllib.TOMLDecodeError) as exc_info:
             tomllib.loads("\n\nfwfw=")
         self.assertEqual(str(exc_info.exception), "Invalid value (at end of document)")
+
+    def test_unfinished_escape_at_eof(self):
+        documents = (
+            '"\\',
+            'fruit."\\',
+            '["\\',
+            '[["\\',
+            'value = "\\',
+            'value = ["\\',
+            'value = { key = "\\',
+            'value = """\\',
+            'value = """\ntext\\',
+            'value = """\r\n\N{SNOWMAN}\N{GRINNING FACE}\\',
+            'value = "' + "\\" * 3,
+        )
+        for document in documents:
+            for binary in (False, True):
+                with self.subTest(document=document, binary=binary):
+                    with self.assertRaises(tomllib.TOMLDecodeError) as exc_info:
+                        if binary:
+                            tomllib.load(io.BytesIO(document.encode()))
+                        else:
+                            tomllib.loads(document)
+                    exc = exc_info.exception
+                    normalized = document.replace("\r\n", "\n")
+                    lines = normalized.split("\n")
+                    self.assertEqual(exc.doc, normalized)
+                    self.assertEqual(exc.pos, len(normalized))
+                    self.assertEqual(exc.lineno, len(lines))
+                    self.assertEqual(exc.colno, len(lines[-1]) + 1)
+                    self.assertEqual(exc.msg, "Unescaped '\\' in a string")
+                    self.assertEqual(
+                        str(exc), "Unescaped '\\' in a string (at end of document)"
+                    )
 
     def test_invalid_char_quotes(self):
         with self.assertRaises(tomllib.TOMLDecodeError) as exc_info:
