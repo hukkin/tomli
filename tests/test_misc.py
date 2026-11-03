@@ -11,6 +11,7 @@ import subprocess
 import sys
 import tempfile
 import textwrap
+import time
 import unittest
 
 from . import tomllib
@@ -148,6 +149,60 @@ class TestMiscellaneous(unittest.TestCase):
             r"TOML key has more than the allowed [0-9]+ parts",
         ):
             tomllib.loads(nested_key_toml)
+
+    def test_many_keys_under_deep_table_header(self):
+        # A table section with a deep header may contain any number of keys
+        # (regression test for gh-152930).
+        depth = tomllib._parser.MAX_KEY_PARTS - 2
+        num_keys = 1000
+        header = "[" + ".".join(f"h{i}" for i in range(depth)) + "]\n"
+        body = "".join(f"k{i} = {i}\n" for i in range(num_keys))
+
+        actual = tomllib.loads(header + body)
+
+        for i in range(depth):
+            actual = actual[f"h{i}"]
+        self.assertEqual(len(actual), num_keys)
+        for i in (0, num_keys // 2, num_keys - 1):
+            with self.subTest(msg=i):
+                self.assertEqual(actual[f"k{i}"], i)
+
+    def test_deep_table_header_not_rewalked_per_key(self):
+        # A key/value pair in a table section must be parsed in time
+        # independent of the length of the section's header. The same
+        # key/value body is parsed under a shallow and a deep header, and the
+        # two documents are measured alternately, keeping the fastest of
+        # several runs, so that the measured ratio does not depend on how
+        # fast or how loaded the machine is (gh-152930).
+        num_keys = 5000
+        body = "".join(f"k{i} = 1\n" for i in range(num_keys))
+        shallow_depth = 1
+        deep_depth = tomllib._parser.MAX_KEY_PARTS - 2
+        docs = {}
+        for depth in (shallow_depth, deep_depth):
+            docs[depth] = "[" + ".".join(f"h{i}" for i in range(depth)) + "]\n" + body
+
+        def measure(depth: int) -> float:
+            start = time.perf_counter()
+            tomllib.loads(docs[depth])
+            return time.perf_counter() - start
+
+        for depth in docs:
+            measure(depth)  # Warm up
+
+        best: dict[int, float] = {}
+        for _ in range(5):
+            for depth in docs:
+                elapsed = measure(depth)
+                if elapsed < best.get(depth, float("inf")):
+                    best[depth] = elapsed
+
+        shallow, deep = best[shallow_depth], best[deep_depth]
+        self.assertLess(
+            deep / shallow,
+            5,
+            f"deep header {deep:.4f}s, shallow header {shallow:.4f}s",
+        )
 
     def test_types_import(self):
         """Test that `_types` module runs.

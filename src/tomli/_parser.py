@@ -175,6 +175,8 @@ def loads(__s: str, *, parse_float: ParseFloat = float) -> dict[str, Any]:
     pos = 0
     out = Output()
     header: Key = ()
+    header_flags = out.flags.resolve(header)
+    header_nest = out.data.get_or_create_nest(header)
     parse_float = make_safe_parse_float(parse_float)
 
     # Parse one statement at a time
@@ -199,7 +201,9 @@ def loads(__s: str, *, parse_float: ParseFloat = float) -> dict[str, Any]:
             pos += 1
             continue
         if char in KEY_INITIAL_CHARS:
-            pos = key_value_rule(src, pos, out, header, parse_float)
+            pos = key_value_rule(
+                src, pos, out, header, header_flags, header_nest, parse_float
+            )
             pos = skip_chars(src, pos, TOML_WS)
         elif char == "[":
             try:
@@ -211,6 +215,8 @@ def loads(__s: str, *, parse_float: ParseFloat = float) -> dict[str, Any]:
                 pos, header = create_list_rule(src, pos, out)
             else:
                 pos, header = create_dict_rule(src, pos, out)
+            header_flags = out.flags.resolve(header)
+            header_nest = out.data.get_or_create_nest(header)
             pos = skip_chars(src, pos, TOML_WS)
         elif char != "#":
             raise TOMLDecodeError("Invalid statement", src, pos)
@@ -272,10 +278,28 @@ class Flags:
             cont[key_stem] = {"flags": set(), "recursive_flags": set(), "nested": {}}
         cont[key_stem]["recursive_flags" if recursive else "flags"].add(flag)
 
-    def is_(self, key: Key, flag: int) -> bool:
+    def is_(
+        self,
+        key: Key,
+        flag: int,
+        *,
+        start: tuple[dict[Any, Any], dict[Any, Any] | None] | None = None,
+    ) -> bool:
+        """Check whether `key` has `flag` set.
+
+        `start` is a position in the flags tree returned by `resolve()`. When
+        it is given, `key` is relative to it and the resolved part is not
+        walked again.
+        """
+        if start is None:
+            cont: dict[Any, Any] = self._flags
+            inner: dict[Any, Any] | None = None
+        else:
+            cont, inner = start
         if not key:
-            return False  # document root has no flags
-        cont = self._flags
+            if inner is None:
+                return False  # document root has no flags
+            return flag in inner["flags"] or flag in inner["recursive_flags"]
         for k in key[:-1]:
             if k not in cont:
                 return False
@@ -289,6 +313,29 @@ class Flags:
             return flag in inner_cont["flags"] or flag in inner_cont["recursive_flags"]
         return False
 
+    def resolve(self, header: Key) -> tuple[dict[Any, Any], dict[Any, Any] | None]:
+        """Resolve a table `header` to a position in the flags tree.
+
+        The returned pair is the position of the header's children (the
+        `nested` container of its last key part) and the header's own flags
+        entry, or `None` for the document root. It can be passed to `is_()`
+        as `start` to look up keys inside the section without walking the
+        whole header from the document root for every key.
+
+        This is equivalent to a lookup from the document root, because the
+        recursive flags of the header and its ancestors can't change while
+        the section is being parsed: a table header is only entered through
+        the table rules, which reject an already frozen header (or one that
+        has a frozen ancestor), and freezing always happens to keys that the
+        current section header is a proper prefix of.
+        """
+        cont = self._flags
+        header_flags: dict[Any, Any] | None = None
+        for k in header:
+            header_flags = cont[k]
+            cont = header_flags["nested"]
+        return cont, header_flags
+
 
 class NestedDict:
     def __init__(self) -> None:
@@ -300,8 +347,10 @@ class NestedDict:
         key: Key,
         *,
         access_lists: bool = True,
+        start: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        cont: Any = self.dict
+        # `start` is a table section's nest, so that `key` is relative to it
+        cont: Any = self.dict if start is None else start
         for k in key:
             if k not in cont:
                 cont[k] = {}
@@ -426,28 +475,35 @@ def create_list_rule(src: str, pos: Pos, out: Output) -> tuple[Pos, Key]:
 
 
 def key_value_rule(
-    src: str, pos: Pos, out: Output, header: Key, parse_float: ParseFloat
+    src: str,
+    pos: Pos,
+    out: Output,
+    header: Key,
+    header_flags: tuple[dict[Any, Any], dict[Any, Any] | None],
+    header_nest: dict[str, Any],
+    parse_float: ParseFloat,
 ) -> Pos:
     pos, key, value = parse_key_value_pair(src, pos, parse_float, nest_lvl=0)
     key_parent, key_stem = key[:-1], key[-1]
-    abs_key_parent = header + key_parent
 
-    relative_path_cont_keys = (header + key[:i] for i in range(1, len(key)))
-    for cont_key in relative_path_cont_keys:
+    relative_path_cont_keys = (key[:i] for i in range(1, len(key)))
+    for rel_key in relative_path_cont_keys:
         # Check that dotted key syntax does not redefine an existing table
-        if out.flags.is_(cont_key, Flags.EXPLICIT_NEST):
-            raise TOMLDecodeError(f"Cannot redefine namespace {cont_key}", src, pos)
+        if out.flags.is_(rel_key, Flags.EXPLICIT_NEST, start=header_flags):
+            raise TOMLDecodeError(
+                f"Cannot redefine namespace {header + rel_key}", src, pos
+            )
         # Containers in the relative path can't be opened with the table syntax or
         # dotted key/value syntax in following table sections.
-        out.flags.add_pending(cont_key, Flags.EXPLICIT_NEST)
+        out.flags.add_pending(header + rel_key, Flags.EXPLICIT_NEST)
 
-    if out.flags.is_(abs_key_parent, Flags.FROZEN):
+    if out.flags.is_(key_parent, Flags.FROZEN, start=header_flags):
         raise TOMLDecodeError(
-            f"Cannot mutate immutable namespace {abs_key_parent}", src, pos
+            f"Cannot mutate immutable namespace {header + key_parent}", src, pos
         )
 
     try:
-        nest = out.data.get_or_create_nest(abs_key_parent)
+        nest = out.data.get_or_create_nest(key_parent, start=header_nest)
     except KeyError:
         raise TOMLDecodeError("Cannot overwrite a value", src, pos) from None
     if key_stem in nest:
