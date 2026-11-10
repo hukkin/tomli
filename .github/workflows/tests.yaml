@@ -90,16 +90,26 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
 
   binary-wheels:
-    name: Binary wheels for ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-11-arm') && 'Windows (arm64)' || startsWith(matrix.os, 'windows-') && 'Windows' || endsWith(matrix.os, '-arm') && 'Linux (arm64)' || 'Linux' }}
+    name: Binary wheels for ${{ matrix.arch == 'riscv64' && 'Linux (riscv64)' || startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-11-arm') && 'Windows (arm64)' || startsWith(matrix.os, 'windows-') && 'Windows' || endsWith(matrix.os, '-arm') && 'Linux (arm64)' || 'Linux' }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, windows-11-arm, macos-latest]
+        arch: ['']
+        include:
+        - os: ubuntu-latest
+          arch: riscv64
 
     steps:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         persist-credentials: false
+
+    - name: Set up QEMU
+      if: matrix.arch == 'riscv64'
+      uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+      with:
+        platforms: riscv64
 
     - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
       with:
@@ -114,11 +124,12 @@ jobs:
       uses: pypa/cibuildwheel@adba99c781d3746d38b3a09b1cf797965bcb7fe6 # v4.3.0
       env:
         CIBW_ARCHS_MACOS: x86_64 arm64
+        CIBW_ARCHS_LINUX: ${{ matrix.arch == 'riscv64' && 'riscv64' || 'auto' }}
         TOMLI_USE_MYPYC: '1'
 
     - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:
-        name: artifact-binary-${{ matrix.os }}
+        name: artifact-binary-${{ matrix.os }}${{ matrix.arch && format('-{0}', matrix.arch) || '' }}
         path: wheelhouse/*.whl
         if-no-files-found: error
 
