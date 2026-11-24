@@ -37,6 +37,15 @@ class TestError(unittest.TestCase):
             tomllib.loads("\n\nfwfw=")
         self.assertEqual(str(exc_info.exception), "Invalid value (at end of document)")
 
+    def test_unfinished_escape_error_position(self):
+        for doc in ('"\\', 'v = "\\', 'v = """\\'):
+            with self.assertRaises(tomllib.TOMLDecodeError) as exc_info:
+                tomllib.loads(doc)
+            self.assertEqual(exc_info.exception.pos, len(doc))
+            self.assertEqual(exc_info.exception.lineno, 1)
+            self.assertEqual(exc_info.exception.colno, len(doc) + 1)
+            self.assertIn("(at end of document)", str(exc_info.exception))
+
     def test_invalid_char_quotes(self):
         with self.assertRaises(tomllib.TOMLDecodeError) as exc_info:
             tomllib.loads("v = '\n'")

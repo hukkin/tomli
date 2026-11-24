@@ -584,7 +584,7 @@ def parse_basic_str_escape(
     src: str, pos: Pos, *, multiline: bool = False
 ) -> tuple[Pos, str]:
     escape_id = src[pos : pos + 2]
-    pos += 2
+    pos += len(escape_id)
     if multiline and escape_id in {"\\ ", "\\\t", "\\\n"}:
         # Skip whitespace until next non-whitespace character or end of
         # the doc. Error if non-whitespace is found before newline.
