@@ -74,6 +74,32 @@ class TestMiscellaneous(unittest.TestCase):
             else:
                 self.assertEqual(actual_val, expected_val)
 
+    def test_parse_float_receives_original_tokens(self):
+        tokens: list[str] = []
+
+        def parse_float(value: str) -> D:
+            tokens.append(value)
+            return D(value)
+
+        result = tomllib.loads(
+            "values = [true, 1, 1_2.3_4, 1e+03, +inf, -nan]", parse_float=parse_float
+        )
+        self.assertEqual(tokens, ["1_2.3_4", "1e+03", "+inf", "-nan"])
+        self.assertIs(result["values"][0], True)
+        self.assertIs(type(result["values"][1]), int)
+        self.assertEqual(result["values"][2:5], [D("12.34"), D("1e3"), D("inf")])
+        self.assertTrue(result["values"][5].is_nan())
+
+    def test_parse_float_propagates_callback_errors(self):
+        error = ValueError("conversion failed")
+
+        def parse_float(value):
+            raise error
+
+        with self.assertRaises(ValueError) as caught:
+            tomllib.loads("value = [0.1]", parse_float=parse_float)
+        self.assertIs(caught.exception, error)
+
     def test_deepcopy(self):
         doc = """
               [bliibaa.diibaa]
