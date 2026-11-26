@@ -243,14 +243,23 @@ class Flags:
 
     def __init__(self) -> None:
         self._flags: dict[str, dict[Any, Any]] = {}
-        self._pending_flags: set[tuple[Key, int]] = set()
+        self._pending_flags: set[tuple[Key, int, int]] = set()
 
-    def add_pending(self, key: Key, flag: int) -> None:
-        self._pending_flags.add((key, flag))
+    def add_pending(self, key: Key, flag: int, *, skip_parts: int) -> None:
+        """Make `flag` pending on `key` and on every prefix of it that has
+        more than `skip_parts` parts.
+
+        The prefixes are expanded in `finalize_pending`. Recording only the
+        longest key keeps this linear in the number of key parts: a prefix
+        per part would be quadratic, and pending flags live until the next
+        table header.
+        """
+        self._pending_flags.add((key, flag, skip_parts))
 
     def finalize_pending(self) -> None:
-        for key, flag in self._pending_flags:
-            self.set(key, flag, recursive=False)
+        for key, flag, skip_parts in self._pending_flags:
+            for part_count in range(skip_parts + 1, len(key) + 1):
+                self.set(key[:part_count], flag, recursive=False)
         self._pending_flags.clear()
 
     def unset_all(self, key: Key) -> None:
@@ -437,9 +446,9 @@ def key_value_rule(
         # Check that dotted key syntax does not redefine an existing table
         if out.flags.is_(cont_key, Flags.EXPLICIT_NEST):
             raise TOMLDecodeError(f"Cannot redefine namespace {cont_key}", src, pos)
-        # Containers in the relative path can't be opened with the table syntax or
-        # dotted key/value syntax in following table sections.
-        out.flags.add_pending(cont_key, Flags.EXPLICIT_NEST)
+    # Containers in the relative path can't be opened with the table syntax or
+    # dotted key/value syntax in following table sections.
+    out.flags.add_pending(abs_key_parent, Flags.EXPLICIT_NEST, skip_parts=len(header))
 
     if out.flags.is_(abs_key_parent, Flags.FROZEN):
         raise TOMLDecodeError(

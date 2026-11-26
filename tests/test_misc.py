@@ -11,6 +11,7 @@ import subprocess
 import sys
 import tempfile
 import textwrap
+import tracemalloc
 import unittest
 
 from . import tomllib
@@ -148,6 +149,23 @@ class TestMiscellaneous(unittest.TestCase):
             r"TOML key has more than the allowed [0-9]+ parts",
         ):
             tomllib.loads(nested_key_toml)
+
+    def test_dotted_key_namespace_memory(self):
+        # The containers named by a dotted key are recorded as pending
+        # flags until the next table header. Recording one entry per key
+        # prefix made that quadratic in the number of key parts, so a
+        # document of maximum length keys needed gigabytes to parse.
+        key_parts = sys.getrecursionlimit() - 1
+        document = "\n".join(
+            f"x{i}." + "a." * (key_parts - 2) + "leaf = 1" for i in range(50)
+        )
+        tracemalloc.start()
+        try:
+            tomllib.loads(document)
+            _, peak = tracemalloc.get_traced_memory()
+        finally:
+            tracemalloc.stop()
+        self.assertLess(peak, 500 * len(document))
 
     def test_types_import(self):
         """Test that `_types` module runs.
