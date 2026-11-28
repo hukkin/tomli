@@ -46,6 +46,25 @@ class TestMiscellaneous(unittest.TestCase):
                 ),
             )
 
+    def test_load_non_file_object(self):
+        # `read` is called before `load` can tell whether the argument is a
+        # file object, so a bare `AttributeError` used to escape. `loads`
+        # and `load` with a text mode file already raise `TypeError`.
+        content = "one=1"
+        with tempfile.TemporaryDirectory() as tmp_dir_path:
+            file_path = Path(tmp_dir_path) / "test.toml"
+            file_path.write_text(content)
+
+            not_file_objects = (file_path, str(file_path), content.encode(), None)
+            for not_a_file in not_file_objects:
+                with self.subTest(msg=type(not_a_file).__qualname__):
+                    with self.assertRaises(TypeError) as exc_info:
+                        tomllib.load(not_a_file)  # type: ignore[arg-type]
+                    # Mypyc extension leads to different message than pure Python
+                    msg = str(exc_info.exception)
+                    self.assertIn(type(not_a_file).__qualname__, msg)
+                    self.assertIn("file object", msg)
+
     def test_parse_float(self):
         doc = """
               val=0.1

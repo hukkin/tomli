@@ -151,7 +151,12 @@ class TOMLDecodeError(ValueError):
 
 def load(__fp: IO[bytes], *, parse_float: ParseFloat = float) -> dict[str, Any]:
     """Parse TOML from a binary file object."""
-    b = __fp.read()
+    try:
+        b = __fp.read()
+    except AttributeError:
+        raise TypeError(
+            f"Expected binary file object, not '{type(__fp).__qualname__}'"
+        ) from None
     try:
         s = b.decode()
     except AttributeError:
