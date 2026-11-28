@@ -11,6 +11,8 @@
   - Binary wheels for Python 3.15
 - Fixed
   - Set nested inline array/table limit to 400 to fix mypyc generated binaries crashing unrecoverably in constrained environments (e.g. worker thread in a `python:3.13-alpine` image)
+- Improved
+  - Make `load` raise `TypeError` not `AttributeError` on arguments that have no `read` attribute (e.g. a `str` path), matching `loads`
 
 ## 2.3.1
 
